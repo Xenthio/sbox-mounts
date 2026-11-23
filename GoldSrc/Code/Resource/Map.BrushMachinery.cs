@@ -224,7 +224,15 @@ partial class MapBuilder
 		WireTrigger( entity, breakable );
 		if ( breakable.Pushable )
 			Log.Warning( $"{FilePath}: {EntityName( entity )} requires push-step movement and buoyancy; only its breakable behavior is active." );
-		if ( entity.GetInt( "explodemagnitude" ) > 0 )
-			Log.Warning( $"{FilePath}: {EntityName( entity )} requires radial explosion damage and temporary explosion effects when broken." );
+		var magnitude = entity.GetInt( "explodemagnitude" );
+		if ( magnitude > 0 )
+		{
+			var explosionObject = new GameObject( true, $"{go.Name} explosion" ) { WorldPosition = go.WorldPosition };
+			var explosion = explosionObject.AddComponent<ExplosionEffect>();
+			explosion.Map = _mapState;
+			explosion.Magnitude = magnitude;
+			ConfigureExplosion( explosion );
+			breakable.BreakExplosion = explosion;
+		}
 	}
 }

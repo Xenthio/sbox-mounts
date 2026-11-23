@@ -22,6 +22,7 @@ public sealed class BreakableBrush : MapEntity, Component.IDamageable, Component
 	[Property] public SoundEvent[] DamageSounds { get; set; } = [];
 	[Property] public SoundEvent[] MetalDamageSounds { get; set; } = [];
 	[Property] public SoundEvent[] BreakSounds { get; set; } = [];
+	[Property] public ExplosionEffect BreakExplosion { get; set; }
 	private bool _broken;
 	private float _breakAt = float.PositiveInfinity;
 	private bool Breakable => MaterialType != 7 && (!Pushable || PushableBreakable);
@@ -86,7 +87,13 @@ public sealed class BreakableBrush : MapEntity, Component.IDamageable, Component
 		if ( pitch > 97 && pitch < 103 ) pitch = 100;
 		Play( BreakSounds, MathF.Min( Game.Random.Float( 0.85f, 1f ) + MathF.Abs( Health ) / 100f, 1f ), pitch / 100f );
 		foreach ( var collider in GetComponentsInChildren<Collider>( true ) ) collider.Enabled = false;
+		var position = WorldPosition;
 		Fire( OnTrigger, detached: true );
+		if ( BreakExplosion.IsValid() )
+		{
+			BreakExplosion.WorldPosition = position;
+			BreakExplosion.Trigger();
+		}
 		RemoveAfter( 0.1f );
 	}
 

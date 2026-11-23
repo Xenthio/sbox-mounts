@@ -5,7 +5,7 @@ namespace GoldSrc.Maps;
 
 partial class MapBuilder
 {
-	private readonly Dictionary<(int Model, BlendMode Blend, bool PivotAtOrigin, char Surface, bool Aggregate), MapGeometry> _brushGeometry = [];
+	private readonly Dictionary<(int Model, BlendMode Blend, bool PivotAtOrigin, char Surface, bool Aggregate, bool TriggerFaces), MapGeometry> _brushGeometry = [];
 
 	private void SpawnBrushEntity( BspFile bsp, Entity entity )
 	{
@@ -96,7 +96,8 @@ partial class MapBuilder
 		var isStatic = className is "func_wall" or "func_illusionary"
 			or "func_conveyor" or "func_buyzone" or "func_detail";
 		var aggregate = isStatic && string.IsNullOrEmpty( entity.TargetName );
-		var geometry = GetBrushGeometry( bsp, bspModel, modelIndex, center, blend, surfaceOverride, aggregate );
+		var triggerFaces = Host is DayOfDefeatMount && className == "func_breakable";
+		var geometry = GetBrushGeometry( bsp, bspModel, modelIndex, center, blend, surfaceOverride, aggregate, triggerFaces );
 		if ( geometry.IsEmpty )
 			return;
 
@@ -259,16 +260,16 @@ partial class MapBuilder
 		return (blend, color.WithAlpha( alpha ));
 	}
 
-	private MapGeometry GetBrushGeometry( BspFile bsp, BspModel bspModel, int modelIndex, Vector3 center, BlendMode blend, char surfaceOverride, bool aggregate )
+	private MapGeometry GetBrushGeometry( BspFile bsp, BspModel bspModel, int modelIndex, Vector3 center, BlendMode blend, char surfaceOverride, bool aggregate, bool triggerFaces )
 	{
 		var pivoted = center == Vector3.Zero;
-		var key = (modelIndex, blend, pivoted, surfaceOverride, aggregate);
+		var key = (modelIndex, blend, pivoted, surfaceOverride, aggregate, triggerFaces);
 
 		if ( _brushGeometry.TryGetValue( key, out var geometry ) )
 			return geometry;
 
-		var name = $"{BrushModelName( modelIndex )}_{(int)blend}_{(pivoted ? 1 : 0)}_{(int)surfaceOverride}{(aggregate ? "_static" : "")}";
-		geometry = CreateGeometry( bsp, bspModel, name, center, blend, surfaceOverride, aggregate );
+		var name = $"{BrushModelName( modelIndex )}_{(int)blend}_{(pivoted ? 1 : 0)}_{(int)surfaceOverride}{(aggregate ? "_static" : "")}{(triggerFaces ? "_trigger_faces" : "")}";
+		geometry = CreateGeometry( bsp, bspModel, name, center, blend, surfaceOverride, aggregate, triggerFaces );
 		_brushGeometry.Add( key, geometry );
 		return geometry;
 	}

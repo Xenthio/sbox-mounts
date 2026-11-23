@@ -172,11 +172,16 @@ partial class MapBuilder
 		explosion.NoSmoke = (entity.SpawnFlags & 8) != 0;
 		explosion.NoDecal = (entity.SpawnFlags & 16) != 0;
 		explosion.NoSparks = (entity.SpawnFlags & 32) != 0;
+		ConfigureExplosion( explosion );
+		RegisterTarget( entity, explosion );
+	}
+
+	private void ConfigureExplosion( ExplosionEffect explosion )
+	{
 		if ( !explosion.NoFireball ) explosion.Fireball = LoadEffectSprite( "sprites/zerogxplode.spr" );
 		if ( !explosion.NoSmoke ) explosion.Smoke = LoadEffectSprite( "sprites/steam1.spr" );
 		explosion.ExplosionSounds = Enumerable.Range( 3, 3 ).Select( i => BuildSoundEvent( $"weapons/explode{i}.wav", 1, 0.3f ) ).ToArray();
 		if ( !explosion.NoDecal ) explosion.Scorches = [Host.GetDecal( "{scorch1" ), Host.GetDecal( "{scorch2" )];
-		RegisterTarget( entity, explosion );
 		_explosions.Add( explosion );
 		if ( _unsupportedEntities.Add( "env_explosion:client-effects" ) )
 			Log.Warning( $"{FilePath}: env_explosion uses decoded fireball/smoke sprites; client explosion lights and secondary particles are not implemented, and smoke motion/color and spark tracer parameters are reconstructed rather than verified 1:1." );

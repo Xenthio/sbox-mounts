@@ -32,7 +32,7 @@ partial class MapBuilder
 		public BBox Bounds = new() { Mins = float.MaxValue, Maxs = float.MinValue };
 	}
 
-	private MapGeometry CreateGeometry( BspFile bsp, BspModel bspModel, string modelName, Vector3 origin = default, BlendMode blend = BlendMode.Opaque, char surfaceOverride = '\0', bool aggregate = false )
+	private MapGeometry CreateGeometry( BspFile bsp, BspModel bspModel, string modelName, Vector3 origin = default, BlendMode blend = BlendMode.Opaque, char surfaceOverride = '\0', bool aggregate = false, bool triggerFaces = false )
 	{
 		var materials = new Dictionary<(int Tex, int Page), MaterialBatch>();
 		var collisionVertices = new List<Vector3>();
@@ -55,7 +55,8 @@ partial class MapBuilder
 			var texIndex = (int)texInfo.MipTex;
 			var texture = bsp.Textures[texIndex];
 
-			if ( texture.IsTool )
+			// DoD uses AAATRIGGER faces for invisible damage receivers, such as Glider's radio.
+			if ( texture.IsTool && !(triggerFaces && texture.Name.Equals( "aaatrigger", StringComparison.OrdinalIgnoreCase )) )
 				continue;
 
 			var surface = _surfaces[faceIndex];
@@ -103,7 +104,7 @@ partial class MapBuilder
 					collisionMaterials.Add( surfaceIndex );
 			}
 
-			if ( isSky )
+			if ( isSky || texture.IsTool )
 				continue;
 
 			var page = isLiquid ? LiquidPage
