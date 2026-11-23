@@ -26,7 +26,8 @@ public partial class TeamFortressClassicMount
 	protected override string FindFallbackFile( string relativePath )
 	{
 		var relative = relativePath.Replace( '\\', '/' );
-		if ( !SharedModels.Contains( relative, StringComparer.OrdinalIgnoreCase )
+		if ( !relative.Equals( "gfx/palette.lmp", StringComparison.OrdinalIgnoreCase )
+			&& !SharedModels.Contains( relative, StringComparer.OrdinalIgnoreCase )
 			&& !SharedSprites.Contains( relative, StringComparer.OrdinalIgnoreCase ) ) return null;
 
 		var path = $"valve/{relative}";

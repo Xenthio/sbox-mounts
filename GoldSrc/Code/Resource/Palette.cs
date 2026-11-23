@@ -8,7 +8,7 @@ public abstract partial class GameMount
 	{
 		if ( _palette is null )
 		{
-			var path = GameDirs.Select( dir => $"{dir}/gfx/palette.lmp" ).FirstOrDefault( FileSystem.FileExists );
+			var path = FindFile( "gfx/palette.lmp" );
 			_palette = path is null ? [] : FileSystem.ReadAllBytes( path ).ToArray();
 		}
 		int offset = index * 3;
