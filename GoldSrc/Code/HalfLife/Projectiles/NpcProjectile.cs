@@ -16,6 +16,7 @@ public class NpcProjectile : Component
 	internal virtual float LaunchSpeed => 625;
 	internal virtual string HitTag => "projectile";
 	internal virtual float Lifetime => 4;
+	internal virtual GameObject CollisionOwner => Shooter;
 	internal virtual void PrepareLaunch() { }
 	internal virtual void Guide() { }
 	[Property] public GameObject Target { get; set; }
@@ -76,7 +77,7 @@ public class NpcProjectile : Component
 		var start = WorldPosition;
 		var end = start + Velocity * Time.Delta;
 		var trace = FlightTrace( start, end ).IgnoreGameObjectHierarchy( GameObject ).UseHitboxes();
-		if ( Shooter.IsValid() ) trace = trace.IgnoreGameObjectHierarchy( Shooter );
+		if ( CollisionOwner is { IsValid: true } owner ) trace = trace.IgnoreGameObjectHierarchy( owner );
 		var hit = trace.Run();
 		if ( !hit.Hit )
 		{
