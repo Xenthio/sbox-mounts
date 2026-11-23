@@ -37,6 +37,7 @@ public sealed partial class MapState
 		public bool[] Inputs { get; set; }
 		public BrushMover.SavedMove Move { get; set; }
 		public MonsterMaker.SavedMaker Maker { get; set; }
+		public CryOfFear.RandomSpawn.SavedGroup RandomSpawn { get; set; }
 		public TrackTrain.SavedTrain Train { get; set; }
 	}
 
@@ -126,6 +127,7 @@ public sealed partial class MapState
 					entry.Script = actor.Npc.CaptureScript();
 					break;
 				case MonsterMaker maker: entry.Maker = maker.CaptureMaker(); break;
+				case CryOfFear.RandomSpawn { IsCoordinator: true } coordinator: entry.RandomSpawn = coordinator.CaptureGroup(); break;
 				case BrushMover mover: entry.Move = mover.CaptureMove(); break;
 				case TrackTrain train: entry.Train = train.CaptureTrain(); break;
 				case MultiSource source: entry.Inputs = source.InputStates; break;
@@ -179,6 +181,7 @@ public sealed partial class MapState
 					if ( entry.Script is {} script ) actor.Npc.RestoreScript( script, this, player );
 					break;
 				case MonsterMaker maker when entry.Maker is not null: maker.RestoreMaker( entry.Maker ); break;
+				case CryOfFear.RandomSpawn coordinator when entry.RandomSpawn is not null: coordinator.RestoreGroup( entry.RandomSpawn ); break;
 				case MonsterMaker maker when entry.Count.HasValue: maker.Count = entry.Count.Value; break;
 				case BrushMover mover when entry.Move is not null: mover.RestoreMove( entry.Move ); break;
 				case TrackTrain train when entry.Train is not null: train.RestoreTrain( entry.Transform, entry.Train ); break;

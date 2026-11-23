@@ -15,6 +15,19 @@ public sealed class Monster : MapEntity
 	[Property, Hide] public bool SpawnedByMaker { get; set; }
 	[Property, Hide] public bool FromPreviousMap { get; set; }
 
+	internal static Monster CloneSpawn( GameObject prefab, MapState map, Transform transform, string name )
+	{
+		var child = prefab.Clone( transform, startEnabled: false );
+		child.SetParent( map.GameObject, true );
+		child.Name = name;
+		var actor = child.AddComponent<Monster>();
+		actor.Map = map;
+		actor.SpawnedByMaker = true;
+		actor.Npc = child.GetComponent<HalfLife.Npc>( true );
+		actor.Renderer = actor.Npc?.Renderer;
+		return actor;
+	}
+
 	protected override void OnDestroy()
 	{
 		if ( (SpawnedByMaker || FromPreviousMap) && Map.IsValid() ) Map.Entities.Remove( this );

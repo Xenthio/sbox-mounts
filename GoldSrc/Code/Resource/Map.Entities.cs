@@ -278,6 +278,18 @@ partial class MapBuilder
 				AddMultiSource( go, entity );
 				return;
 
+			case "cof_monster_random_spawn" when Host is CryOfFearMount:
+				var randomSpawn = go.AddComponent<CryOfFear.RandomSpawn>();
+				randomSpawn.TargetName = entity.TargetName;
+				randomSpawn.ChildClass = entity.GetString( "message" );
+				randomSpawn.IsCoordinator = entity.GetFloat( "health" ) > 0;
+				randomSpawn.DrawCount = (int)entity.GetFloat( "frags" );
+				randomSpawn.HitMonsterClip = (entity.SpawnFlags & 1) != 0;
+				if ( randomSpawn.IsCoordinator )
+					randomSpawn.ModelOverride = LoadMountedModel( entity.GetString( "model" ) )?.ResourcePath;
+				RegisterTarget( entity, randomSpawn, null, null, null, nameof( MapEntity.Kill ) );
+				return;
+
 			case "cof_triggeron" when Host is CryOfFearMount:
 				var enableTouch = go.AddComponent<CryOfFear.TriggerOn>();
 				enableTouch.TargetName = entity.TargetName;

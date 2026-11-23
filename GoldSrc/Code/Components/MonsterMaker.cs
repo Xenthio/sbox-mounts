@@ -90,22 +90,16 @@ public sealed class MonsterMaker : MapEntity
 			_exhausted = true;
 			return false;
 		}
-		var child = prefab.Clone( transform, startEnabled: false );
-		child.SetParent( Map.GameObject, true );
-		var npc = child.GetComponent<Npc>( true );
-		child.Name = string.IsNullOrEmpty( ChildName ) ? ChildClass : ChildName;
-		var actor = child.AddComponent<Monster>();
+		var actor = Monster.CloneSpawn( prefab, Map, transform, string.IsNullOrEmpty( ChildName ) ? ChildClass : ChildName );
+		var child = actor.GameObject;
+		var npc = actor.Npc;
 		actor.TargetName = ChildName;
-		actor.Npc = npc;
 		if ( HitMonsterClip ) MonsterClip.Restrict( child );
-		actor.SpawnedByMaker = true;
 		if ( npc.IsValid() )
 		{
 			npc.FadeCorpse = _fadeChildren;
 			if ( health.HasValue ) npc.Health = health.Value;
 		}
-		actor.Renderer = npc?.Renderer;
-		actor.Map = Map;
 		if ( !string.IsNullOrEmpty( ChildName ) ) Map.Entities.Add( actor );
 		_children.Add( child );
 		child.Enabled = true;
