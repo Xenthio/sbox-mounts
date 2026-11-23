@@ -49,7 +49,7 @@ public partial class Npc
 
 	internal virtual void DeathSound() => EmitSound( VoiceSample( Sounds.Death ), WorldPosition, VoiceVolume, VoicePitch );
 
-	StudioSequence ChooseDeathSequence( ITagSet groups, Vector3 direction )
+	internal virtual StudioSequence ChooseDeathSequence( ITagSet groups, Vector3 direction )
 	{
 		var regional = IsHeadHit( groups ) ? WeightedActivity( DieHeadshot )
 			: groups.Has( "hitgroup_3" ) ? WeightedActivity( DieGutshot ) : null;

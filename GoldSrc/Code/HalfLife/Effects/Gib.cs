@@ -53,6 +53,12 @@ public sealed class Gib : Component, Component.ICollisionListener
 
 	internal static void Spawn( Model model, string group, int variant, Vector3 point, Vector3 velocity, Npc.BloodColor blood, float fadeAfter = 0, System.Random random = null, bool fleshShard = false )
 	{
+		const string scheme = "mount://";
+		var path = model.ResourcePath;
+		var mountEnd = path.StartsWith( scheme ) ? path.IndexOf( '/', scheme.Length ) : -1;
+		if ( mountEnd < 0 || Sandbox.Mounting.Directory.Get( path[scheme.Length..mountEnd] )?.GetByPath( path ) is not ModelLoader loader )
+			return;
+
 		var go = new GameObject( false, "Gib" );
 		go.NetworkMode = NetworkMode.Never;
 		go.Flags |= GameObjectFlags.NotSaved;
@@ -67,7 +73,7 @@ public sealed class Gib : Component, Component.ICollisionListener
 		renderer.SetBodyGroup( group, variant );
 		var collider = go.AddComponent<HullCollider>();
 		collider.Type = HullCollider.PrimitiveType.Points;
-		collider.Points = ((ModelLoader)Sandbox.Mounting.Directory.Get( "hl1" ).GetByPath( model.Name )).GibHull( group, variant );
+		collider.Points = loader.GibHull( group, variant );
 		collider.Friction = 0.55f;
 		collider.ColliderFlags |= ColliderFlags.IgnoreTraces;
 		collider.Elasticity = 0.5f;
