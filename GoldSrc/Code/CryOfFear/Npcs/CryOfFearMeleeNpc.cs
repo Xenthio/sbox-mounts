@@ -8,6 +8,7 @@ public abstract class CryOfFearMeleeNpc : VoicedNpc
 	internal virtual string SwingSounds => "slower/hammer_miss";
 	internal virtual string HitSounds => "slower/hammer_strike";
 	internal virtual string WallSounds => "slower/hammer_strike_wall";
+	internal virtual StudioSequence SelectMeleeSequence() => WeightedActivity( Melee );
 
 	internal override IEnumerable<StudioSequence> ExtraSequences => Activities( Melee );
 
@@ -30,7 +31,7 @@ public abstract class CryOfFearMeleeNpc : VoicedNpc
 	{
 		var facing = (target.WorldPosition - WorldPosition).WithZ( 0 ).Normal;
 		if ( facing.IsNearlyZero() || WorldRotation.Forward.Dot( facing ) < 0.7f ) return;
-		if ( WeightedActivity( Melee ) is not { } melee ) return;
+		if ( SelectMeleeSequence() is not { } melee ) return;
 
 		EmitSound( Sounds.Attack, WorldPosition, speaker: this );
 		PlayAction( melee );
