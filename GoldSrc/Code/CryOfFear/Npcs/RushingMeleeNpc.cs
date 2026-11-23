@@ -34,7 +34,7 @@ public abstract class RushingMeleeNpc : CryOfFearMeleeNpc
 		var sound = victim.IsValid() ? HitSounds : contact ? WallSounds : SwingSounds;
 		EmitSound( sound, WorldPosition, pitch: Game.Random.Int( 95, 105 ) / 100f );
 		if ( StrikeVoice is { } voice && Game.Random.Int( 0, 1 ) == 1 )
-			EmitSound( voice, WorldPosition, speaker: this );
+			EmitSound( voice, WorldPosition, pitch: VoicePitch, speaker: this );
 
 		if ( victim?.GameObject.GetComponent<PlayerController>() is { } player )
 		{
