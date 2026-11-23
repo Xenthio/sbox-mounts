@@ -76,7 +76,7 @@ internal sealed class StudioSequenceEvents
 				if ( renderer.GetAttachment( $"attachment{1 + (e.Index - 5001) / 10}" ) is { } muzzle )
 				{
 					int.TryParse( e.Options, out var type );
-					ShowMuzzleFlash( renderer, muzzle, type );
+					ShowMuzzleFlash( audio.Mount, renderer, muzzle, type );
 				}
 				break;
 			case 5002:
@@ -92,11 +92,10 @@ internal sealed class StudioSequenceEvents
 		}
 	}
 
-	internal static void ShowMuzzleFlash( SkinnedModelRenderer model, Transform muzzle, int type )
+	internal static void ShowMuzzleFlash( GameMount mount, SkinnedModelRenderer model, Transform muzzle, int type )
 	{
 		var index = System.Math.Max( 0, type % 10 ) % 3;
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ||
-			mount.GetIndexedSprite( $"muzzleflash{index + 1}" ) is not { } sprite ) return;
+		if ( mount?.GetIndexedSprite( $"muzzleflash{index + 1}" ) is not { } sprite ) return;
 		var texture = sprite.Animations[0].Frames[0].Texture;
 		var scale = type / 10 > 0 ? (type / 10) * 0.1f : 0.5f;
 		var go = new GameObject( false, "Muzzle flash" );

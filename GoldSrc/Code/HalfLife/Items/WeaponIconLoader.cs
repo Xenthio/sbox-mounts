@@ -23,7 +23,7 @@ internal sealed class WeaponIconLoader( string className ) : ResourceLoader<Game
 				{
 					var path = $"{spriteDir}/sprites/{row[2]}.spr";
 					if ( !Host.FileSystem.FileExists( path ) ) continue;
-					if ( HalfLifeMount.ReadSpriteFrames( Host.FileSystem.OpenRead( path ) ) is not { Count: > 0 } frames ) continue;
+					if ( GameMount.ReadSpriteFrames( Host.FileSystem.OpenRead( path ) ) is not { Count: > 0 } frames ) continue;
 					var frame = frames[0];
 					if ( x < 0 || y < 0 || width <= 0 || height <= 0 || x > frame.Width - width || y > frame.Height - height ) continue;
 					if ( MakeIcon( frame.Pixels, frame.Width, x, y, width, height ) is { } icon ) return icon;

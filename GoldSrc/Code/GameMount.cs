@@ -166,6 +166,9 @@ public abstract partial class GameMount : BaseGameMount
 
 	protected override void Shutdown()
 	{
+		_indexedSpriteFrames.Clear();
+		_trailMaterials.Clear();
+		_indexedSprites.Clear();
 		_npcAudio = null;
 		base.Shutdown();
 	}
@@ -177,14 +180,6 @@ public partial class HalfLifeMount : GameMount
 	public override string Title => "Half-Life";
 	public override long AppId => 70;
 	public override IReadOnlyList<string> GameDirs => ["valve_hd", "valve"];
-
-	protected override void Shutdown()
-	{
-		_indexedSpriteFrames.Clear();
-		_trailMaterials.Clear();
-		_indexedSprites.Clear();
-		base.Shutdown();
-	}
 }
 
 public class HalfLifeMModMount : GameMount

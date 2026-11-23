@@ -30,7 +30,7 @@ internal sealed class WeaponPickupAttribute( string model, string ammo, int limi
 [Hide]
 public abstract partial class StudioWeapon : BaseCombatWeapon
 {
-	GameMount ContentMount => Sandbox.Mounting.Directory.Get( Definition.Mount ) as GameMount;
+	internal GameMount ContentMount => Sandbox.Mounting.Directory.Get( Definition.Mount ) as GameMount;
 	string PickupPath => $"mount://{Definition.Mount}/{Definition.PrefabPath}";
 	WeaponPickupAttribute _definition;
 	internal WeaponPickupAttribute Definition => _definition ??= Game.TypeLibrary.GetType( GetType() ).GetAttribute<WeaponPickupAttribute>();
@@ -219,7 +219,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 		{
 			var velocity = Owner.Velocity + pose.Rotation.Right * Game.Random.Float( 50, 70 )
 				+ pose.Rotation.Up * Game.Random.Float( 100, 150 ) + pose.Rotation.Forward * 25;
-			ShellCasing.Eject( origin, pose.Rotation, shotgun, velocity );
+			ShellCasing.Eject( origin, pose.Rotation, shotgun, velocity, ContentMount );
 		}
 	}
 

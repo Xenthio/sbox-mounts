@@ -21,7 +21,7 @@ public abstract class BulletWeapon : StudioWeapon
 	{
 		if ( Application.IsDedicatedServer || (!IsProxy && Owner is { ThirdPerson: false }) ) return;
 		if ( WorldModel?.GetComponent<SkinnedModelRenderer>() is { } renderer )
-			StudioSequenceEvents.ShowMuzzleFlash( renderer, GetMuzzleTransform(), PlayerMuzzleFlash );
+			StudioSequenceEvents.ShowMuzzleFlash( ContentMount, renderer, GetMuzzleTransform(), PlayerMuzzleFlash );
 	}
 
 	// FireBulletsPlayer applies its spread at trace time, independently for each pellet.

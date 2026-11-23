@@ -8,8 +8,11 @@ internal sealed partial class NpcAudio
 	readonly Dictionary<string, string> _files = new( StringComparer.OrdinalIgnoreCase );
 	readonly Dictionary<string, List<string>> _variants = new( StringComparer.OrdinalIgnoreCase );
 
+	internal GameMount Mount { get; }
+
 	internal NpcAudio( GameMount mount )
 	{
+		Mount = mount;
 		var sounds = mount.GetAll( ResourceType.Sound ).OfType<WavSoundLoader>().ToArray();
 		foreach ( var dir in mount.GameDirs )
 		{
