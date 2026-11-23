@@ -38,6 +38,7 @@ public sealed partial class MapState
 		public BrushMover.SavedMove Move { get; set; }
 		public MonsterMaker.SavedMaker Maker { get; set; }
 		public CryOfFear.RandomSpawn.SavedGroup RandomSpawn { get; set; }
+		public CryOfFear.TimedSpawn.SavedSpawner TimedSpawn { get; set; }
 		public TrackTrain.SavedTrain Train { get; set; }
 	}
 
@@ -128,6 +129,7 @@ public sealed partial class MapState
 					break;
 				case MonsterMaker maker: entry.Maker = maker.CaptureMaker(); break;
 				case CryOfFear.RandomSpawn { IsCoordinator: true } coordinator: entry.RandomSpawn = coordinator.CaptureGroup(); break;
+				case CryOfFear.TimedSpawn spawner: entry.TimedSpawn = spawner.Capture(); break;
 				case BrushMover mover: entry.Move = mover.CaptureMove(); break;
 				case TrackTrain train: entry.Train = train.CaptureTrain(); break;
 				case MultiSource source: entry.Inputs = source.InputStates; break;
@@ -182,6 +184,7 @@ public sealed partial class MapState
 					break;
 				case MonsterMaker maker when entry.Maker is not null: maker.RestoreMaker( entry.Maker ); break;
 				case CryOfFear.RandomSpawn coordinator when entry.RandomSpawn is not null: coordinator.RestoreGroup( entry.RandomSpawn ); break;
+				case CryOfFear.TimedSpawn spawner when entry.TimedSpawn is not null: spawner.Restore( entry.TimedSpawn ); break;
 				case MonsterMaker maker when entry.Count.HasValue: maker.Count = entry.Count.Value; break;
 				case BrushMover mover when entry.Move is not null: mover.RestoreMove( entry.Move ); break;
 				case TrackTrain train when entry.Train is not null: train.RestoreTrain( entry.Transform, entry.Train ); break;

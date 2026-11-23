@@ -290,6 +290,17 @@ partial class MapBuilder
 				RegisterTarget( entity, randomSpawn, null, null, null, nameof( MapEntity.Kill ) );
 				return;
 
+			case "cof_randomtimedspawner" when Host is CryOfFearMount:
+				var timedSpawn = go.AddComponent<CryOfFear.TimedSpawn>();
+				timedSpawn.TargetName = entity.TargetName;
+				timedSpawn.MarkerName = entity.GetString( "message" );
+				timedSpawn.ChildClass = entity.Target;
+				timedSpawn.MinDelay = entity.GetInt( "iuser1" );
+				timedSpawn.MaxDelay = entity.GetInt( "iuser2" );
+				timedSpawn.ReplacementLimit = entity.GetInt( "iuser4" );
+				RegisterTarget( entity, timedSpawn, null, null, null, nameof( MapEntity.Kill ) );
+				return;
+
 			case "cof_triggeron" when Host is CryOfFearMount:
 				var enableTouch = go.AddComponent<CryOfFear.TriggerOn>();
 				enableTouch.TargetName = entity.TargetName;
