@@ -12,9 +12,11 @@ public abstract class CrowbarWeapon : StudioWeapon
 		null => UnheldAimRay
 	};
 
-	protected SceneTraceResult TraceSwing( Ray aim )
+	protected SceneTraceResult TraceSwing( Ray aim ) => TraceMelee( aim, Ballistics.Range );
+
+	protected SceneTraceResult TraceMelee( Ray aim, float range )
 	{
-		var trace = BulletTrace( aim, Ballistics.Range, 0 );
+		var trace = BulletTrace( aim, range, 0 );
 		var line = trace.Run();
 		if ( line.Hit ) return line;
 		var hull = trace.Size( HeadHull ).Run();
