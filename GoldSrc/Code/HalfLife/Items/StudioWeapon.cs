@@ -22,6 +22,7 @@ internal sealed class WeaponPickupAttribute( string model, string ammo, int limi
 	public string PickupModel { get; set; }
 	public string PreviewModel { get; set; }
 	public int PreviewPitch { get; set; }
+	public string Mount { get; set; } = "hl1";
 	internal string WorldPickupPath => $"models/{PickupModel ?? $"w_{model}"}.mdl";
 	internal string PrefabPath => $"entities/items/weapon_{ClassName ?? model}.prefab";
 }
@@ -29,6 +30,8 @@ internal sealed class WeaponPickupAttribute( string model, string ammo, int limi
 [Hide]
 public abstract partial class StudioWeapon : BaseCombatWeapon
 {
+	GameMount ContentMount => Sandbox.Mounting.Directory.Get( Definition.Mount ) as GameMount;
+	string PickupPath => $"mount://{Definition.Mount}/{Definition.PrefabPath}";
 	WeaponPickupAttribute _definition;
 	internal WeaponPickupAttribute Definition => _definition ??= Game.TypeLibrary.GetType( GetType() ).GetAttribute<WeaponPickupAttribute>();
 	internal virtual string DeploySequence => "draw";
@@ -106,7 +109,12 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 
 	protected override void OnShootImpact( in ShotEffect shot )
 	{
-		if ( !shot.Hit || Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( ContentMount is not HalfLifeMount mount )
+		{
+			base.OnShootImpact( shot );
+			return;
+		}
+		if ( !shot.Hit ) return;
 		var flesh = HitFlesh( shot );
 		var sound = mount.GetBulletImpactSound( shot.Surface, flesh );
 		BulletEffects.ShowImpact( shot.HitPosition, shot.Normal, sound, flesh ? 0 : Game.Random.Int( 1, 5 ) );
@@ -187,7 +195,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 
 	internal virtual void BindAmmoTypes()
 	{
-		if ( Definition.Ammo is { } ammo ) PrimaryAmmoType ??= GameResource.Load<BaseAmmoResource>( $"mount://hl1/ammo/{ammo}.ammo" );
+		if ( Definition.Ammo is { } ammo ) PrimaryAmmoType ??= GameResource.Load<BaseAmmoResource>( $"mount://{Definition.Mount}/ammo/{ammo}.ammo" );
 	}
 
 	protected override async System.Threading.Tasks.Task OnLoad()
@@ -195,11 +203,10 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 		await base.OnLoad();
 		if ( Networking.IsHost ) return;
 		// Load mounted resources for the complete replicated inventory, including holstered weapons.
-		await Sandbox.Mounting.Directory.Mount( "hl1" );
+		await Sandbox.Mounting.Directory.Mount( Definition.Mount );
 		if ( !IsValid ) return;
 		BindAmmoTypes();
-		var mount = Sandbox.Mounting.Directory.Get( "hl1" );
-		if ( mount?.GetByPath( $"mount://hl1/{Definition.PrefabPath}" ) is WeaponPickupLoader pickup )
+		if ( ContentMount?.GetByPath( PickupPath ) is WeaponPickupLoader pickup )
 			pickup.BindPresentation( this, GetComponent<SkinnedModelRenderer>( true ) );
 	}
 
@@ -218,7 +225,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 
 	protected SoundHandle PlaySample( string sample, float volume = 1, float pitch = 1 )
 	{
-		if ( !Application.IsDedicatedServer && Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
+		if ( !Application.IsDedicatedServer && ContentMount is { } mount )
 			return NpcAudio.Play( mount.NpcAudio.Find( sample ), WorldPosition, volume, pitch );
 		return null;
 	}
@@ -264,10 +271,10 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 
 	GameObject MakeModel( string relativePath, GameObject parent, bool firstPerson )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return null;
+		if ( ContentMount is not { } mount ) return null;
 		foreach ( var dir in mount.GameDirs )
 		{
-			var path = $"mount://hl1/{dir}/{relativePath}.vmdl";
+			var path = $"mount://{Definition.Mount}/{dir}/{relativePath}.vmdl";
 			if ( mount.GetByPath( path ) is not ModelLoader loader ) continue;
 			var model = Model.Load( path );
 			if ( !model.IsValid() || model.IsError ) continue;

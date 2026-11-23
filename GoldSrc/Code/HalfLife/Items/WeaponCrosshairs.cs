@@ -66,8 +66,7 @@ public abstract partial class StudioWeapon
 		if ( !CrosshairVisible() ) return;
 		if ( _crosshairs is null )
 		{
-			if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount
-				|| mount.GetByPath( $"mount://hl1/{Definition.PrefabPath}" ) is not WeaponPickupLoader pickup ) return;
+			if ( ContentMount?.GetByPath( PickupPath ) is not WeaponPickupLoader pickup ) return;
 			_crosshairs = pickup.Crosshairs;
 		}
 		var (image, onTarget) = _crosshairs.Select( painter.Bounds.Size, Zoomed );

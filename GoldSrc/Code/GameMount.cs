@@ -15,6 +15,8 @@ public abstract partial class GameMount : BaseGameMount
 	public abstract IReadOnlyList<string> GameDirs { get; }
 
 	internal BaseFileSystem FileSystem { get; private set; }
+	NpcAudio _npcAudio;
+	internal NpcAudio NpcAudio => _npcAudio ??= new( this );
 
 	private readonly Dictionary<string, Wad> wads = new( StringComparer.OrdinalIgnoreCase );
 
@@ -65,11 +67,11 @@ public abstract partial class GameMount : BaseGameMount
 		wads.Clear();
 		_sprites.Clear();
 		var registry = this is HalfLifeMount ? new NpcRegistry() : null;
-		var weapons = registry is null ? [] : Game.TypeLibrary.GetTypes<StudioWeapon>()
+		var weapons = Game.TypeLibrary.GetTypes<StudioWeapon>()
 			.Select( type => (Type: type, Pickup: type.GetAttribute<WeaponPickupAttribute>()) )
-			.Where( entry => entry.Pickup is not null ).ToArray();
+			.Where( entry => entry.Pickup?.Mount == Ident ).ToArray();
 		var viewModels = weapons.SelectMany( entry => entry.Pickup.ViewModelPaths ).ToHashSet( System.StringComparer.OrdinalIgnoreCase );
-		var npcModels = registry is not null ? new Dictionary<string, string>( System.StringComparer.OrdinalIgnoreCase ) : null;
+		var gameplayModels = registry is not null || weapons.Length > 0 ? new Dictionary<string, string>( StringComparer.OrdinalIgnoreCase ) : null;
 		var originalModels = new Dictionary<string, string>( System.StringComparer.OrdinalIgnoreCase );
 		foreach ( var dir in GameDirs )
 		{
@@ -126,9 +128,9 @@ public abstract partial class GameMount : BaseGameMount
 
 					var modelPath = relativePath.Replace( '\\', '/' );
 					var npc = registry?.FindModel( modelPath );
-					var animated = npc is not null || (registry is not null && viewModels.Contains( modelPath ));
+					var animated = npc is not null || viewModels.Contains( modelPath );
 					context.Add( ResourceType.Model, path, new ModelLoader( fullPath, animated, npc ) );
-					npcModels?.TryAdd( modelPath, path );
+					gameplayModels?.TryAdd( modelPath, path );
 					if ( registry is not null && dir == "valve" ) originalModels[modelPath] = path;
 				}
 				else if ( ext == ".wav" )
@@ -152,53 +154,35 @@ public abstract partial class GameMount : BaseGameMount
 
 		MountSurfaces( context );
 		MountDecals( context );
-		if ( npcModels is not null )
-		{
-			registry.Mount( context, npcModels, originalModels );
+		registry?.Mount( context, gameplayModels, originalModels );
+		if ( this is HalfLifeMount )
 			context.Add( ResourceType.GameResource, Rifle.GrenadeAmmoPath, new AmmoLoader( "AR grenades", 10 ) );
-			foreach ( var ammo in weapons.Select( w => w.Pickup ).Where( p => p.Ammo is not null ).DistinctBy( w => w.Ammo ) )
-				context.Add( ResourceType.GameResource, $"ammo/{ammo.Ammo}.ammo", new AmmoLoader( ammo.Ammo, ammo.Limit ) );
-			foreach ( var (type, pickup) in weapons )
-			{
-				if ( !npcModels.TryGetValue( pickup.WorldPickupPath, out var model ) ) continue;
-				var className = Path.GetFileNameWithoutExtension( pickup.PrefabPath );
-				var icon = new WeaponIconLoader( className );
-				context.Add( ResourceType.Texture, $"icons/{className}", icon );
-				var preview = pickup.PreviewModel is null ? model : npcModels.GetValueOrDefault( $"models/{pickup.PreviewModel}.mdl", model );
-				if ( pickup.PreviewPitch != 0 )
-				{
-					var upright = $"previews/{className}";
-					context.Add( ResourceType.Model, upright, new ModelLoader( preview, previewRotation: Rotation.FromPitch( pickup.PreviewPitch ) ) );
-					preview = upright;
-				}
-				var loader = new WeaponPickupLoader( type, model, preview, icon.Path );
-				loader.Tags.Add( "weapon" );
-				context.Add( ResourceType.PrefabFile, pickup.PrefabPath, loader );
-			}
-		}
+		if ( weapons.Length > 0 )
+			MountWeapons( context, gameplayModels, weapons );
 
 		IsMounted = true;
 		return Task.CompletedTask;
+	}
+
+	protected override void Shutdown()
+	{
+		_npcAudio = null;
+		base.Shutdown();
 	}
 }
 
 public partial class HalfLifeMount : GameMount
 {
-	NpcAudio _npcAudio;
-
 	public override string Ident => "hl1";
 	public override string Title => "Half-Life";
 	public override long AppId => 70;
 	public override IReadOnlyList<string> GameDirs => ["valve_hd", "valve"];
-
-	internal NpcAudio NpcAudio => _npcAudio ??= new( this );
 
 	protected override void Shutdown()
 	{
 		_indexedSpriteFrames.Clear();
 		_trailMaterials.Clear();
 		_indexedSprites.Clear();
-		_npcAudio = null;
 		base.Shutdown();
 	}
 }
