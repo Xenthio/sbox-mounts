@@ -4,6 +4,7 @@ namespace GoldSrc.HalfLife;
 public class TimedGrenade : Component, Component.ICollisionListener
 {
 	[Property] public GameObject Thrower { get; set; }
+	GameMount _effectsMount;
 	TimeUntil _fuse, _nextBounce, _nextImpact, _nextTumble;
 	bool _settledWarning;
 	protected float FuseRemaining => _fuse;
@@ -38,7 +39,8 @@ public class TimedGrenade : Component, Component.ICollisionListener
 	internal static void Throw( GameObject owner, Vector3 origin, Vector3 velocity, float fuse ) =>
 		Spawn<TimedGrenade>( owner, origin, velocity, fuse, "Hand grenade", "mount://hl1/valve/models/w_grenade.mdl.vmdl" );
 
-	internal static T Spawn<T>( GameObject owner, Vector3 origin, Vector3 velocity, float fuse, string name, string modelPath, System.Action<T> configure = null )
+	internal static T Spawn<T>( GameObject owner, Vector3 origin, Vector3 velocity, float fuse, string name, string modelPath,
+		System.Action<T> configure = null, GameMount effectsMount = null )
 		where T : TimedGrenade, new()
 	{
 		var go = new GameObject( false, name );
@@ -57,6 +59,7 @@ public class TimedGrenade : Component, Component.ICollisionListener
 		body.GravityScale = grenade.GravityScale;
 		body.EnableImpactDamage = false;
 		grenade.Thrower = owner;
+		grenade._effectsMount = effectsMount;
 		grenade._fuse = fuse;
 		grenade._nextTumble = 0.1f;
 		body.RigidbodyFlags |= RigidbodyFlags.DisableCollisionSounds;
@@ -99,8 +102,8 @@ public class TimedGrenade : Component, Component.ICollisionListener
 
 	internal virtual void OnBounce( Rigidbody body )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
-			mount.NpcAudio.Emit( "weapons/grenade_hit", WorldPosition, volume: 0.25f );
+		var mount = _effectsMount ?? Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
+		mount?.NpcAudio.Emit( "weapons/grenade_hit", WorldPosition, volume: 0.25f );
 	}
 
 	internal virtual bool ReadyToDetonate( Rigidbody body ) => true;
@@ -140,6 +143,6 @@ public class TimedGrenade : Component, Component.ICollisionListener
 	{
 		var floor = Scene.Trace.Ray( WorldPosition + Vector3.Up * 8, WorldPosition + Vector3.Down * 40 )
 			.IgnoreGameObjectHierarchy( GameObject ).Run();
-		Blast.Detonate( GameObject, Thrower, floor.Hit ? floor.EndPosition : WorldPosition, floor.Normal, 100, floor.Hit );
+		Blast.Detonate( GameObject, Thrower, floor.Hit ? floor.EndPosition : WorldPosition, floor.Normal, 100, floor.Hit, _effectsMount );
 	}
 }

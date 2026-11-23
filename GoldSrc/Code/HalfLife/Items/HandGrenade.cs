@@ -2,7 +2,10 @@ namespace GoldSrc.HalfLife;
 
 [Title( "Hand Grenade" ), Category( "Half-Life" )]
 [WeaponPickup( "grenade", "grenades", 10, ClassName = "handgrenade", Bucket = 4, Weight = 5 )]
-public sealed class HandGrenade : PinGrenadeWeapon
+public sealed class HandGrenade : ClassicHandGrenade;
+
+[Hide]
+public abstract class ClassicHandGrenade : PinGrenadeWeapon
 {
 	internal override (string Name, float? Delay) IdleAnimation => Game.Random.Float( 0, 1 ) <= 0.75f
 		? ("idle", Game.Random.Float( 10, 15 )) : ("fidget", 2.5f);
@@ -17,7 +20,10 @@ public sealed class HandGrenade : PinGrenadeWeapon
 	internal override string LaunchGrenade( Vector3 origin, Vector3 direction, float pitch, float pinAge )
 	{
 		var speed = System.Math.Clamp( (90 - pitch) * 6.5f, 0, 1000 );
-		TimedGrenade.Throw( Owner.GameObject, origin, direction * speed + Owner.Velocity, System.MathF.Max( 0, 3 - pinAge ) );
+		SpawnGrenade( origin, direction * speed + Owner.Velocity, System.MathF.Max( 0, 3 - pinAge ) );
 		return speed < 500 ? "throw1" : speed < 1000 ? "throw2" : "throw3";
 	}
+
+	internal virtual void SpawnGrenade( Vector3 origin, Vector3 velocity, float fuse ) =>
+		TimedGrenade.Throw( Owner.GameObject, origin, velocity, fuse );
 }
