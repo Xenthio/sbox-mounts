@@ -19,6 +19,7 @@ internal sealed class WeaponPickupAttribute( string model, string ammo, int limi
 		}
 	}
 	public string ClassName { get; set; }
+	public string EntityName { get; set; }
 	public string PickupModel { get; set; }
 	public string ModelDirectory { get; set; } = "models";
 	public string PreviewModel { get; set; }
@@ -26,7 +27,7 @@ internal sealed class WeaponPickupAttribute( string model, string ammo, int limi
 	public string Mount { get; set; } = "hl1";
 	internal string ModelPath( string name ) => $"{ModelDirectory}/{name}.mdl";
 	internal string WorldPickupPath => ModelPath( PickupModel ?? $"w_{model}" );
-	internal string PrefabPath => $"entities/items/weapon_{ClassName ?? model}.prefab";
+	internal string PrefabPath => $"entities/items/{EntityName ?? $"weapon_{ClassName ?? model}"}.prefab";
 }
 
 [Hide]

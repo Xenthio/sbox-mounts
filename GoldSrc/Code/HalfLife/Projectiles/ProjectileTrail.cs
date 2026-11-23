@@ -5,7 +5,7 @@ public sealed class ProjectileTrail : Component
 {
 	TrailRenderer _trail;
 
-	internal static void Attach( GameObject projectile, HalfLifeMount mount, string name, string sprite, float life, float halfWidth, Color tint )
+	internal static void Attach( GameObject projectile, GameMount mount, string name, string sprite, float life, float halfWidth, Color tint )
 	{
 		var go = new GameObject( projectile, false, name ) { NetworkMode = NetworkMode.Never };
 		var trail = go.AddComponent<TrailRenderer>();
@@ -17,7 +17,7 @@ public sealed class ProjectileTrail : Component
 		trail.Color = new Gradient( new Gradient.ColorFrame( 0, tint ), new Gradient.ColorFrame( 1, tint.WithAlpha( 0 ) ) );
 		trail.Opaque = false;
 		trail.BlendMode = BlendMode.Lighten;
-		trail.Texturing = TrailTextureConfig.Default with { Material = mount.GetTrailMaterial( sprite ), WorldSpace = true, UnitsPerTexture = 32 };
+		if ( sprite is not null ) trail.Texturing = TrailTextureConfig.Default with { Material = mount.GetTrailMaterial( sprite ), WorldSpace = true, UnitsPerTexture = 32 };
 		go.Enabled = true;
 	}
 
