@@ -71,7 +71,7 @@ public sealed class Sewmo : CryOfFearMeleeNpc
 		else base.ModifyDamage( damage );
 	}
 
-	internal override StudioSequence SelectMeleeSequence() => Find( EffectiveBody == 0 ? "attack1" : "attack2" );
+	internal override StudioSequence SelectMeleeSequence( GameObject target ) => Find( EffectiveBody == 0 ? "attack1" : "attack2" );
 
 	internal override void HandleActionEvent( int id )
 	{
