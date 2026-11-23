@@ -4,7 +4,7 @@ using GoldSrc.HalfLife;
 namespace GoldSrc.CounterStrike;
 
 [Hide]
-public abstract class CounterStrikePistol : StudioWeapon
+public abstract class CounterStrikePistol : CounterStrikeFirearm
 {
 	internal readonly record struct PistolAccuracy( float Maximum, float Minimum, float RecoveryTime, float Rate );
 
@@ -12,7 +12,6 @@ public abstract class CounterStrikePistol : StudioWeapon
 	float? _lastShot;
 
 	internal abstract PistolAccuracy Accuracy { get; }
-	internal abstract float RangeModifier { get; }
 	internal virtual int FireSequenceCount => 2;
 	internal virtual float MovingSpread => 0.255f;
 	internal virtual float CrouchingSpread => 0.075f;
@@ -35,14 +34,7 @@ public abstract class CounterStrikePistol : StudioWeapon
 	{
 		if ( IsHeld && !TakePrimaryAmmo() ) return;
 
-		var ray = AimRay;
 		var spread = Spread();
-		var basis = Rotation.LookAt( ray.Forward );
-		var offset = basis.Right * (SampleOffset() * spread) + basis.Up * (SampleOffset() * spread);
-		var hit = BulletTrace( new Ray( ray.Position, (ray.Forward + offset).Normal ), Ballistics.Range, 0 ).Run();
-		if ( hit.Hit )
-			ShootBullet( hit, Ballistics.Damage * MathF.Pow( RangeModifier, hit.Distance / 500f ), 0 );
-
 		if ( _lastShot is { } last )
 		{
 			var accuracy = Accuracy;
@@ -50,8 +42,7 @@ public abstract class CounterStrikePistol : StudioWeapon
 			_accuracy = Math.Clamp( (_accuracy ?? accuracy.Maximum) - penalty, accuracy.Minimum, accuracy.Maximum );
 		}
 		_lastShot = Time.Now;
-		TimeSinceShoot = 0;
-		ShootEffects( new ShotEffect( hit.EndPosition, hit.Hit, hit.Normal, hit.GameObject, hit.Surface ) );
+		FireRound( spread );
 	}
 
 	float Spread()
@@ -65,8 +56,6 @@ public abstract class CounterStrikePistol : StudioWeapon
 		};
 		return scale * (1 - (_accuracy ?? Accuracy.Maximum));
 	}
-
-	static float SampleOffset() => Game.Random.Float( -0.5f, 0.5f ) + Game.Random.Float( -0.5f, 0.5f );
 
 	protected override void OnReloadStarted()
 	{
