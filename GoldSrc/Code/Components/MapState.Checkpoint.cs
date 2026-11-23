@@ -30,6 +30,7 @@ public sealed partial class MapState
 		public float? Health { get; set; }
 		public HalfLife.Npc.SavedScript Script { get; set; }
 		public int? Count { get; set; }
+		public float? GameCounterCount { get; set; }
 		public bool Running { get; set; }
 		public float Elapsed { get; set; }
 		public int EventIndex { get; set; }
@@ -118,6 +119,8 @@ public sealed partial class MapState
 			switch ( entity )
 			{
 				case WallCharger charger: entry.Count = charger.Juice; break;
+				case Counter counter: entry.Count = counter.Remaining; break;
+				case GameCounter counter: entry.GameCounterCount = counter.Count; break;
 				case Monster actor when actor.Npc.IsValid():
 					entry.Health = actor.Npc.Health;
 					entry.Script = actor.Npc.CaptureScript();
@@ -168,6 +171,8 @@ public sealed partial class MapState
 			switch ( entity )
 			{
 				case WallCharger charger when entry.Count.HasValue: charger.Juice = entry.Count.Value; break;
+				case Counter counter when entry.Count.HasValue: counter.Remaining = entry.Count.Value; break;
+				case GameCounter counter when entry.GameCounterCount.HasValue: counter.Count = entry.GameCounterCount.Value; break;
 				case Monster actor when actor.Npc.IsValid() && entry.Health.HasValue:
 					actor.Npc.Health = entry.Health.Value;
 					actor.WorldTransform = entry.Transform;
