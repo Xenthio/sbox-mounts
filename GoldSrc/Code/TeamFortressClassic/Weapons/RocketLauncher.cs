@@ -68,24 +68,7 @@ public sealed class FortressRocket : RocketProjectile
 	{
 		var damage = Damage + Game.Random.Float( 0, 20 );
 		var origin = position + normal * ((damage - 50) * 0.6f);
-		var submerged = WaterBody.Find( Scene, origin ).IsValid();
-		var victims = Scene.FindInPhysics( new Sphere( origin, damage ) )
-			.Select( go => go.GetComponentInParent<IDamageable>() ).OfType<Component>().Distinct().ToArray();
-		foreach ( var target in victims )
-		{
-			if ( !target.IsValid() || !Npc.SharesWaterLevel( target.GameObject, submerged ) ) continue;
-			var center = Npc.TargetBodyPosition( target.GameObject );
-			var trace = Scene.Trace.Ray( origin, center ).IgnoreGameObjectHierarchy( GameObject ).WithoutTags( "trigger", "debris" ).UseHitboxes().Run();
-			if ( trace.Hit && trace.GameObject?.Root != target.GameObject.Root ) continue;
-			var self = target.GameObject.Root == Shooter?.Root;
-			var amount = (damage - origin.Distance( trace.EndPosition ) * 0.5f) * (self ? 0.75f : 1);
-			if ( amount <= 0 ) continue;
-			var info = new DamageInfo { Damage = amount, Origin = origin, Position = trace.EndPosition, Attacker = Shooter, Weapon = GameObject };
-			info.Tags.Add( "blast" );
-			((IDamageable)target).OnDamage( info );
-			if ( target.IsValid() ) Npc.PushVictim( target, (center - origin).Normal * amount * 5 );
-		}
-
+		FortressBlast.Apply( GameObject, Shooter, origin, damage, falloff: 0.5f );
 		EffectMount?.NpcAudio.Emit( $"weapons/explode{Game.Random.Int( 3, 5 )}.wav", origin, attenuation: 0.3f );
 		ShowExplosion( origin );
 	}
@@ -95,5 +78,30 @@ public sealed class FortressRocket : RocketProjectile
 	{
 		var mount = Sandbox.Mounting.Directory.Get( "tfc" ) as GameMount;
 		if ( mount is not null ) Blast.SpriteEffect( "TFC rocket explosion", "explode01", position, 1, 15, mount: mount );
+	}
+}
+
+internal static class FortressBlast
+{
+	internal static void Apply( GameObject projectile, GameObject shooter, Vector3 origin, float damage, float falloff )
+	{
+		var scene = projectile.Scene;
+		var submerged = WaterBody.Find( scene, origin ).IsValid();
+		var victims = scene.FindInPhysics( new Sphere( origin, damage ) )
+			.Select( go => go.GetComponentInParent<Component.IDamageable>() ).OfType<Component>().Distinct().ToArray();
+		foreach ( var target in victims )
+		{
+			if ( !target.IsValid() || !Npc.SharesWaterLevel( target.GameObject, submerged ) ) continue;
+			var center = Npc.TargetBodyPosition( target.GameObject );
+			var trace = scene.Trace.Ray( origin, center ).IgnoreGameObjectHierarchy( projectile ).WithoutTags( "trigger", "debris" ).UseHitboxes().Run();
+			if ( trace.Hit && trace.GameObject?.Root != target.GameObject.Root ) continue;
+			var self = target.GameObject.Root == shooter?.Root;
+			var amount = (damage - origin.Distance( trace.EndPosition ) * falloff) * (self ? 0.75f : 1);
+			if ( amount <= 0 ) continue;
+			var info = new DamageInfo { Damage = amount, Origin = origin, Position = trace.EndPosition, Attacker = shooter, Weapon = projectile };
+			info.Tags.Add( "blast" );
+			((Component.IDamageable)target).OnDamage( info );
+			if ( target.IsValid() ) Npc.PushVictim( target, (center - origin).Normal * amount * 5 );
+		}
 	}
 }

@@ -9,6 +9,9 @@ public partial class TeamFortressClassicMount
 	[
 		"weapons/357_cock1.wav", "weapons/reload1.wav", "weapons/reload3.wav", "weapons/scock1.wav",
 		"weapons/rocket1.wav", "weapons/rocketfire1.wav", "weapons/sbarrel1.wav",
+		"weapons/glauncher.wav",
+		"items/cliprelease1.wav", "items/clipinsert1.wav",
+		"weapons/grenade_hit1.wav", "weapons/grenade_hit2.wav", "weapons/grenade_hit3.wav",
 		"weapons/explode3.wav", "weapons/explode4.wav", "weapons/explode5.wav"
 	];
 	static readonly string[] SharedSprites = ["sprites/smoke.spr", "sprites/muzzleflash1.spr", "sprites/muzzleflash2.spr"];
