@@ -49,6 +49,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 	internal virtual float? IdleAfterShot => null;
 	internal virtual string ReloadSequence => "reload";
 	internal virtual float IdleAfterReloadStart => 3;
+	internal virtual void OnViewSequenceEvent( Mdl.Event animationEvent, SkinnedModelRenderer renderer ) { }
 
 	// Some fresh SDK weapons carry more rounds than fit in their magazine.
 	internal virtual int FreshPickupRounds => ClipMaxSize;

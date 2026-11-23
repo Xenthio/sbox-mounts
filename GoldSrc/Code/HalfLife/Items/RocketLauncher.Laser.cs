@@ -43,16 +43,7 @@ public sealed partial class RocketLauncher
 		var hit = BulletTrace( sight, 8192, 0 ).Run();
 		SpotPosition = hit.EndPosition;
 		if ( Application.IsDedicatedServer ) return;
-		if ( !_dot.IsValid() && Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount && mount.GetIndexedSprite( "laserdot" ) is { } sprite )
-		{
-			var go = new GameObject( GameObject, true, "RPG laser spot" );
-			go.NetworkMode = NetworkMode.Never;
-			_dot = go.AddComponent<SpriteRenderer>();
-			_dot.Sprite = sprite;
-			var image = sprite.Animations[0].Frames[0].Texture;
-			_dot.Size = new Vector2( image.Width, image.Height );
-			_dot.Additive = true;
-		}
+		if ( !_dot.IsValid() ) _dot = LaserSpot.Create( GameObject, ContentMount, "RPG laser spot" );
 		if ( !_dot.IsValid() ) return;
 		_dot.Enabled = hit.Hit;
 		_dot.WorldPosition = hit.EndPosition - sight.Forward * 0.5f;

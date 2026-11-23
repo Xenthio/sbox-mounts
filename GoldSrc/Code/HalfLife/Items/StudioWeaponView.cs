@@ -51,7 +51,7 @@ public sealed class StudioWeaponView : BaseWeaponModel
 		if ( Scene.Camera.IsValid() ) WorldTransform = Scene.Camera.WorldTransform;
 		if ( _current is null || !Renderer.Animation.IsValid ) return;
 		var time = _loop ? (float)_elapsed % _current.Duration : (float)_elapsed;
-		_sequenceEvents.Update( _audio, Renderer, time, _loop );
+		_sequenceEvents.Update( _audio, Renderer, time, _loop, weapon: _weapon );
 		if ( _elapsed >= _idleAfter && !_weapon.IsReloading && _weapon.CanIdle )
 		{
 			_weapon.PlayIdle( this );

@@ -12,7 +12,7 @@ internal sealed class StudioSequenceEvents
 	}
 
 	internal void Update( NpcAudio audio, SkinnedModelRenderer renderer, float time, bool looping, Npc npc = null,
-		bool reverse = false, bool grounded = false )
+		bool reverse = false, bool grounded = false, StudioWeapon weapon = null )
 	{
 		if ( _sequence is null || audio is null ) return;
 		if ( looping && time < _previous )
@@ -32,12 +32,12 @@ internal sealed class StudioSequenceEvents
 				var at = e.Frame / _sequence.Description.Fps;
 				if ( reverse ) at = _sequence.Duration - at;
 				if ( at > end ) break;
-				if ( at > start ) Play( e, audio, renderer, npc, grounded );
+				if ( at > start ) Play( e, audio, renderer, npc, grounded, weapon );
 			}
 		}
 	}
 
-	static void Play( Mdl.Event e, NpcAudio audio, SkinnedModelRenderer renderer, Npc npc, bool grounded )
+	static void Play( Mdl.Event e, NpcAudio audio, SkinnedModelRenderer renderer, Npc npc, bool grounded, StudioWeapon weapon )
 	{
 		var position = renderer.WorldPosition;
 		switch ( e.Index )
@@ -88,6 +88,7 @@ internal sealed class StudioSequenceEvents
 				break;
 			default:
 				npc?.PlaySequenceSound( audio, e.Index );
+				weapon?.OnViewSequenceEvent( e, renderer );
 				break;
 		}
 	}
