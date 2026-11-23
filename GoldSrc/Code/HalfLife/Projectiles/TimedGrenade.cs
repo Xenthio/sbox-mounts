@@ -38,7 +38,7 @@ public class TimedGrenade : Component, Component.ICollisionListener
 	internal static void Throw( GameObject owner, Vector3 origin, Vector3 velocity, float fuse ) =>
 		Spawn<TimedGrenade>( owner, origin, velocity, fuse, "Hand grenade", "mount://hl1/valve/models/w_grenade.mdl.vmdl" );
 
-	internal static void Spawn<T>( GameObject owner, Vector3 origin, Vector3 velocity, float fuse, string name, string modelPath, System.Action<T> configure = null )
+	internal static T Spawn<T>( GameObject owner, Vector3 origin, Vector3 velocity, float fuse, string name, string modelPath, System.Action<T> configure = null )
 		where T : TimedGrenade, new()
 	{
 		var go = new GameObject( false, name );
@@ -64,6 +64,7 @@ public class TimedGrenade : Component, Component.ICollisionListener
 		body.Velocity = fuse < 0.1f ? Vector3.Zero : velocity;
 		if ( fuse >= 0.1f ) body.AngularVelocity = go.WorldRotation.Right * Game.Random.Float( 8, 14 );
 		go.NetworkSpawn( true, null );
+		return grenade;
 	}
 
 	void ICollisionListener.OnCollisionStart( Collision collision )

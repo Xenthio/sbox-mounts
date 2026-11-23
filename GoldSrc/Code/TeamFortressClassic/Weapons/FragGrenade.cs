@@ -17,16 +17,17 @@ public sealed class FragGrenade : FortressHandGrenadeWeapon
 }
 
 [Hide]
-public sealed class FortressFragGrenade : FortressHandGrenade
+public sealed class FortressFragGrenade : FortressExplosiveGrenade;
+
+[Hide]
+public abstract class FortressExplosiveGrenade : FortressHandGrenade
 {
 	const float Damage = 180;
 
 	internal override void Detonate()
 	{
 		var position = WorldPosition;
-		var floor = Scene.Trace.Ray( position + Vector3.Up * 8, position + Vector3.Down * 40 )
-			.IgnoreGameObjectHierarchy( GameObject ).IgnoreGameObjectHierarchy( Thrower ).IgnoreDynamic()
-			.WithoutTags( "trigger", "debris" ).Run();
+		var floor = TraceFloor();
 		var damageOrigin = !InHand && floor.Hit ? floor.EndPosition + floor.Normal * 32 : position;
 		var effectOrigin = floor.Hit ? floor.EndPosition + floor.Normal * ((Damage - 24) * 0.6f) : position;
 		FortressBlast.Apply( GameObject, Thrower, damageOrigin, Damage, falloff: 0.5f, inHand: InHand );
@@ -39,7 +40,7 @@ public sealed class FortressFragGrenade : FortressHandGrenade
 	static void ShowExplosion( Vector3 position, Vector3 normal )
 	{
 		if ( Mount is not { } mount ) return;
-		Blast.SpriteEffect( "TFC fragmentation grenade explosion", "explode01", position, (Damage - 50) * 0.06f, 15,
+		Blast.SpriteEffect( "TFC grenade explosion", "explode01", position, (Damage - 50) * 0.06f, 15,
 			additive: false, mount: mount );
 		if ( WaterBody.Find( Game.ActiveScene, position ).IsValid() ) return;
 		var count = Game.Random.Int( 0, 3 );

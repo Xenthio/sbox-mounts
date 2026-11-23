@@ -45,4 +45,8 @@ public abstract class FortressHandGrenade : TimedGrenade
 
 	internal override void OnBounce( Rigidbody body ) =>
 		Mount?.NpcAudio.Emit( "weapons/grenade_hit", WorldPosition, volume: 0.25f );
+
+	protected SceneTraceResult TraceFloor() => Scene.Trace.Ray( WorldPosition + Vector3.Up * 8, WorldPosition + Vector3.Down * 40 )
+		.IgnoreGameObjectHierarchy( GameObject ).IgnoreGameObjectHierarchy( Thrower ).IgnoreDynamic()
+		.WithoutTags( "trigger", "debris" ).Run();
 }
