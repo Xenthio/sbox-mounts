@@ -2,7 +2,12 @@
 
 class WavSoundLoader( string fullPath ) : ResourceLoader<GameMount>
 {
-	protected override object Load() => SoundFile.FromWav( Path, Host.FileSystem.ReadAllBytes( fullPath ).ToArray() );
+	protected override object Load()
+	{
+		var data = Host.FileSystem.ReadAllBytes( fullPath ).ToArray();
+		// Sven Co-op keeps the legacy WAV names for some replacement Vorbis samples.
+		return System.MemoryExtensions.StartsWith<byte>( data, "OggS"u8 ) ? SoundFile.FromOgg( Path, data ) : SoundFile.FromWav( Path, data );
+	}
 }
 
 internal static class GoldSrcSoundEvents
