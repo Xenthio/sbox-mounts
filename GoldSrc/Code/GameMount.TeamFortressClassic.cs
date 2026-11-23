@@ -5,7 +5,7 @@ namespace GoldSrc;
 public partial class TeamFortressClassicMount
 {
 	static readonly string[] SharedModels = ["models/rpgrocket.mdl", "models/shotgunshell.mdl", "models/shell.mdl",
-		"models/v_rpg.mdl", "models/w_rpg.mdl", "models/w_egon.mdl"];
+		"models/v_rpg.mdl", "models/w_rpg.mdl", "models/w_egon.mdl", "models/v_grenade.mdl", "models/w_grenade.mdl"];
 	static readonly string[] SharedSounds =
 	[
 		"weapons/357_cock1.wav", "weapons/reload1.wav", "weapons/reload3.wav", "weapons/scock1.wav",
@@ -17,6 +17,7 @@ public partial class TeamFortressClassicMount
 		"items/cliprelease1.wav", "items/clipinsert1.wav",
 		"weapons/grenade_hit1.wav", "weapons/grenade_hit2.wav", "weapons/grenade_hit3.wav",
 		"weapons/explode3.wav", "weapons/explode4.wav", "weapons/explode5.wav",
+		"weapons/debris1.wav", "weapons/debris2.wav", "weapons/debris3.wav",
 		"player/pl_shell1.wav", "player/pl_shell2.wav", "player/pl_shell3.wav"
 	];
 	static readonly string[] SharedSprites = ["sprites/smoke.spr", "sprites/muzzleflash1.spr", "sprites/muzzleflash2.spr",
@@ -39,7 +40,7 @@ public partial class TeamFortressClassicMount
 		foreach ( var relative in SharedModels )
 		{
 			if ( FindFile( relative ) is { } path && path.StartsWith( "valve/", StringComparison.Ordinal ) )
-				context.Add( ResourceType.Model, path, new ModelLoader( path, relative == "models/v_rpg.mdl" ) );
+				context.Add( ResourceType.Model, path, new ModelLoader( path, relative.StartsWith( "models/v_", StringComparison.Ordinal ) ) );
 		}
 		foreach ( var sample in SharedSounds )
 		{

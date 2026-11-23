@@ -14,6 +14,8 @@ public abstract class PinGrenadeWeapon : StudioWeapon
 	internal virtual string PinSound => null;
 	internal virtual string ThrowSound => null;
 	internal virtual bool HasGrenadesLeft => HasPrimaryAmmo();
+	internal virtual float MinimumPinTime => 0.5f;
+	internal virtual float HeldFuse => float.PositiveInfinity;
 	internal virtual float RedrawDelay => 0.5f;
 	internal abstract string LaunchGrenade( Vector3 origin, Vector3 direction, float pitch, float pinAge );
 
@@ -66,7 +68,7 @@ public abstract class PinGrenadeWeapon : StudioWeapon
 	{
 		base.OnUpdate();
 		if ( !Networking.IsHost || !IsActive || !Owner.IsValid() ) return;
-		if ( _released && _pinAge >= 0.5f ) Throw();
+		if ( _primed && (_pinAge >= HeldFuse || (_released && _pinAge >= MinimumPinTime)) ) Throw();
 		if ( !_redrawing || _redrawAt > 0 ) return;
 		_redrawing = false;
 		if ( HasGrenadesLeft ) ShowAnimation( DeploySequence );
