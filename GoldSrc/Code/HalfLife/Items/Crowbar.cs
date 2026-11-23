@@ -75,12 +75,17 @@ public abstract class ClassicCrowbar : CrowbarWeapon
 		var volume = PlaySurfaceImpact( shot );
 		if ( volume > 0 )
 			PlaySample( $"weapons/{MeleeSample}_hit{Game.Random.Int( 1, 2 )}.wav", volume, Game.Random.Int( 98, 101 ) / 100f );
-		_decalPoint = shot.HitPosition;
-		_decalNormal = shot.Normal;
-		_decalDelay = 0.2f;
+		QueueImpactDecal( shot, 0.2f );
 	}
 
-	float PlaySurfaceImpact( ShotEffect shot )
+	protected void QueueImpactDecal( ShotEffect shot, float delay )
+	{
+		_decalPoint = shot.HitPosition;
+		_decalNormal = shot.Normal;
+		_decalDelay = delay;
+	}
+
+	protected float PlaySurfaceImpact( ShotEffect shot )
 	{
 		if ( Networking.MaxPlayers > 1 || ContentMount is not { } mount ) return 1;
 		var material = mount.GetMaterialType( shot.Surface );
