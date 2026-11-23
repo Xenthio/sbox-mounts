@@ -11,8 +11,15 @@ partial class MapBuilder
 		var halfLifeItems = Host is HalfLifeMount or HalfLifeMModMount;
 		var weapon = name.StartsWith( "weapon_", System.StringComparison.Ordinal ) ||
 			name.StartsWith( "tf_weapon_", System.StringComparison.Ordinal );
-		var cryOfFearAmmo = Host is CryOfFearMount && name is ("ammo_shells" or "ammo_p345" or "ammo_vp70");
-		if ( !weapon && !halfLifeItems && !cryOfFearAmmo ) return false;
+		(string Model, string Pool, int Amount) cryOfFearAmmo = Host is CryOfFearMount ? name switch
+		{
+			"ammo_glock" => ("ammo/clip", "glock", 15),
+			"ammo_shells" => ("ammo/ammo_shotshells", "buckshot", 9),
+			"ammo_p345" => ("ammo/p345_clip", "p345", 8),
+			"ammo_vp70" => ("ammo/vp70_clip", "vp70", 18),
+			_ => default
+		} : default;
+		if ( !weapon && !halfLifeItems && cryOfFearAmmo.Model is null ) return false;
 		GameObject go;
 		var transform = new Transform( entity.Origin, entity.Rotation );
 		if ( name == "world_items" && entity.GetInt( "type" ) == 45 ) name = "item_suit";
@@ -57,16 +64,13 @@ partial class MapBuilder
 		}
 		else
 		{
-			var (model, pool, amount) = name switch
+			var (model, pool, amount) = cryOfFearAmmo.Model is not null ? cryOfFearAmmo : name switch
 			{
 				"ammo_glockclip" or "ammo_9mmclip" => ("w_9mmclip", "9mm", 17),
 				"ammo_mp5clip" or "ammo_9mmar" => ("w_9mmARclip", "9mm", 50),
 				"ammo_9mmbox" => ("w_chainammo", "9mm", 200),
 				"ammo_mp5grenades" or "ammo_argrenades" => ("w_ARgrenade", "argrenades", 2),
 				"ammo_buckshot" => ("w_shotbox", "buckshot", 12),
-				"ammo_shells" when cryOfFearAmmo => ("ammo/ammo_shotshells", "buckshot", 9),
-				"ammo_p345" when cryOfFearAmmo => ("ammo/p345_clip", "p345", 8),
-				"ammo_vp70" when cryOfFearAmmo => ("ammo/vp70_clip", "vp70", 18),
 				"ammo_357" => ("w_357ammobox", "357", 6),
 				"ammo_gaussclip" => ("w_gaussammo", "uranium", 20),
 				"ammo_crossbow" => ("w_crossbow_clip", "bolts", 5),
@@ -77,9 +81,9 @@ partial class MapBuilder
 			var resource = LoadMountedModel( $"models/{model}.mdl" );
 			if ( resource is not { IsError: false } ) return false;
 			var ammo = GameResource.Load<BaseAmmoResource>( $"mount://{Host.Ident}/ammo/{pool}.ammo" );
-			if ( Host is HalfLifeMModMount && ammo is null ) return false;
+			if ( Host is (HalfLifeMModMount or CryOfFearMount) && ammo is null ) return false;
 			go = HalfLife.AmmoPickup.Create( transform, resource, ammo, amount, pool );
-			if ( cryOfFearAmmo )
+			if ( cryOfFearAmmo.Model is not null )
 			{
 				var pickup = go.GetComponent<HalfLife.AmmoPickup>();
 				pickup.SoundMount = Host.Ident;

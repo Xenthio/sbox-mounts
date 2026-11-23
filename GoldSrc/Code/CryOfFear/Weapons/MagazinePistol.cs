@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using GoldSrc.HalfLife;
 
 namespace GoldSrc.CryOfFear;
@@ -7,6 +8,7 @@ namespace GoldSrc.CryOfFear;
 public abstract class MagazinePistol : IronSightWeapon
 {
 	const float AccuracyRecoveryInterval = 0.1f;
+	static readonly ConditionalWeakTable<PlayerController, HashSet<string>> DrawnWeapons = new();
 	static readonly float[] SpreadCones = [0, 0.00873f, 0.01745f, 0.02618f, 0.03490f, 0.04362f, 0.05234f, 0.06105f, 0.06976f, 0.07846f, 0.08716f];
 	float _accuracyPenalty;
 	TimeUntil _recoverAccuracy;
@@ -20,6 +22,8 @@ public abstract class MagazinePistol : IronSightWeapon
 	internal abstract float AccuracyRecoveryDelay { get; }
 	internal virtual string EmptySound => "weapons_new/glock/weapon_fire_empty.wav";
 	internal virtual float DryFireDelay => 0.5f;
+	internal virtual float FirstDrawTime => 0;
+	protected bool IsFirstDraw { get; private set; }
 
 	internal override int PlayerMuzzleFlash => 1;
 	internal override Vector2 PelletSpread => Vector2.One * SpreadCones[(int)_accuracyPenalty];
@@ -34,6 +38,17 @@ public abstract class MagazinePistol : IronSightWeapon
 		DeployTime = 1;
 		ReloadTime = TacticalReloadTime;
 		AttackDamageTags = ["bullet"];
+	}
+
+	protected override void OnEquipped()
+	{
+		if ( FirstDrawTime > 0 && Owner.IsValid() )
+		{
+			IsFirstDraw = DrawnWeapons.GetOrCreateValue( Owner ).Add( Definition.Model );
+			DeployTime = IsFirstDraw ? FirstDrawTime : 29f / 30;
+		}
+
+		base.OnEquipped();
 	}
 
 	protected bool FireRound()

@@ -3,63 +3,39 @@ using GoldSrc.HalfLife;
 namespace GoldSrc.CryOfFear;
 
 [Title( "Glock 19" ), Category( "Cry of Fear" )]
-[WeaponPickup( "glock", "glock", 150, Bucket = 4, ModelDirectory = "models/weapons/glock", Mount = "cof" )]
-public sealed class Glock : BulletWeapon
+[WeaponPickup( "glock", "glock", 150, Bucket = 4, Weight = 5, ModelDirectory = "models/weapons/glock", Mount = "cof" )]
+public sealed class Glock : MagazinePistol
 {
-	internal override Vector2 PelletSpread => Vector2.One * 0.01745f;
-	internal override int PlayerMuzzleFlash => 1;
+	internal override float TacticalReloadTime => 2.6f;
+	internal override float EmptyReloadTime => 3.5f;
+	internal override float RecoilPerRound => 1.25f;
+	internal override float AccuracyRecoveryDelay => 0.55f;
+	internal override float FirstDrawTime => 2.3f;
 	internal override string WorldModelPath => "police/models/weapons/glock/p_glock.mdl";
 	internal override string ShotSound => "weapons_new/glock/glock_fire.wav";
-	internal override string DeploySequence => Clip1 == 0 ? "draw_noshot" : "draw";
-	internal override string ShotSequence => Clip1 == 0 ? "shoot_empty_1" : "shoot_1";
-	internal override (string Name, float? Delay) IdleAnimation => (Clip1 == 0 ? "idle1_noshot" : "idle1", null);
+	internal override string DeploySequence => IsFirstDraw ? "draw_first" : Clip1 == 0 ? "draw_noshot" : "draw";
+	internal override string RaiseSightsSequence => Clip1 == 0 ? "iron_to_noshot" : "iron_to";
+	internal override string LowerSightsSequence => Clip1 == 0 ? "iron_from_noshot" : "iron_from";
+	internal override string ShotSequence => Zoomed
+		? (Clip1 == 0 ? "iron_shoot_empty" : "iron_shoot")
+		: (Clip1 == 0 ? "shoot_empty_1" : "shoot_1");
+	internal override (string Name, float? Delay) IdleAnimation => Zoomed
+		? (Clip1 == 0 ? "iron_idle_noshot" : "iron_idle", null)
+		: (Clip1 == 0 ? "idle1_noshot" : "idle1", null);
 	internal override float? IdleAfterShot => 1;
-	[Sync( SyncFlags.FromHost )] bool ReloadingFromEmpty { get; set; }
-
-	internal override string ReloadSequence => ReloadingFromEmpty ? "reload_noshot" : "reload";
-	internal override float IdleAfterReloadStart => ReloadingFromEmpty ? 3.5f : 2.6f;
 
 	internal override void Configure()
 	{
-		HoldType = WeaponHolds.Pistol;
-		Handedness = WeaponHandedness.Right;
-		PrimaryAutomatic = false;
+		base.Configure();
 		PrimaryDelay = 0.1f;
-		AutoReload = false;
-		CanCancelReload = false;
-		ReloadTime = 2.6f;
 		ClipMaxSize = 15;
-		AttackDamageTags = ["bullet"];
 		Ballistics = new() { Damage = 13, Range = 8192, Radius = 0 };
 	}
 
-	public override void Reload()
+	public override void PrimaryAttack()
 	{
-		if ( Networking.IsHost && CanReload() )
-		{
-			ReloadingFromEmpty = Clip1 == 0;
-			ReloadTime = IdleAfterReloadStart;
-		}
-		base.Reload();
-	}
-
-	protected override void OnReloadStarted()
-	{
-		base.OnReloadStarted();
-		// The magazine is discarded when the reload begins.
-		if ( Networking.IsHost ) Clip1 = 0;
-	}
-
-	protected override void OnShootEffects( ShotEffect shot )
-	{
-		base.OnShootEffects( shot );
-		if ( !shot.NoEvents ) EjectShells( 1, false );
-	}
-
-	public override void DryFire()
-	{
-		PlaySample( "weapons_new/glock/weapon_fire_empty.wav" );
-		SetNextFire( 0.5f );
-		ViewModel?.GetComponent<StudioWeaponView>()?.Play( "shoot_noshot", idleAfter: 0.5f );
+		if ( !FireRound() ) return;
+		SetNextSecondaryFire( 1 );
+		if ( Clip1 == 0 ) SetNextPrimaryFire( 1 );
 	}
 }
