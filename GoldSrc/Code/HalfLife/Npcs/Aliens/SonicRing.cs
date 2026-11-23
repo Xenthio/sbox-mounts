@@ -9,7 +9,7 @@ public sealed class SonicRing : Component
 	float _radius;
 	TimeSince _age;
 
-	internal static void Spawn( Vector3 origin, Color tint, float radius, GameMount mount = null )
+	internal static void Spawn( Vector3 origin, Color tint, float radius, GameMount mount = null, float width = 16 )
 	{
 		var go = new GameObject( false, "Sonic blast" );
 		go.NetworkMode = NetworkMode.Never;
@@ -17,7 +17,7 @@ public sealed class SonicRing : Component
 		var line = go.AddComponent<LineRenderer>();
 		line.UseVectorPoints = true;
 		line.VectorPoints = Circle.Select( _ => origin ).ToList();
-		line.Width = 16;
+		line.Width = width;
 		line.Color = tint;
 		line.Additive = true;
 		line.Opaque = false;
