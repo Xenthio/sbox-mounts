@@ -4,22 +4,26 @@ namespace GoldSrc.TeamFortressClassic;
 
 public sealed partial class Spanner
 {
-	const int BuildCost = 100;
-	const float BuildTime = 2;
 	TimeUntil _buildComplete;
-	FortressDispenser _construction;
+	FortressBuilding _construction;
 	PlayerController _slowedBuilder;
+	int _buildCost;
 
 	[Sync( SyncFlags.FromHost )] public bool IsBuilding { get; private set; }
 
-	public override bool CanReload() => IsActive && !IsBuilding && Owner.IsValid() && PrimaryAmmoType is not null && Ammo1 >= BuildCost;
-	public override void Reload() => BeginBuilding();
+	public override bool CanReload() => IsActive && !IsBuilding && Owner.IsValid() && PrimaryAmmoType is not null &&
+		Ammo1 >= (Owner.IsDucking ? 130 : 100);
+	public override void Reload()
+	{
+		if ( Owner.IsValid() ) BeginBuilding( Owner.IsDucking );
+	}
 
 	[Rpc.Host( NetFlags.OwnerOnly )]
-	void BeginBuilding()
+	void BeginBuilding( bool sentry )
 	{
-		if ( !CanReload() || !CanBuild( Owner ) || Scene.GetAllComponents<FortressDispenser>().Any( unit => unit.Builder == Owner ) )
-			return;
+		var cost = sentry ? 130 : 100;
+		if ( !IsActive || IsBuilding || !CanBuild( Owner ) || PrimaryAmmoType is null || Ammo1 < cost ) return;
+		if ( Scene.GetAllComponents<FortressBuilding>().Any( unit => unit.Builder == Owner && (unit is FortressSentry) == sentry ) ) return;
 
 		var start = Owner.WorldPosition;
 		var forward = Owner.EyeTransform.Forward.WithZ( 0 ).Normal;
@@ -32,14 +36,19 @@ public sealed partial class Spanner
 		if ( !floor.Hit || floor.StartedSolid || floor.Normal.z < 0.7f ) return;
 
 		var site = floor.EndPosition + Vector3.Up;
-		var clearance = Scene.Trace.Box( new BBox( new Vector3( -16, -16, 0 ), new Vector3( 16, 16, 24 ) ),
+		var height = sentry ? FortressSentry.Height : 24;
+		var clearance = Scene.Trace.Box( new BBox( new Vector3( -16, -16, 0 ), new Vector3( 16, 16, height ) ),
 			site, site + Vector3.Up ).IgnoreGameObjectHierarchy( Owner.GameObject ).WithoutTags( "trigger", "debris", "playercontroller" ).Run();
 		if ( clearance.StartedSolid || clearance.Hit ) return;
 
-		_construction = FortressDispenser.StartConstruction( Owner, site, Rotation.LookAt( forward ) );
+		var rotation = Rotation.LookAt( forward );
+		_construction = sentry
+			? FortressBuilding.StartConstruction<FortressSentry>( Owner, site, rotation, "TFC sentry", "base", height )
+			: FortressBuilding.StartConstruction<FortressDispenser>( Owner, site, rotation, "TFC dispenser", "dispenser", height );
 		if ( !_construction.IsValid() ) return;
 
-		_buildComplete = BuildTime;
+		_buildCost = cost;
+		_buildComplete = sentry ? 5 : 2;
 		IsBuilding = true;
 		UpdateBuilderMovement();
 		ContentMount?.NpcAudio.Emit( "weapons/building.wav", site );
@@ -53,11 +62,11 @@ public sealed partial class Spanner
 		base.OnUpdate();
 		if ( Networking.IsHost && IsBuilding )
 		{
-			if ( !_construction.IsValid() || !IsActive || !CanBuild( Owner ) || _construction.Builder != Owner || Ammo1 < BuildCost )
+			if ( !_construction.IsValid() || !IsActive || !CanBuild( Owner ) || _construction.Builder != Owner || Ammo1 < _buildCost )
 				StopBuilding();
 			else if ( _buildComplete <= 0 )
 			{
-				if ( Inventory.TakeAmmo( PrimaryAmmoType, BuildCost ) == BuildCost )
+				if ( Inventory.TakeAmmo( PrimaryAmmoType, _buildCost ) == _buildCost )
 					_construction.Finish( Inventory );
 				StopBuilding();
 			}
@@ -95,12 +104,12 @@ public sealed partial class Spanner
 		ReleaseBuilder();
 		if ( !builder.IsValid() ) return;
 		_slowedBuilder = builder;
-		FortressSpeed.SetBuildingDispenser( builder, true );
+		FortressSpeed.SetBuilding( builder, true );
 	}
 
 	void ReleaseBuilder()
 	{
-		if ( _slowedBuilder.IsValid() ) FortressSpeed.SetBuildingDispenser( _slowedBuilder, false );
+		if ( _slowedBuilder.IsValid() ) FortressSpeed.SetBuilding( _slowedBuilder, false );
 		_slowedBuilder = null;
 	}
 }

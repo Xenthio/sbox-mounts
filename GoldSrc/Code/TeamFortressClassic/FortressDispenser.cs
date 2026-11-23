@@ -5,7 +5,7 @@ using GoldSrc.Maps;
 namespace GoldSrc.TeamFortressClassic;
 
 [Hide]
-public sealed class FortressDispenser : Component, Component.IDamageable
+public sealed class FortressDispenser : FortressBuilding
 {
 	const float SupplyInterval = 12;
 	const float RefillReach = 38;
@@ -22,34 +22,10 @@ public sealed class FortressDispenser : Component, Component.IDamageable
 	float _armour;
 	TimeUntil _nextProduction, _nextRefill;
 
-	static GameMount Mount => Sandbox.Mounting.Directory.Get( "tfc" ) as TeamFortressClassicMount;
+	public override float MaxHealth => 150;
 
-	[Sync( SyncFlags.FromHost )] public PlayerController Builder { get; private set; }
-	[Sync( SyncFlags.FromHost )] public bool IsBuilt { get; private set; }
-	[Sync( SyncFlags.FromHost )] public float Health { get; set; } = 150;
-	public float MaxHealth => 150;
-
-	internal static FortressDispenser StartConstruction( PlayerController builder, Vector3 position, Rotation rotation )
+	internal override void OnBuilt( BaseInventoryComponent inventory )
 	{
-		if ( Mount?.FindMountPath( "models/dispenser.mdl" ) is not { } path ||
-			Model.Load( $"mount://tfc/{path}.vmdl" ) is not { IsError: false } model ) return null;
-
-		var go = new GameObject( false, "TFC dispenser" ) { WorldPosition = position, WorldRotation = rotation };
-		go.Tags.Add( "removable" );
-		go.AddComponent<ModelRenderer>().Model = model;
-		var collider = go.AddComponent<BoxCollider>();
-		collider.Center = Vector3.Up * 12;
-		collider.Scale = new Vector3( 32, 32, 24 );
-		collider.Static = true;
-		var dispenser = go.AddComponent<FortressDispenser>();
-		dispenser.Builder = builder;
-		go.NetworkSpawn( true, null );
-		return dispenser;
-	}
-
-	internal void Finish( BaseInventoryComponent inventory )
-	{
-		if ( IsBuilt ) return;
 		for ( var i = 0; i < Supplies.Length; i++ )
 		{
 			var supply = Supplies[i];
@@ -65,20 +41,12 @@ public sealed class FortressDispenser : Component, Component.IDamageable
 			_armour = MathF.Min( ArmourCapacity, MathF.Min( vitals.Armour, MathF.Ceiling( vitals.Armour * 0.25f ) ) );
 			vitals.Armour -= _armour;
 		}
-		IsBuilt = true;
 		_nextProduction = SupplyInterval;
 		_nextRefill = 0.2f;
 	}
 
-	protected override void OnUpdate()
+	internal override void OnBuildingUpdate()
 	{
-		if ( !Networking.IsHost ) return;
-		if ( !Builder.IsValid() )
-		{
-			GameObject.Destroy();
-			return;
-		}
-		if ( !IsBuilt ) return;
 		if ( _nextProduction <= 0 )
 		{
 			_nextProduction = SupplyInterval;
@@ -124,7 +92,7 @@ public sealed class FortressDispenser : Component, Component.IDamageable
 		return true;
 	}
 
-	internal void Service( BaseInventoryComponent inventory, BaseAmmoResource cells )
+	internal override void Service( BaseInventoryComponent inventory, BaseAmmoResource cells )
 	{
 		if ( !IsBuilt || Health <= 0 ) return;
 		_nextRefill = 3;
@@ -149,15 +117,11 @@ public sealed class FortressDispenser : Component, Component.IDamageable
 
 	static BaseAmmoResource GetAmmoType( string name ) => GameResource.Load<BaseAmmoResource>( $"mount://tfc/ammo/{name}.ammo" );
 
-	public void OnDamage( in DamageInfo damage )
+	protected override void DestroyBuilding( GameObject attacker )
 	{
-		if ( !Networking.IsHost || !IsBuilt || Health <= 0 || !float.IsFinite( damage.Damage ) || damage.Damage <= 0 ) return;
-		Health = MathF.Max( 0, Health - damage.Damage );
-		if ( Health > 0 ) return;
-
 		var blast = MathF.Min( 250, 25 + _stock[2] * 1.5f + _stock[3] );
 		var origin = WorldPosition + Vector3.Up * 12;
-		FortressBlast.Apply( GameObject, Builder.IsValid() ? Builder.GameObject : damage.Attacker, origin, blast, falloff: 0.5f );
+		FortressBlast.Apply( GameObject, Builder.IsValid() ? Builder.GameObject : attacker, origin, blast, falloff: 0.5f );
 		Mount?.NpcAudio.Emit( "weapons/explode3.wav", origin );
 		ShowExplosion( origin );
 		GameObject.Destroy();

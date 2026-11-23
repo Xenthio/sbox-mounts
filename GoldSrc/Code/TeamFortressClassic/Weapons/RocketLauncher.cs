@@ -54,7 +54,7 @@ public sealed class RocketLauncher : ProjectileWeapon
 }
 
 [Hide]
-public sealed class FortressRocket : RocketProjectile
+public class FortressRocket : RocketProjectile
 {
 	internal override float IgnitionDelay => 0;
 	internal override float SmokeLifetime => 4;

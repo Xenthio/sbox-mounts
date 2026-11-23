@@ -35,13 +35,13 @@ public sealed class FortressEmpGrenade : FortressHandGrenade
 			if ( InRange( pipe.WorldPosition ) ) pipe.TriggerEmp();
 		foreach ( var pack in Scene.GetAllComponents<FortressDetpack>() )
 			if ( InRange( pack.WorldPosition ) ) pack.TriggerEmp();
-		foreach ( var dispenser in Scene.GetAllComponents<FortressDispenser>().ToArray() )
+		foreach ( var building in Scene.GetAllComponents<FortressBuilding>().ToArray() )
 		{
-			if ( !dispenser.IsValid() || !InRange( dispenser.WorldPosition ) ) continue;
-			var damage = new DamageInfo { Damage = 200, Origin = origin, Position = dispenser.WorldPosition,
+			if ( !building.IsValid() || !InRange( building.WorldPosition ) ) continue;
+			var damage = new DamageInfo { Damage = 200, Origin = origin, Position = building.WorldPosition,
 				Weapon = GameObject, Attacker = Thrower };
 			damage.Tags.Add( "blast" );
-			dispenser.OnDamage( damage );
+			building.OnDamage( damage );
 		}
 
 		foreach ( var player in Scene.GetAllComponents<PlayerController>().ToArray() )

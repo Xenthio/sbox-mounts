@@ -57,7 +57,7 @@ public sealed class Detpack : StudioWeapon
 			MapState.PlayerVitals( other ) is not { Health: <= 0 } && other.WorldPosition.DistanceSquared( start ) <= Clearance * Clearance ) ) return false;
 		if ( Scene.GetAllComponents<FortressDetpack>().Any( pack => pack.Planter == player ||
 			pack.WorldPosition.DistanceSquared( start ) <= Clearance * Clearance ) ) return false;
-		if ( Scene.GetAllComponents<FortressDispenser>().Any( unit => unit.WorldPosition.DistanceSquared( start ) <= Clearance * Clearance ) )
+		if ( Scene.GetAllComponents<FortressBuilding>().Any( unit => unit.WorldPosition.DistanceSquared( start ) <= Clearance * Clearance ) )
 			return false;
 
 		var floor = Scene.Trace.Ray( start + Vector3.Up * 8, start + Vector3.Down * 12 )

@@ -10,7 +10,7 @@ public partial class TeamFortressClassicMount
 	[
 		"weapons/357_cock1.wav", "weapons/reload1.wav", "weapons/reload3.wav", "weapons/scock1.wav",
 		"weapons/rocket1.wav", "weapons/rocketfire1.wav", "weapons/sbarrel1.wav",
-		"weapons/glauncher.wav", "ambience/rifle1.wav",
+		"weapons/glauncher.wav", "weapons/pl_gun3.wav", "ambience/rifle1.wav",
 		"ambience/fire1.wav", "ambience/flameburst1.wav",
 		"weapons/cbar_hit1.wav", "weapons/cbar_hit2.wav", "weapons/cbar_hitbod1.wav",
 		"weapons/cbar_hitbod2.wav", "weapons/cbar_hitbod3.wav", "weapons/cbar_miss1.wav",

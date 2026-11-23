@@ -41,9 +41,9 @@ public sealed partial class Spanner : FortressMelee
 		_nextRepair = PrimaryDelay;
 
 		var targetObject = TraceSwing( AimRay ).GameObject;
-		if ( targetObject?.GetComponentInParent<FortressDispenser>() is { } dispenser )
+		if ( targetObject?.GetComponentInParent<FortressBuilding>() is { } building )
 		{
-			dispenser.Service( Inventory, PrimaryAmmoType );
+			building.Service( Inventory, PrimaryAmmoType );
 			return;
 		}
 

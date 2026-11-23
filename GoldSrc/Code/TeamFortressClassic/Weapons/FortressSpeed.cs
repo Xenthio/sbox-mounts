@@ -35,10 +35,10 @@ internal static class FortressSpeed
 		Apply( player, limits );
 	}
 
-	internal static void SetBuildingDispenser( PlayerController player, bool building )
+	internal static void SetBuilding( PlayerController player, bool building )
 	{
 		var limits = Active.GetValue( player, controller => new Limits( controller ) );
-		limits.BuildingDispenser = building;
+		limits.Building = building;
 		Apply( player, limits );
 	}
 
@@ -57,8 +57,8 @@ internal static class FortressSpeed
 		internal Speed Ducked = new( player.DuckedSpeed );
 		internal bool Tranquilized;
 		internal bool PlantingDetpack;
-		internal bool BuildingDispenser;
-		internal bool MovementLocked => PlantingDetpack || BuildingDispenser;
+		internal bool Building;
+		internal bool MovementLocked => PlantingDetpack || Building;
 		internal float? AimLimit;
 		internal float LegDamage;
 	}
