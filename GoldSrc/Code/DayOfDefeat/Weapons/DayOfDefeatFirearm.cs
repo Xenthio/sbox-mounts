@@ -39,6 +39,7 @@ public abstract class DayOfDefeatFirearm : BulletWeapon
 		base.PrimaryAttack();
 	}
 
+	public override bool CanSecondaryAttack() => false;
 	public override bool CanReload() => Ammo1 > Clip1 && base.CanReload();
 
 	public override void DryFire()
@@ -47,8 +48,10 @@ public abstract class DayOfDefeatFirearm : BulletWeapon
 		SetNextFire( 0.15f );
 	}
 
+	internal override string ShotSound => $"weapons/{Definition.Model}_shoot.wav";
+
 	internal override void PlayShotSound() =>
-		PlaySample( $"weapons/{Definition.Model}_shoot.wav", Game.Random.Float( 0.92f, 1 ), Game.Random.Int( 98, 101 ) / 100f );
+		PlaySample( ShotSound, Game.Random.Float( 0.92f, 1 ), Game.Random.Int( 98, 101 ) / 100f );
 
 	internal override void DrawShotTrail( Vector3 start, Vector3 end )
 	{

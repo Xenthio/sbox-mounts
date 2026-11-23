@@ -6,8 +6,8 @@ public abstract partial class GameMount
 {
 	private static void MountWeapons( MountContext context, Dictionary<string, string> models, (TypeDescription Type, WeaponPickupAttribute Pickup)[] weapons )
 	{
-		foreach ( var ammo in weapons.Select( weapon => weapon.Pickup ).Where( pickup => pickup.Ammo is not null ).DistinctBy( pickup => pickup.Ammo ) )
-			context.Add( ResourceType.GameResource, $"ammo/{ammo.Ammo}.ammo", new AmmoLoader( ammo.Ammo, ammo.Limit ) );
+		foreach ( var ammo in weapons.Select( weapon => weapon.Pickup ).Where( pickup => pickup.Ammo is not null ).GroupBy( pickup => pickup.Ammo ) )
+			context.Add( ResourceType.GameResource, $"ammo/{ammo.Key}.ammo", new AmmoLoader( ammo.Key, ammo.Max( pickup => pickup.Limit ) ) );
 
 		foreach ( var (type, pickup) in weapons )
 		{
