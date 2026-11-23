@@ -73,11 +73,16 @@ internal sealed class ConcussionView : CameraEffectSystem.BaseEffect
 	internal static void Apply( PlayerController player )
 	{
 		if ( Application.IsDedicatedServer || !player.Scene.Camera.IsValid() ) return;
-		if ( Active.TryGetValue( player, out var previous ) ) previous.Stop();
-		Active.Remove( player );
+		Cure( player );
 		var concussion = new ConcussionView { _player = player, Camera = player.Scene.Camera, Duration = 15 };
 		Active.Add( player, concussion );
 		player.Scene.GetSystem<CameraEffectSystem>().Add( concussion );
+	}
+
+	internal static void Cure( PlayerController player )
+	{
+		if ( Active.TryGetValue( player, out var previous ) ) previous.Stop();
+		Active.Remove( player );
 	}
 
 	public override bool IsDone => base.IsDone || !_player.IsValid() || !_player.Enabled ||
