@@ -224,11 +224,11 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 			pickup.BindPresentation( this, GetComponent<SkinnedModelRenderer>( true ) );
 	}
 
-	protected void EjectShells( int count, bool shotgun, string modelPath = null )
+	protected void EjectShells( int count, bool shotgun, string modelPath = null, Vector3? localOffset = null )
 	{
 		if ( Application.IsDedicatedServer || !Owner.IsValid() ) return;
 		var pose = Owner.EyeTransform;
-		var origin = pose.PointToWorld( shotgun ? new Vector3( 32, -6, -12 ) : new Vector3( 20, -4, -12 ) );
+		var origin = pose.PointToWorld( localOffset ?? (shotgun ? new Vector3( 32, -6, -12 ) : new Vector3( 20, -4, -12 )) );
 		for ( int i = 0; i < count; i++ )
 		{
 			var velocity = Owner.Velocity + pose.Rotation.Right * Game.Random.Float( 50, 70 )
@@ -237,10 +237,10 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 		}
 	}
 
-	protected SoundHandle PlaySample( string sample, float volume = 1, float pitch = 1 )
+	protected SoundHandle PlaySample( string sample, float volume = 1, float pitch = 1, float attenuation = GoldSrcSoundEvents.Normal )
 	{
 		if ( !Application.IsDedicatedServer && ContentMount is { } mount )
-			return NpcAudio.Play( mount.NpcAudio.Find( sample ), WorldPosition, volume, pitch );
+			return NpcAudio.Play( mount.NpcAudio.Find( sample ), WorldPosition, volume, pitch, attenuation );
 		return null;
 	}
 

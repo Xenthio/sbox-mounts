@@ -156,8 +156,6 @@ public abstract partial class GameMount : BaseGameMount
 
 		MountSurfaces( context );
 		MountDecals( context );
-		if ( this is CounterStrikeMount or ConditionZeroMount )
-			CounterStrike.SniperScope.Mount( this, context );
 		if ( registry.HasEntries )
 			registry.Mount( context, gameplayModels, originalModels );
 		if ( this is HalfLifeMount or HalfLifeMModMount )
@@ -211,7 +209,7 @@ public class BlueShiftMount : GameMount
 	public override IReadOnlyList<string> GameDirs => ["bshift_hd", "bshift"];
 }
 
-public class CounterStrikeMount : GameMount
+public class CounterStrikeMount : CounterStrikeGameMount
 {
 	public override string Ident => "cstrike";
 	public override string Title => "Counter-Strike";
@@ -219,7 +217,7 @@ public class CounterStrikeMount : GameMount
 	public override IReadOnlyList<string> GameDirs => ["cstrike_hd", "cstrike"];
 }
 
-public class ConditionZeroMount : GameMount
+public class ConditionZeroMount : CounterStrikeGameMount
 {
 	public override string Ident => "czero";
 	public override string Title => "Counter-Strike: Condition Zero";

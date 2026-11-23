@@ -31,9 +31,12 @@ public abstract class BulletWeapon : StudioWeapon
 	{
 		var spread = PelletSpread;
 		var basis = Rotation.LookAt( ray.Forward );
-		var direction = ray.Forward + basis.Right * (SampleOffset() * spread.x) + basis.Up * (SampleOffset() * spread.y);
+		var offset = SamplePelletOffset();
+		var direction = ray.Forward + basis.Right * (offset.x * spread.x) + basis.Up * (offset.y * spread.y);
 		return base.BulletTrace( new Ray( ray.Position, direction.Normal ), distance * direction.Length, radius );
 	}
+
+	internal virtual Vector2 SamplePelletOffset() => new( SampleOffset(), SampleOffset() );
 
 	static float SampleOffset() => Game.Random.Float( -0.5f, 0.5f ) + Game.Random.Float( -0.5f, 0.5f );
 }
