@@ -7,13 +7,16 @@ internal sealed class WeaponIconLoader( string className ) : ResourceLoader<Game
 {
 	protected override object Load()
 	{
+		var sharedHud = Host is DayOfDefeatMount;
+		var manifestName = sharedHud ? "hud" : className;
+		var entryName = sharedHud ? className : "weapon";
 		foreach ( var dir in Host.GameDirs )
 		{
-			var manifest = $"{dir}/sprites/{className}.txt";
+			var manifest = $"{dir}/sprites/{manifestName}.txt";
 			if ( !Host.FileSystem.FileExists( manifest ) ) continue;
 			var entries = Host.FileSystem.ReadAllText( manifest ).Split( '\n' )
 				.Select( line => line.Split( (char[])null, StringSplitOptions.RemoveEmptyEntries ) )
-				.Where( row => row.Length >= 7 && row[0] == "weapon" && int.TryParse( row[1], out _ ) )
+				.Where( row => row.Length >= 7 && row[0] == entryName && int.TryParse( row[1], out _ ) )
 				.OrderByDescending( row => int.Parse( row[1] ) );
 			foreach ( var row in entries )
 			{

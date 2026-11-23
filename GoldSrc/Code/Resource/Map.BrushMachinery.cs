@@ -184,7 +184,15 @@ partial class MapBuilder
 		breakable.TriggerOnly = (entity.SpawnFlags & 1) != 0;
 		breakable.BreakOnTouch = (entity.SpawnFlags & 2) != 0;
 		breakable.BreakOnPressure = (entity.SpawnFlags & 4) != 0;
-		breakable.CrowbarSensitive = (entity.SpawnFlags & 256) != 0;
+		if ( Host is DayOfDefeatMount && entity.ClassName == "func_breakable" )
+		{
+			breakable.RocketDamageOnly = (entity.SpawnFlags & 256) != 0;
+			breakable.RocketBlastOnly = (entity.SpawnFlags & 512) != 0;
+		}
+		else
+		{
+			breakable.CrowbarSensitive = (entity.SpawnFlags & 256) != 0;
+		}
 		breakable.Pushable = entity.ClassName == "func_pushable";
 		breakable.PushableBreakable = (entity.SpawnFlags & 128) != 0;
 		breakable.PressureDelay = entity.GetFloat( "delay" );

@@ -13,6 +13,8 @@ public sealed class BreakableBrush : MapEntity, Component.IDamageable, Component
 	[Property] public bool BreakOnTouch { get; set; }
 	[Property] public bool BreakOnPressure { get; set; }
 	[Property] public bool CrowbarSensitive { get; set; }
+	[Property] public bool RocketDamageOnly { get; set; }
+	[Property] public bool RocketBlastOnly { get; set; }
 	[Property] public bool Pushable { get; set; }
 	[Property] public bool PushableBreakable { get; set; }
 	[Property] public float PressureDelay { get; set; }
@@ -36,6 +38,8 @@ public sealed class BreakableBrush : MapEntity, Component.IDamageable, Component
 	void IDamageable.OnDamage( in DamageInfo damage )
 	{
 		if ( !CanTrigger || _broken || TriggerOnly || !Breakable ) return;
+		if ( RocketBlastOnly && !damage.Tags.Has( "dod_rocket_blast" ) ) return;
+		if ( RocketDamageOnly && !damage.Tags.Has( "dod_rocket_blast" ) && !damage.Tags.Has( "dod_rocket_impact" ) ) return;
 		var amount = damage.Damage;
 		if ( damage.Tags.Has( "club" ) )
 		{

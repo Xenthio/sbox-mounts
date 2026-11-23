@@ -83,6 +83,8 @@ partial class MapBuilder
 			var isSky = texture.IsSky;
 			var isLiquid = texture.IsLiquid;
 			var surfaceType = surfaceOverride != '\0' ? surfaceOverride : Host.GetTextureSurfaceType( texture.Name, isLiquid );
+			var skySurface = isSky ? Host.GetSkySurface() : null;
+			if ( skySurface is not null ) surfaceType = '\0';
 
 			if ( !isLiquid )
 			{
@@ -90,7 +92,7 @@ partial class MapBuilder
 				{
 					surfaceIndex = checked((byte)collisionSurfaces.Count);
 					surfaceIndices.Add( surfaceType, surfaceIndex );
-					collisionSurfaces.Add( Host.GetSurface( surfaceType ) );
+					collisionSurfaces.Add( surfaceType == '\0' ? skySurface : Host.GetSurface( surfaceType ) );
 				}
 
 				var collisionOffset = collisionVertices.Count;

@@ -82,29 +82,6 @@ public sealed class DayOfDefeatGrenade : TimedGrenade, Component.IPressable
 			.IgnoreGameObjectHierarchy( inflictor ).WithoutTags( "trigger", "debris", "playercontroller", "npc", "player" ).Run();
 		var origin = floor.Hit && (position - floor.EndPosition).Dot( floor.Normal ) <= 8
 			? floor.EndPosition + floor.Normal * 8 : position;
-		Blast.DamageInRadius( inflictor, thrower, origin, BlastDamage, BlastDamage * 2.5f, "blast" );
-		var underwater = WaterBody.Find( inflictor.Scene, origin ).IsValid();
-		ContentMount?.NpcAudio.Emit( underwater ? "weapons/explodewater.wav" : $"weapons/explode{Game.Random.Int( 3, 5 )}.wav", origin );
-		ShowExplosion( origin, floor.EndPosition, floor.Normal, floor.Hit, underwater );
-	}
-
-	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static async void ShowExplosion( Vector3 origin, Vector3 contact, Vector3 normal, bool hit, bool underwater )
-	{
-		if ( Application.IsDedicatedServer || ContentMount is not { } mount ) return;
-		var scene = Game.ActiveScene;
-		var fireball = Blast.SpriteEffect( "DoD grenade explosion", "zerogxplode", origin, 4.8f, 15, mount: mount );
-		ExplosionParticles.Spawn( origin, fireball );
-		if ( hit ) ImpactDecal.Place( contact, normal, $"scorch{Game.Random.Int( 1, 2 )}", 48, mount );
-		if ( !underwater )
-		{
-			var sparks = Game.Random.Int( 0, 3 );
-			for ( var i = 0; i < sparks; i++ ) SparkShower.Spawn( origin, hit ? normal : Vector3.Zero, mount );
-		}
-
-		await GameTask.DelaySeconds( 0.3f );
-		if ( !scene.IsValid() || scene != Game.ActiveScene ) return;
-		if ( underwater ) Blast.Bubbles( origin, 64, 100, "DoD grenade bubbles", mount );
-		else Blast.SpriteEffect( "DoD grenade smoke", "steam1", origin + Vector3.Up * 20, 4.8f, 12, additive: false, mount: mount );
+		DayOfDefeatExplosion.Detonate( inflictor, thrower, origin, floor.EndPosition, floor.Normal, floor.Hit, BlastDamage, 4.8f );
 	}
 }

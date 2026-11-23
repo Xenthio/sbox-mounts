@@ -2,6 +2,13 @@ using System;
 
 namespace GoldSrc;
 
+internal sealed class GoldSrcSkySurfaceLoader : ResourceLoader<GameMount>
+{
+	internal const string SkyTag = "goldsrc_sky";
+
+	protected override object Load() => new Surface { Description = "GoldSrc sky", Tags = SkyTag };
+}
+
 internal sealed class GoldSrcAudioBaseLoader : ResourceLoader<GameMount>
 {
 	protected override object Load() => new Surface
