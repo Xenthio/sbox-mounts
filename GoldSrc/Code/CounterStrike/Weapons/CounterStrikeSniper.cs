@@ -136,7 +136,7 @@ public abstract class CounterStrikeSniper : CounterStrikeFirearm
 		{
 			_scopeMasks ??= SniperScope.Load( mount );
 			if ( _scopeMasks.All( mask => mask is { IsError: false } ) )
-				SniperScope.Draw( painter, _scopeMasks );
+				ScopeOverlay.Draw( painter, _scopeMasks );
 		}
 		base.DrawCrosshair( painter, center );
 	}
