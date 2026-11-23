@@ -158,7 +158,7 @@ public abstract partial class GameMount : BaseGameMount
 		MountDecals( context );
 		if ( registry.HasEntries )
 			registry.Mount( context, gameplayModels, originalModels );
-		if ( this is HalfLifeMount )
+		if ( this is HalfLifeMount or HalfLifeMModMount )
 			context.Add( ResourceType.GameResource, Rifle.GrenadeAmmoPath, new AmmoLoader( "AR grenades", 10 ) );
 		if ( weapons.Length > 0 )
 			MountWeapons( context, gameplayModels, weapons );

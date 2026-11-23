@@ -2,11 +2,21 @@ namespace GoldSrc.HalfLife;
 
 [Title( "Shotgun" ), Category( "Half-Life" )]
 [WeaponPickup( "shotgun", "buckshot", 125, Bucket = 2, Weight = 15 )]
-public sealed class Shotgun : BulletWeapon
+public sealed class Shotgun : PumpShotgun
+{
+	internal override (float Damage, int Pellets) ShellDamage => Deathmatch ? (20, 4) : (5, 6);
+	internal override Vector2 PelletSpread => Deathmatch
+		? new Vector2( DoubleShot ? 0.17365f : 0.08716f, 0.04362f )
+		: base.PelletSpread;
+}
+
+[Hide]
+public abstract class PumpShotgun : BulletWeapon
 {
 	internal override int PlayerMuzzleFlash => 51;
 
-	bool _double;
+	protected bool DoubleShot { get; private set; }
+	internal abstract (float Damage, int Pellets) ShellDamage { get; }
 	TimeUntil _pump, _insert;
 	bool _pumpPending, _insertPending;
 
@@ -16,8 +26,8 @@ public sealed class Shotgun : BulletWeapon
 		<= 0.95f => ("sm_idle", 20f / 9),
 		_ => ("idle4", 20f / 9)
 	};
-	internal override string ShotSequence => _double ? "shoot_big" : "shoot";
-	internal override float? IdleAfterShot => Clip1 > 0 ? (_double ? 6 : 5) : (_double ? SecondaryDelay : PrimaryDelay);
+	internal override string ShotSequence => DoubleShot ? "shoot_big" : "shoot";
+	internal override float? IdleAfterShot => Clip1 > 0 ? (DoubleShot ? 6 : 5) : (DoubleShot ? SecondaryDelay : PrimaryDelay);
 	internal override string ReloadSequence => "start_reload";
 
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => hd ? new( 28.55f, 2.55f, 4.75f ) : new( 24.5f, 2.5f, 4.55f );
@@ -40,9 +50,7 @@ public sealed class Shotgun : BulletWeapon
 
 	public override bool HasSecondaryAmmo() => !IsHeld || Clip1 >= 2;
 	public override bool CanReload() => NextPrimaryFire <= 0 && base.CanReload();
-	internal override Vector2 PelletSpread => Deathmatch
-		? new Vector2( _double ? 0.17365f : 0.08716f, 0.04362f )
-		: Vector2.One * 0.08716f;
+	internal override Vector2 PelletSpread => Vector2.One * 0.08716f;
 	internal override void DrawShotTrail( Vector3 start, Vector3 end ) { }
 
 	public override void DryFire()
@@ -64,8 +72,10 @@ public sealed class Shotgun : BulletWeapon
 			return;
 		}
 		if ( both && IsHeld && (Clip1 < 2 || !TakePrimaryAmmo()) ) return;
-		_double = both;
-		Ballistics = Ballistics with { Damage = Deathmatch ? 20 : 5, Pellets = (Deathmatch ? 4 : 6) * (both ? 2 : 1) };
+		DoubleShot = both;
+		OnShellsFiring( both );
+		var (damage, pellets) = ShellDamage;
+		Ballistics = Ballistics with { Damage = damage, Pellets = pellets * (both ? 2 : 1) };
 		base.PrimaryAttack();
 		SetNextFire( both ? SecondaryDelay : PrimaryDelay );
 		ReportShot( both );
@@ -76,7 +86,7 @@ public sealed class Shotgun : BulletWeapon
 	{
 		if ( !IsProxy && Owner is { ThirdPerson: false } )
 			MeleeViewPunch.Apply( Scene.Camera, new Angles( both ? -10 : -5, 0, 0 ) );
-		EjectShells( both ? 2 : 1, true );
+		EjectSpentShells( both );
 		PlaySample( both ? "weapons/dbarrel1.wav" : "weapons/sbarrel1.wav", Game.Random.Float( both ? 0.98f : 0.95f, 1 ),
 			((both ? 85 : 93) + Game.Random.Int( 0, 31 )) / 100f );
 		_pump = both ? 0.95f : 0.5f;
@@ -110,7 +120,11 @@ public sealed class Shotgun : BulletWeapon
 		PlayPump();
 	}
 
-	void PlayPump() => PlaySample( "weapons/scock1.wav", 1, (95 + Game.Random.Int( 0, 31 )) / 100f );
+	internal virtual void OnShellsFiring( bool both ) { }
+
+	internal virtual void EjectSpentShells( bool both ) => EjectShells( both ? 2 : 1, true );
+
+	internal virtual void PlayPump() => PlaySample( "weapons/scock1.wav", 1, (95 + Game.Random.Int( 0, 31 )) / 100f );
 
 	protected override void OnUpdate()
 	{
