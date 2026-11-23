@@ -11,8 +11,8 @@ partial class MapBuilder
 		var halfLifeItems = Host is HalfLifeMount or HalfLifeMModMount;
 		var weapon = name.StartsWith( "weapon_", System.StringComparison.Ordinal ) ||
 			name.StartsWith( "tf_weapon_", System.StringComparison.Ordinal );
-		var cryOfFearShells = Host is CryOfFearMount && name == "ammo_shells";
-		if ( !weapon && !halfLifeItems && !cryOfFearShells ) return false;
+		var cryOfFearAmmo = Host is CryOfFearMount && name is ("ammo_shells" or "ammo_p345");
+		if ( !weapon && !halfLifeItems && !cryOfFearAmmo ) return false;
 		GameObject go;
 		var transform = new Transform( entity.Origin, entity.Rotation );
 		if ( name == "world_items" && entity.GetInt( "type" ) == 45 ) name = "item_suit";
@@ -64,7 +64,8 @@ partial class MapBuilder
 				"ammo_9mmbox" => ("w_chainammo", "9mm", 200),
 				"ammo_mp5grenades" or "ammo_argrenades" => ("w_ARgrenade", "argrenades", 2),
 				"ammo_buckshot" => ("w_shotbox", "buckshot", 12),
-				"ammo_shells" when cryOfFearShells => ("ammo/ammo_shotshells", "buckshot", 9),
+				"ammo_shells" when cryOfFearAmmo => ("ammo/ammo_shotshells", "buckshot", 9),
+				"ammo_p345" when cryOfFearAmmo => ("ammo/p345_clip", "p345", 8),
 				"ammo_357" => ("w_357ammobox", "357", 6),
 				"ammo_gaussclip" => ("w_gaussammo", "uranium", 20),
 				"ammo_crossbow" => ("w_crossbow_clip", "bolts", 5),
@@ -77,6 +78,12 @@ partial class MapBuilder
 			var ammo = GameResource.Load<BaseAmmoResource>( $"mount://{Host.Ident}/ammo/{pool}.ammo" );
 			if ( Host is HalfLifeMModMount && ammo is null ) return false;
 			go = HalfLife.AmmoPickup.Create( transform, resource, ammo, amount, pool );
+			if ( cryOfFearAmmo )
+			{
+				var pickup = go.GetComponent<HalfLife.AmmoPickup>();
+				pickup.SoundMount = Host.Ident;
+				pickup.PickupSound = "weapons/item_get.wav";
+			}
 		}
 
 		go.Name = EntityName( entity );

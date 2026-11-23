@@ -3,6 +3,9 @@ namespace GoldSrc.HalfLife;
 [Hide]
 public class AmmoPickup : BaseAmmoPickup, Component.ITriggerListener
 {
+	[Property] public string SoundMount { get; set; } = "hl1";
+	[Property] public string PickupSound { get; set; } = "items/9mmclip1.wav";
+
 	internal static GameObject Create( Transform transform, Model model, BaseAmmoResource ammo, int amount, string title )
 	{
 		var go = new GameObject( false, title );
@@ -34,9 +37,8 @@ public class AmmoPickup : BaseAmmoPickup, Component.ITriggerListener
 
 	protected override bool OnAdding( BaseInventoryComponent inventory )
 	{
-		if ( AmmoType is not null && inventory.GetAmmo( AmmoType ) < AmmoType.MaxReserve
-			&& Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
-			mount.NpcAudio.Emit( "items/9mmclip1.wav", WorldPosition );
+		if ( OnCanPickup( inventory ) && Sandbox.Mounting.Directory.Get( SoundMount ) is GameMount mount )
+			mount.NpcAudio.Emit( PickupSound, WorldPosition );
 		return base.OnAdding( inventory );
 	}
 }

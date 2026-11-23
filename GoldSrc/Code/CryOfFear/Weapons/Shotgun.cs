@@ -4,15 +4,13 @@ namespace GoldSrc.CryOfFear;
 
 [Title( "Remington 870" ), Category( "Cry of Fear" )]
 [WeaponPickup( "shotgun", "buckshot", 50, Bucket = 3, ModelDirectory = "models/weapons/shotgun", Mount = "cof" )]
-public sealed class Shotgun : BulletWeapon
+public sealed class Shotgun : IronSightWeapon
 {
-	const float SightTransitionTime = 0.3f;
 	const float OpenTime = 0.5f;
 	const float InsertTime = 0.6f;
 	const float InsertInterval = 0.65f;
 	TimeUntil? _nextInsert;
 	TimeUntil? _shellEjection;
-	TimeUntil? _reloadAfterSights;
 	bool _reloadStartedEmpty;
 
 	internal override int FreshPickupRounds => 9;
@@ -24,7 +22,6 @@ public sealed class Shotgun : BulletWeapon
 	internal override float IdleAfterReloadStart => OpenTime;
 	internal override float? IdleAfterShot => Clip1 == 0 ? PrimaryDelay : 5;
 	internal override (string Name, float? Delay) IdleAnimation => Zoomed ? ("iron_idle", null) : ("idle1", null);
-	internal override float ZoomFieldOfView => 50;
 	internal override Vector2 PelletSpread => Vector2.One * 0.06976f;
 
 	internal override void Configure()
@@ -40,31 +37,6 @@ public sealed class Shotgun : BulletWeapon
 		ReloadTime = InsertInterval;
 		AttackDamageTags = ["bullet"];
 		Ballistics = new() { Damage = 5, Pellets = 8, Range = 2048, Radius = 0 };
-	}
-
-	public override bool CanReload() => IsActive && NextPrimaryFire <= 0 && base.CanReload();
-
-	public override bool CanSecondaryAttack() => IsActive && NextPrimaryFire <= 0 && base.CanSecondaryAttack();
-
-	public override void SecondaryAttack()
-	{
-		base.SecondaryAttack();
-		ViewModel?.GetComponent<StudioWeaponView>()?.Play( Zoomed ? "iron_to" : "iron_from", idleAfter: SightTransitionTime );
-		SetNextFire( SightTransitionTime );
-	}
-
-	public override void Reload()
-	{
-		if ( !CanReload() ) return;
-		if ( !Zoomed )
-		{
-			base.Reload();
-			return;
-		}
-
-		// Finish the owner's sight transition before asking the host to open the tube.
-		SecondaryAttack();
-		_reloadAfterSights = SightTransitionTime;
 	}
 
 	public override void PrimaryAttack()
@@ -117,11 +89,6 @@ public sealed class Shotgun : BulletWeapon
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-		if ( _reloadAfterSights is { } reload && reload <= 0 )
-		{
-			_reloadAfterSights = null;
-			base.Reload();
-		}
 		if ( _nextInsert is { } insert && insert <= 0 )
 		{
 			_nextInsert = null;
@@ -132,11 +99,5 @@ public sealed class Shotgun : BulletWeapon
 			_shellEjection = null;
 			if ( IsActive ) EjectShells( 1, true, "models/weapons/shotgunshell.mdl" );
 		}
-	}
-
-	protected override void OnHolstered()
-	{
-		_reloadAfterSights = null;
-		base.OnHolstered();
 	}
 }
