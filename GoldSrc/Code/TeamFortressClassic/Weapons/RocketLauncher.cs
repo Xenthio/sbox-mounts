@@ -83,7 +83,7 @@ public sealed class FortressRocket : RocketProjectile
 
 internal static class FortressBlast
 {
-	internal static void Apply( GameObject projectile, GameObject shooter, Vector3 origin, float damage, float falloff, bool inHand = false )
+	internal static void Apply( GameObject projectile, GameObject shooter, Vector3 origin, float damage, float falloff, GameObject sourceBody = null )
 	{
 		var scene = projectile.Scene;
 		var submerged = WaterBody.Find( scene, origin ).IsValid();
@@ -95,10 +95,10 @@ internal static class FortressBlast
 			var center = Npc.TargetBodyPosition( target.GameObject );
 			var self = target.GameObject.Root == shooter?.Root;
 			var blastRay = scene.Trace.Ray( origin, center ).IgnoreGameObjectHierarchy( projectile ).WithoutTags( "trigger", "debris" ).UseHitboxes();
-			if ( inHand ) blastRay = blastRay.IgnoreGameObjectHierarchy( shooter );
+			if ( sourceBody.IsValid() ) blastRay = blastRay.IgnoreGameObjectHierarchy( sourceBody );
 			var trace = blastRay.Run();
 			if ( trace.Hit && trace.GameObject?.Root != target.GameObject.Root ) continue;
-			var point = inHand && self ? origin : trace.EndPosition;
+			var point = target.GameObject.Root == sourceBody?.Root ? origin : trace.EndPosition;
 			var amount = (damage - origin.Distance( point ) * falloff) * (self ? 0.75f : 1);
 			if ( amount <= 0 ) continue;
 			var info = new DamageInfo { Damage = amount, Origin = origin, Position = point, Attacker = shooter, Weapon = projectile };

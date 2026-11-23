@@ -14,11 +14,17 @@ public sealed class FortressGrenade : Component, Component.IDamageable.IEvents
 	[Property] public GameObject Shooter { get; set; }
 	[Property] public bool IsPipe { get; set; }
 	TimeSince _age = 0;
+	TimeUntil? _empDetonation;
 	Vector3 _velocity;
 	bool _settled, _spent;
 
 	internal bool IsArmed => _age >= ArmDelay && !_spent;
 	static GameMount Mount => Sandbox.Mounting.Directory.Get( "tfc" ) as GameMount;
+
+	internal void TriggerEmp()
+	{
+		if ( IsPipe && !_spent ) _empDetonation = 0.1f;
+	}
 
 	internal static IEnumerable<FortressGrenade> PipesOwnedBy( GameObject shooter ) => shooter.Scene.GetAllComponents<FortressGrenade>()
 		.Where( projectile => projectile.IsPipe && !projectile._spent && projectile.Shooter == shooter );
@@ -54,7 +60,7 @@ public sealed class FortressGrenade : Component, Component.IDamageable.IEvents
 	{
 		if ( !Networking.IsHost || _spent ) return;
 		if ( IsPipe && !Shooter.IsValid() ) { GameObject.Destroy(); return; }
-		if ( _age >= (IsPipe ? PipeFuse : TimedFuse) ) { Detonate(); return; }
+		if ( _age >= (IsPipe ? PipeFuse : TimedFuse) || (_empDetonation is { } emp && emp <= 0) ) { Detonate(); return; }
 		if ( _settled ) return;
 
 		var gravity = Scene.PhysicsWorld.Gravity;

@@ -30,7 +30,7 @@ public abstract class FortressExplosiveGrenade : FortressHandGrenade
 		var floor = TraceFloor();
 		var damageOrigin = !InHand && floor.Hit ? floor.EndPosition + floor.Normal * 32 : position;
 		var effectOrigin = floor.Hit ? floor.EndPosition + floor.Normal * ((Damage - 24) * 0.6f) : position;
-		FortressBlast.Apply( GameObject, Thrower, damageOrigin, Damage, falloff: 0.5f, inHand: InHand );
+		FortressBlast.Apply( GameObject, Thrower, damageOrigin, Damage, falloff: 0.5f, sourceBody: InHand ? Thrower : null );
 		Mount?.NpcAudio.Emit( $"weapons/explode{Game.Random.Int( 3, 5 )}.wav", effectOrigin );
 		Mount?.NpcAudio.Emit( "weapons/debris", effectOrigin, volume: 0.55f, attenuation: 0.8f );
 		ShowExplosion( effectOrigin, floor.Normal );
