@@ -16,6 +16,7 @@ public abstract class BipodRifle : DayOfDefeatFirearm, PlayerController.IEvents
 	internal abstract string DeployedModel { get; }
 	internal abstract float BipodTime { get; }
 	internal abstract float CarriedReloadTime { get; }
+	internal virtual string BipodSequence( bool deployed ) => deployed ? "up_to_down" : "down_to_up";
 	internal virtual float DeployedReloadTime => CarriedReloadTime;
 	internal override float StandingSpread => 0.025f;
 	internal override Vector2 PelletSpread => BipodDeployed ? Vector2.One * 0.02f : base.PelletSpread;
@@ -99,7 +100,7 @@ public abstract class BipodRifle : DayOfDefeatFirearm, PlayerController.IEvents
 		_bipodBusy = BipodTime;
 		SetNextFire( BipodTime );
 		var view = ViewModel?.GetComponent<StudioWeaponView>();
-		view?.Play( deployed ? "up_to_down" : "down_to_up" );
+		view?.Play( BipodSequence( deployed ) );
 	}
 
 	void OnBipodChanged( bool _, bool deployed )

@@ -10,6 +10,7 @@ public abstract class DayOfDefeatFirearm : BulletWeapon
 	internal virtual float StandingSpread => 0.035f;
 	internal virtual bool EjectsBrass => true;
 	internal virtual float MovingSpreadPenalty => 0.1f;
+	internal virtual string BrassModel => "models/shells.mdl";
 	internal virtual int BrassBodyGroup => 0;
 	internal virtual float BrassDelay => 0;
 	internal override Vector2 PelletSpread => Vector2.One * (StandingSpread + (Owner is { } player && player.Velocity.Length > 45 ? MovingSpreadPenalty : 0));
@@ -90,6 +91,6 @@ public abstract class DayOfDefeatFirearm : BulletWeapon
 		var attachment = model?.GetComponent<SkinnedModelRenderer>()?.GetAttachment( "attachment2" );
 		var origin = attachment?.Position ?? eye.PointToWorld( new Vector3( 20, -4, -12 ) );
 		var velocity = eye.Rotation.Right * Game.Random.Float( 60, 80 ) + eye.Rotation.Up * Game.Random.Float( 60, 80 );
-		ShellCasing.Eject( origin, eye.Rotation, false, velocity, ContentMount, "models/shells.mdl", BrassBodyGroup );
+		ShellCasing.Eject( origin, eye.Rotation, false, velocity, ContentMount, BrassModel, BrassBodyGroup );
 	}
 }
