@@ -41,15 +41,18 @@ internal sealed class WeaponPickupLoader( TypeDescription type, string modelPath
 	}
 
 	internal static bool Drop<T>( Transform transform, bool toss = false ) where T : StudioWeapon
+		=> SpawnDrop<T>( transform, toss ).IsValid();
+
+	internal static T SpawnDrop<T>( Transform transform, bool toss = false ) where T : StudioWeapon
 	{
 		var definition = Game.TypeLibrary.GetType( typeof( T ) ).GetAttribute<WeaponPickupAttribute>();
 		var prefab = GameObject.GetPrefab( $"mount://{definition.Mount}/{definition.PrefabPath}" );
-		if ( !prefab.IsValid() ) return false;
+		if ( !prefab.IsValid() ) return null;
 		var weapon = prefab.Clone( transform );
 		var body = weapon.GetComponent<Rigidbody>();
 		ApplyDropVelocity( body, toss );
 		weapon.NetworkSpawn( true, null );
-		return true;
+		return weapon.GetComponent<T>();
 	}
 
 	internal static void ApplyDropVelocity( Rigidbody body, bool toss )
