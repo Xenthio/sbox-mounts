@@ -1,6 +1,6 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class AlienGrunt
+public partial class AlienGrunt
 {
 	[Property] public bool Gagged { get; set; }
 

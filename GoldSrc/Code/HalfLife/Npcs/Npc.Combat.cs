@@ -13,6 +13,22 @@ public partial class Npc
 		return true;
 	}
 
+	internal static bool ShellHit( DamageInfo info ) => HitGroups( info ).Has( "hitgroup_10" )
+		&& (info.Tags.Has( "bullet" ) || info.Tags.Has( "club" ) || info.Tags.Has( "slash" ));
+
+	internal void AbsorbShellHit( Component.IDamageable.DamageEvent hit )
+	{
+		var info = hit.DamageInfo;
+		if ( ShouldShowArmorImpact() ) ArmorRicochet.Show( info.Position, Game.Random.Float( 1, 2 ) );
+		if ( Game.Random.Int( 0, 1 ) == 0 )
+		{
+			var reflection = (info.Origin - info.Position).Normal + Vector3.Random * 0.3f;
+			BulletEffects.Tracer( info.Position, info.Position + reflection * 512 );
+		}
+		hit.AcceptedDamage -= 20;
+		if ( hit.AcceptedDamage <= 0 ) hit.AcceptedDamage = 0.1f;
+	}
+
 	internal virtual string HelmetHitGroup => null;
 
 	internal bool IsHeadHit( ITagSet groups ) => groups.Has( "hitgroup_1" ) || (HelmetHitGroup is { } helmet && groups.Has( helmet ));

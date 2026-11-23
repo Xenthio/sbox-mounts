@@ -3,7 +3,7 @@ namespace GoldSrc.HalfLife;
 [Title( "Alien Grunt" ), Category( "Half-Life" )]
 [Alias( "GoldSrc.HalfLifeAlienGrunt" )]
 [NpcDefinition( "monster_alien_grunt", "agrunt", MonsterClass.AlienMilitary, 90, 32, 64, 125, ArmorGroup = 10, Attack = NpcAttack.Projectile, Damage = 5, Range = 1024, ProjectileModel = "hornet", Gibs = GibSet.Alien, Blood = BloodColor.Yellow )]
-public sealed partial class AlienGrunt : VoicedNpc, Component.IDamageable.IEvents
+public partial class AlienGrunt : VoicedNpc, Component.IDamageable.IEvents
 {
 	internal override float ViewDot => 0.2f;
 
@@ -73,21 +73,9 @@ public sealed partial class AlienGrunt : VoicedNpc, Component.IDamageable.IEvent
 		if ( blood != BloodColor.None ) BloodEffects.Spray( blood, AttackOrigin, 25 );
 	}
 
-	static bool ShellHit( DamageInfo info ) => HitGroups( info ).Has( "hitgroup_10" )
-		&& (info.Tags.Has( "bullet" ) || info.Tags.Has( "club" ) || info.Tags.Has( "slash" ));
-
 	internal override void ModifyDamage( Component.IDamageable.DamageEvent hit )
 	{
-		var info = hit.DamageInfo;
-		if ( !ShellHit( info ) ) return;
-		if ( ShouldShowArmorImpact() ) ArmorRicochet.Show( info.Position, Game.Random.Float( 1, 2 ) );
-		if ( Game.Random.Int( 0, 1 ) == 0 )
-		{
-			var reflection = (info.Origin - info.Position).Normal + Vector3.Random * 0.3f;
-			BulletEffects.Tracer( info.Position, info.Position + reflection * 512 );
-		}
-		hit.AcceptedDamage -= 20;
-		if ( hit.AcceptedDamage <= 0 ) hit.AcceptedDamage = 0.1f;
+		if ( ShellHit( hit.DamageInfo ) ) AbsorbShellHit( hit );
 	}
 
 	internal override void ShowWound( Component.IDamageable.DamageEvent hit )

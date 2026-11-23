@@ -51,9 +51,10 @@ internal static partial class Blast
 		puff.AddComponent<RisingSmoke>();
 	}
 
-	internal static GameObject SpriteEffect( string name, string asset, Vector3 origin, float scale, float fps, bool additive = true )
+	internal static GameObject SpriteEffect( string name, string asset, Vector3 origin, float scale, float fps, bool additive = true, GameMount mount = null )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount || mount.GetIndexedSprite( asset ) is not { } sprite ) return null;
+		mount ??= Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
+		if ( mount?.GetIndexedSprite( asset ) is not { } sprite ) return null;
 		var animation = sprite.Animations[0];
 		var image = animation.Frames[0].Texture;
 		var go = new GameObject( false, name );

@@ -9,7 +9,7 @@ public sealed class SonicRing : Component
 	float _radius;
 	TimeSince _age;
 
-	internal static void Spawn( Vector3 origin, Color tint, float radius )
+	internal static void Spawn( Vector3 origin, Color tint, float radius, GameMount mount = null )
 	{
 		var go = new GameObject( false, "Sonic blast" );
 		go.NetworkMode = NetworkMode.Never;
@@ -22,7 +22,8 @@ public sealed class SonicRing : Component
 		line.Additive = true;
 		line.Opaque = false;
 		line.CastShadows = false;
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
+		mount ??= Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
+		if ( mount is not null )
 			line.Texturing = TrailTextureConfig.Default with { Material = mount.GetTrailMaterial( "shockwave" ), WorldSpace = false };
 		var ring = go.AddComponent<SonicRing>();
 		ring._line = line;

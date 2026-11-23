@@ -2,7 +2,7 @@ using Sandbox.Npcs.Layers;
 
 namespace GoldSrc.HalfLife;
 
-public sealed partial class AlienGrunt
+public partial class AlienGrunt
 {
 	const int Crouch = 17, Stand = 19, ThreatDisplay = 57, VictoryDance = 65;
 	static readonly int[] VictoryActivities = [Crouch, VictoryDance, VictoryDance, Stand, ThreatDisplay,

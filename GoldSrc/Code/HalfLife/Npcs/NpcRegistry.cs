@@ -40,7 +40,7 @@ internal sealed class NpcRegistry
 			void Add( MountContext mount, string name, string modelPath, string projectileModel, string edition )
 			{
 				var loader = new NpcPrefabLoader( component, definition, modelPath, projectileModel, edition );
-				loader.Tags.Add( "npc" );
+				if ( definition.ShowInSpawnMenu ) loader.Tags.Add( "npc" );
 				mount.Add( ResourceType.PrefabFile, $"entities/npcs/{name}.prefab", loader );
 			}
 		}
