@@ -42,6 +42,13 @@ internal static class FortressSpeed
 		Apply( player, limits );
 	}
 
+	internal static void SetTeleporting( PlayerController player, bool teleporting )
+	{
+		var limits = Active.GetValue( player, controller => new Limits( controller ) );
+		limits.Teleporting = teleporting;
+		Apply( player, limits );
+	}
+
 	static void Apply( PlayerController player, Limits limits )
 	{
 		player.WalkSpeed = limits.Walk.Apply( player.WalkSpeed, limits );
@@ -58,7 +65,8 @@ internal static class FortressSpeed
 		internal bool Tranquilized;
 		internal bool PlantingDetpack;
 		internal bool Building;
-		internal bool MovementLocked => PlantingDetpack || Building;
+		internal bool Teleporting;
+		internal bool MovementLocked => PlantingDetpack || Building || Teleporting;
 		internal float? AimLimit;
 		internal float LegDamage;
 	}

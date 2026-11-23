@@ -12,18 +12,34 @@ public sealed partial class Spanner
 	[Sync( SyncFlags.FromHost )] public bool IsBuilding { get; private set; }
 
 	public override bool CanReload() => IsActive && !IsBuilding && Owner.IsValid() && PrimaryAmmoType is not null &&
-		Ammo1 >= (Owner.IsDucking ? 130 : 100);
+		Ammo1 >= BuildCost( SelectedBuilding() );
+
 	public override void Reload()
 	{
-		if ( Owner.IsValid() ) BeginBuilding( Owner.IsDucking );
+		if ( Owner.IsValid() ) BeginBuilding( SelectedBuilding() );
 	}
 
-	[Rpc.Host( NetFlags.OwnerOnly )]
-	void BeginBuilding( bool sentry )
+	BuildingKind SelectedBuilding()
 	{
-		var cost = sentry ? 130 : 100;
+		var use = !string.IsNullOrEmpty( Owner.UseButton ) && Input.Down( Owner.UseButton );
+		if ( use ) return Owner.IsDucking ? BuildingKind.TeleporterExit : BuildingKind.TeleporterEntrance;
+		return Owner.IsDucking ? BuildingKind.Sentry : BuildingKind.Dispenser;
+	}
+
+	static int BuildCost( BuildingKind kind ) => kind switch
+	{
+		BuildingKind.Dispenser => 100,
+		BuildingKind.Sentry => 130,
+		_ => 125
+	};
+
+	[Rpc.Host( NetFlags.OwnerOnly )]
+	void BeginBuilding( BuildingKind kind )
+	{
+		if ( kind is < BuildingKind.Dispenser or > BuildingKind.TeleporterExit ) return;
+		var cost = BuildCost( kind );
 		if ( !IsActive || IsBuilding || !CanBuild( Owner ) || PrimaryAmmoType is null || Ammo1 < cost ) return;
-		if ( Scene.GetAllComponents<FortressBuilding>().Any( unit => unit.Builder == Owner && (unit is FortressSentry) == sentry ) ) return;
+		if ( Scene.GetAllComponents<FortressBuilding>().Any( unit => unit.Builder == Owner && unit.Kind == kind ) ) return;
 
 		var start = Owner.WorldPosition;
 		var forward = Owner.EyeTransform.Forward.WithZ( 0 ).Normal;
@@ -36,19 +52,32 @@ public sealed partial class Spanner
 		if ( !floor.Hit || floor.StartedSolid || floor.Normal.z < 0.7f ) return;
 
 		var site = floor.EndPosition + Vector3.Up;
-		var height = sentry ? FortressSentry.Height : 24;
+		var height = kind switch
+		{
+			BuildingKind.Sentry => FortressSentry.Height,
+			BuildingKind.Dispenser => 24,
+			_ => FortressTeleporter.PadHeight
+		};
 		var clearance = Scene.Trace.Box( new BBox( new Vector3( -16, -16, 0 ), new Vector3( 16, 16, height ) ),
 			site, site + Vector3.Up ).IgnoreGameObjectHierarchy( Owner.GameObject ).WithoutTags( "trigger", "debris", "playercontroller" ).Run();
 		if ( clearance.StartedSolid || clearance.Hit ) return;
 
 		var rotation = Rotation.LookAt( forward );
-		_construction = sentry
-			? FortressBuilding.StartConstruction<FortressSentry>( Owner, site, rotation, "TFC sentry", "base", height )
-			: FortressBuilding.StartConstruction<FortressDispenser>( Owner, site, rotation, "TFC dispenser", "dispenser", height );
+		_construction = kind switch
+		{
+			BuildingKind.Sentry => FortressBuilding.StartConstruction<FortressSentry>( Owner, site, rotation, "TFC sentry", "base", height ),
+			BuildingKind.Dispenser => FortressBuilding.StartConstruction<FortressDispenser>( Owner, site, rotation, "TFC dispenser", "dispenser", height ),
+			_ => FortressTeleporter.Construct( Owner, site, rotation, kind == BuildingKind.TeleporterExit )
+		};
 		if ( !_construction.IsValid() ) return;
 
 		_buildCost = cost;
-		_buildComplete = sentry ? 5 : 2;
+		_buildComplete = kind switch
+		{
+			BuildingKind.Dispenser => 2,
+			BuildingKind.Sentry => 5,
+			_ => 4
+		};
 		IsBuilding = true;
 		UpdateBuilderMovement();
 		ContentMount?.NpcAudio.Emit( "weapons/building.wav", site );

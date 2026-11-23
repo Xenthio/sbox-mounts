@@ -1,5 +1,13 @@
 namespace GoldSrc.TeamFortressClassic;
 
+internal enum BuildingKind
+{
+	Dispenser,
+	Sentry,
+	TeleporterEntrance,
+	TeleporterExit
+}
+
 [Hide]
 public abstract class FortressBuilding : Component, Component.IDamageable
 {
@@ -9,9 +17,10 @@ public abstract class FortressBuilding : Component, Component.IDamageable
 	[Sync( SyncFlags.FromHost )] public bool IsBuilt { get; private set; }
 	[Sync( SyncFlags.FromHost )] public float Health { get; set; } = 150;
 	public abstract float MaxHealth { get; }
+	internal abstract BuildingKind Kind { get; }
 
 	internal static T StartConstruction<T>( PlayerController builder, Vector3 position, Rotation rotation,
-		string title, string modelName, float height ) where T : FortressBuilding, new()
+		string title, string modelName, float height, System.Action<T> configure = null ) where T : FortressBuilding, new()
 	{
 		if ( LoadModel( modelName ) is not { IsError: false } model ) return null;
 
@@ -24,6 +33,8 @@ public abstract class FortressBuilding : Component, Component.IDamageable
 		collider.Static = true;
 		var building = go.AddComponent<T>();
 		building.Builder = builder;
+		building.Health = building.MaxHealth;
+		configure?.Invoke( building );
 		go.NetworkSpawn( true, null );
 		return building;
 	}

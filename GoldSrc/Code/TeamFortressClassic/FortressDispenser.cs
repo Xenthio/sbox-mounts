@@ -23,6 +23,7 @@ public sealed class FortressDispenser : FortressBuilding
 	TimeUntil _nextProduction, _nextRefill;
 
 	public override float MaxHealth => 150;
+	internal override BuildingKind Kind => BuildingKind.Dispenser;
 
 	internal override void OnBuilt( BaseInventoryComponent inventory )
 	{

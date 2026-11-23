@@ -29,6 +29,7 @@ public sealed class FortressSentry : FortressBuilding
 	SkinnedModelRenderer _head;
 
 	public override float MaxHealth => Level switch { 1 => 150, 2 => 180, _ => 216 };
+	internal override BuildingKind Kind => BuildingKind.Sentry;
 	int MaxShells => Level switch { 1 => 100, 2 => 120, _ => 144 };
 	Vector3 EyePosition => WorldPosition + Vector3.Up * (BaseHeight + 22);
 
