@@ -17,12 +17,12 @@ public sealed class RandomSpawn : MapEntity
 	bool _selected;
 	TimeUntil? _selectAt;
 
-	internal sealed record SavedChild( string ClassName, Transform Transform, float Health, int Body, int Skin );
+	internal sealed record SavedChild( string ClassName, Transform Transform, float Health, int Body, int Skin, Npc.SavedMagazine Magazine = null );
 	internal sealed record SavedGroup( bool Selected, float RemainingTime, SavedChild[] Children );
 
 	internal SavedGroup CaptureGroup() => new( _selected, _selectAt is { } timer ? (float)timer : 2f, _children
 		.Where( child => child.IsValid() && child.Health > 0 )
-		.Select( child => new SavedChild( child.ClassName, child.WorldTransform, child.Health, child.Body, child.Skin ) ).ToArray() );
+		.Select( child => new SavedChild( child.ClassName, child.WorldTransform, child.Health, child.Body, child.Skin, child.CaptureMagazine() ) ).ToArray() );
 
 	internal void RestoreGroup( SavedGroup save )
 	{
@@ -81,6 +81,7 @@ public sealed class RandomSpawn : MapEntity
 		{
 			npc.Health = saved.Health;
 			npc.Skin = saved.Skin;
+			npc.RestoreMagazine( saved.Magazine );
 		}
 		_children.Add( npc );
 		actor.GameObject.Enabled = true;

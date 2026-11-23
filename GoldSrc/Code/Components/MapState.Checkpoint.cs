@@ -29,6 +29,7 @@ public sealed partial class MapState
 		public bool ColliderEnabled { get; set; } = true;
 		public float? Health { get; set; }
 		public HalfLife.Npc.SavedScript Script { get; set; }
+		public HalfLife.Npc.SavedMagazine Magazine { get; set; }
 		public int? Count { get; set; }
 		public float? GameCounterCount { get; set; }
 		public bool Running { get; set; }
@@ -42,7 +43,8 @@ public sealed partial class MapState
 		public TrackTrain.SavedTrain Train { get; set; }
 	}
 
-	private sealed record SavedActor( System.Text.Json.Nodes.JsonObject Object, float Health, HalfLife.Npc.SavedScript Script );
+	private sealed record SavedActor( System.Text.Json.Nodes.JsonObject Object, float Health, HalfLife.Npc.SavedScript Script,
+		HalfLife.Npc.SavedMagazine Magazine = null );
 
 	private sealed class Snapshot
 	{
@@ -114,7 +116,8 @@ public sealed partial class MapState
 			if ( !entity.IsValid() || entity.GameObject.IsDestroyed ) continue;
 			if ( entity is Monster dead && dead.Npc.IsValid() && dead.Npc.Health <= 0 ) continue;
 			if ( entity is Monster { FromPreviousMap: true } incoming && incoming.Npc.IsValid() )
-				data.IncomingActors.Add( new( incoming.GameObject.Serialize(), incoming.Npc.Health, incoming.Npc.CaptureScript() ) );
+				data.IncomingActors.Add( new( incoming.GameObject.Serialize(), incoming.Npc.Health,
+					incoming.Npc.CaptureScript(), incoming.Npc.CaptureMagazine() ) );
 			if ( entity.EntityIndex < 0 || entity.EntityIndex == _savingTrigger ) continue;
 			var entry = new SavedEntity { Transform = entity.WorldTransform, ColliderEnabled = entity.GetComponent<Collider>( true )?.Enabled ?? true };
 			data.Entities[entity.EntityIndex] = entry;
@@ -126,6 +129,7 @@ public sealed partial class MapState
 				case Monster actor when actor.Npc.IsValid():
 					entry.Health = actor.Npc.Health;
 					entry.Script = actor.Npc.CaptureScript();
+					entry.Magazine = actor.Npc.CaptureMagazine();
 					break;
 				case MonsterMaker maker: entry.Maker = maker.CaptureMaker(); break;
 				case CryOfFear.RandomSpawn { IsCoordinator: true } coordinator: entry.RandomSpawn = coordinator.CaptureGroup(); break;
@@ -165,6 +169,7 @@ public sealed partial class MapState
 			actor.Map = this;
 			Entities.Add( actor );
 			actor.Npc.Health = saved.Health;
+			actor.Npc.RestoreMagazine( saved.Magazine );
 			actor.Npc.RestoreScript( saved.Script, this, player );
 		}
 		foreach ( var entity in Entities.ToArray() )
@@ -179,6 +184,7 @@ public sealed partial class MapState
 				case GameCounter counter when entry.GameCounterCount.HasValue: counter.Count = entry.GameCounterCount.Value; break;
 				case Monster actor when actor.Npc.IsValid() && entry.Health.HasValue:
 					actor.Npc.Health = entry.Health.Value;
+					actor.Npc.RestoreMagazine( entry.Magazine );
 					actor.WorldTransform = entry.Transform;
 					if ( entry.Script is {} script ) actor.Npc.RestoreScript( script, this, player );
 					break;

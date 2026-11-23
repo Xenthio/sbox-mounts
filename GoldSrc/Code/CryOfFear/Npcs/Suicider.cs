@@ -34,8 +34,19 @@ public sealed class Suicider : CryOfFearMeleeNpc
 	internal override void OnModelLoaded( ModelLoader loader )
 	{
 		EyeHeight = 28;
-		_rounds = UsesP345 ? 8 : 15;
+		_rounds ??= UsesP345 ? 8 : 15;
 		_aim = loader.Controllers is { Length: > 2 } ? loader.Controllers[2] : null;
+	}
+
+	internal override SavedMagazine CaptureMagazine() => _rounds is { } rounds
+		? new SavedMagazine( rounds, System.MathF.Max( 0, _nextShot ) )
+		: null;
+
+	internal override void RestoreMagazine( SavedMagazine magazine )
+	{
+		if ( magazine is null ) return;
+		_rounds = magazine.Rounds;
+		_nextShot = magazine.ShotDelay;
 	}
 
 	protected override void OnUpdate()

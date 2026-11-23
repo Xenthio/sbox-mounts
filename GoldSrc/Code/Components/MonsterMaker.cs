@@ -19,12 +19,13 @@ public sealed class MonsterMaker : MapEntity
 	float? _ground;
 	TimeUntil _next;
 
-	internal sealed record SavedChild( Transform Transform, float Health );
+	internal sealed record SavedChild( Transform Transform, float Health, Npc.SavedMagazine Magazine = null );
 	internal sealed record SavedMaker( int Count, bool Active, bool Exhausted, float NextSpawn, SavedChild[] Children );
 
 	internal SavedMaker CaptureMaker() => new( Count, _active, _exhausted, _next,
-		_children.Where( go => go.IsValid() && !go.IsDestroyed && go.GetComponent<Npc>() is { Health: > 0 } )
-			.Select( go => new SavedChild( go.WorldTransform, go.GetComponent<Npc>().Health ) ).ToArray() );
+		_children.Where( go => go.IsValid() && !go.IsDestroyed ).Select( go => go.GetComponent<Npc>() )
+			.Where( npc => npc is { Health: > 0 } )
+			.Select( npc => new SavedChild( npc.WorldTransform, npc.Health, npc.CaptureMagazine() ) ).ToArray() );
 
 	internal void RestoreMaker( SavedMaker state )
 	{
@@ -35,7 +36,7 @@ public sealed class MonsterMaker : MapEntity
 		_active = state.Active;
 		_exhausted = state.Exhausted;
 		_next = state.NextSpawn;
-		foreach ( var child in state.Children ) CreateChild( child.Transform, child.Health );
+		foreach ( var child in state.Children ) CreateChild( child.Transform, child );
 	}
 
 	protected override void OnStart()
@@ -81,7 +82,7 @@ public sealed class MonsterMaker : MapEntity
 		Fire( OnTrigger, GameObject );
 	}
 
-	private bool CreateChild( Transform transform, float? health = null )
+	private bool CreateChild( Transform transform, SavedChild saved = null )
 	{
 		var prefab = GameObject.GetPrefab( PrefabPath );
 		if ( !prefab.IsValid() )
@@ -98,7 +99,11 @@ public sealed class MonsterMaker : MapEntity
 		if ( npc.IsValid() )
 		{
 			npc.FadeCorpse = _fadeChildren;
-			if ( health.HasValue ) npc.Health = health.Value;
+			if ( saved is not null )
+			{
+				npc.Health = saved.Health;
+				npc.RestoreMagazine( saved.Magazine );
+			}
 		}
 		if ( !string.IsNullOrEmpty( ChildName ) ) Map.Entities.Add( actor );
 		_children.Add( child );

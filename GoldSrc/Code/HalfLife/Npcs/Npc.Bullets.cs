@@ -2,6 +2,11 @@ namespace GoldSrc.HalfLife;
 
 public partial class Npc
 {
+	internal sealed record SavedMagazine( int Rounds, float ShotDelay );
+
+	internal virtual SavedMagazine CaptureMagazine() => null;
+	internal virtual void RestoreMagazine( SavedMagazine magazine ) { }
+
 	// GoldSrc shares tracer cadence across NPCs firing in the same game.
 	static uint _tracerCount;
 

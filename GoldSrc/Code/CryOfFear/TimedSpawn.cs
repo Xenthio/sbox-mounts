@@ -17,7 +17,7 @@ public sealed class TimedSpawn : MapEntity
 	[Property] public int ReplacementLimit { get; set; }
 
 	internal enum Phase { AwaitingPlayer, Waiting, WatchingChild, Finished }
-	internal sealed record SavedChild( Transform Transform, float Health, int Body, int Skin );
+	internal sealed record SavedChild( Transform Transform, float Health, int Body, int Skin, Npc.SavedMagazine Magazine = null );
 	internal sealed record SavedSpawner( Phase State, float RemainingTime, int Replacements, SavedChild Child );
 
 	Phase _state;
@@ -26,7 +26,7 @@ public sealed class TimedSpawn : MapEntity
 	Npc _child;
 
 	internal SavedSpawner Capture() => new( _state, _nextStep, _replacements, _child.IsValid() && _child.Health > 0
-		? new SavedChild( _child.WorldTransform, _child.Health, _child.Body, _child.Skin )
+		? new SavedChild( _child.WorldTransform, _child.Health, _child.Body, _child.Skin, _child.CaptureMagazine() )
 		: null );
 
 	internal void Restore( SavedSpawner save )
@@ -108,6 +108,7 @@ public sealed class TimedSpawn : MapEntity
 			npc.Health = saved.Health;
 			npc.Body = saved.Body;
 			npc.Skin = saved.Skin;
+			npc.RestoreMagazine( saved.Magazine );
 		}
 		actor.GameObject.Enabled = true;
 		actor.GameObject.NetworkSpawn( true, null );
