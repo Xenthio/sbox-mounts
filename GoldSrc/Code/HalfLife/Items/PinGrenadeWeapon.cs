@@ -6,10 +6,14 @@ public abstract class PinGrenadeWeapon : StudioWeapon
 	bool _holdingPin, _primed, _redrawing;
 	TimeSince _pinAge;
 	TimeUntil _redrawAt;
-	bool _released;
+	bool _released, _holdingSecondary;
+
+	internal bool Underhand { get; private set; }
 
 	internal abstract string PinSequence { get; }
 	internal virtual string PinSound => null;
+	internal virtual string ThrowSound => null;
+	internal virtual bool HasGrenadesLeft => HasPrimaryAmmo();
 	internal virtual float RedrawDelay => 0.5f;
 	internal abstract string LaunchGrenade( Vector3 origin, Vector3 direction, float pitch, float pinAge );
 
@@ -21,20 +25,25 @@ public abstract class PinGrenadeWeapon : StudioWeapon
 		UsesClips = false;
 	}
 
-	public override bool CanPrimaryAttack() => !_holdingPin && !_primed && !_redrawing && base.CanPrimaryAttack();
+	protected bool CanPrime => !_holdingPin && !_primed && !_redrawing && HasPrimaryAmmo();
+	public override bool CanPrimaryAttack() => CanPrime && base.CanPrimaryAttack();
 	protected override bool OnHolstering( BaseInventoryItem next ) => !_holdingPin && !_primed && base.OnHolstering( next );
 
-	public override void PrimaryAttack()
+	public override void PrimaryAttack() => Prime( false );
+
+	protected void Prime( bool underhand )
 	{
 		_holdingPin = true;
-		PullPin();
+		_holdingSecondary = underhand;
+		PullPin( underhand );
 	}
 
 	[Rpc.Host( NetFlags.OwnerOnly )]
-	void PullPin()
+	void PullPin( bool underhand )
 	{
 		if ( !IsActive || !Owner.IsValid() || _primed || _redrawing || !HasPrimaryAmmo() ) return;
 		_primed = true;
+		Underhand = underhand;
 		_pinAge = 0;
 		ShowAnimation( PinSequence );
 	}
@@ -42,7 +51,7 @@ public abstract class PinGrenadeWeapon : StudioWeapon
 	protected override void Think()
 	{
 		base.Think();
-		if ( !_holdingPin || Input.Down( "attack1" ) ) return;
+		if ( !_holdingPin || Input.Down( _holdingSecondary ? "attack2" : "attack1" ) ) return;
 		_holdingPin = false;
 		ReleasePin();
 	}
@@ -60,7 +69,7 @@ public abstract class PinGrenadeWeapon : StudioWeapon
 		if ( _released && _pinAge >= 0.5f ) Throw();
 		if ( !_redrawing || _redrawAt > 0 ) return;
 		_redrawing = false;
-		if ( HasPrimaryAmmo() ) ShowAnimation( DeploySequence );
+		if ( HasGrenadesLeft ) ShowAnimation( DeploySequence );
 		else Inventory.Remove( this );
 	}
 
@@ -71,21 +80,25 @@ public abstract class PinGrenadeWeapon : StudioWeapon
 		var angles = Owner.EyeAngles;
 		angles.pitch = -10 + angles.pitch * (angles.pitch < 0 ? 80f : 100f) / 90;
 		var direction = angles.ToRotation().Forward;
-		var origin = BulletTrace( new Ray( Owner.EyePosition, direction ), 16, 2 ).Run().EndPosition;
+		var origin = LaunchOrigin( direction );
 		var animation = LaunchGrenade( origin, direction, angles.pitch, _pinAge );
 		TakePrimaryAmmo();
-		ShowAnimation( animation );
+		ShowAnimation( animation, attack: true );
 		_redrawing = true;
-		_redrawAt = HasPrimaryAmmo() ? RedrawDelay : 0.5f;
+		_redrawAt = HasGrenadesLeft ? RedrawDelay : 0.5f;
 	}
 
+	internal virtual Vector3 LaunchOrigin( Vector3 direction ) =>
+		BulletTrace( new Ray( Owner.EyePosition, direction ), 16, 2 ).Run().EndPosition;
+
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	void ShowAnimation( string name )
+	void ShowAnimation( string name, bool attack = false )
 	{
-		if ( name.StartsWith( "throw" ) )
+		if ( attack )
 		{
 			SetNextPrimaryFire( PrimaryDelay );
 			PostWeaponEvent( WeaponEvents.Attack );
+			if ( ThrowSound is { } throwSound ) PlaySample( throwSound );
 		}
 		if ( name == PinSequence && PinSound is { } sample ) PlaySample( sample );
 		var view = ViewModel?.GetComponent<StudioWeaponView>();

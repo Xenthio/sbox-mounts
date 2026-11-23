@@ -6,6 +6,7 @@ public class TimedGrenade : Component, Component.ICollisionListener
 	[Property] public GameObject Thrower { get; set; }
 	TimeUntil _fuse, _nextBounce, _nextImpact, _nextTumble;
 	bool _settledWarning;
+	protected float FuseRemaining => _fuse;
 	internal virtual float GravityScale => 0.5f;
 	internal virtual float Friction => 0.8f;
 	internal virtual bool DealsImpactDamage => true;
