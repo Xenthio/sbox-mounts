@@ -2,7 +2,7 @@ namespace GoldSrc.HalfLife;
 
 internal static class StreakSplash
 {
-	internal static ParticleEffect Create( GameObject owner, HalfLifeMount mount )
+	internal static ParticleEffect Create( GameObject owner, GameMount mount )
 	{
 		var sparks = owner.AddComponent<ParticleEffect>();
 		sparks.InitialScale = 1.5f;

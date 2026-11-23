@@ -1,6 +1,6 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class Gargantua
+public abstract partial class GargantuaNpc
 {
 	static readonly string[] Controls = ["flame_yaw", "flame_pitch"];
 	internal override string[] ControllerParameters => Controls;
@@ -25,7 +25,7 @@ public sealed partial class Gargantua
 		_endFlame = 4.5f;
 		_nextFlame = 6;
 		_nextBurn = 0;
-		EmitSound( "garg/gar_flameon1.wav", WorldPosition );
+		EmitSound( VoiceSample( "gar_flameon1.wav" ), WorldPosition );
 		Burn();
 	}
 
@@ -42,7 +42,7 @@ public sealed partial class Gargantua
 		{
 			Flaming = false;
 			FlameAim = default;
-			EmitSound( "garg/gar_flameoff1.wav", WorldPosition );
+			EmitSound( VoiceSample( "gar_flameoff1.wav" ), WorldPosition );
 			return;
 		}
 		if ( _nextBurn <= 0 ) Burn();
@@ -55,9 +55,9 @@ public sealed partial class Gargantua
 		LeftEnd = BurnFrom( "attachment2", direction );
 		RightEnd = BurnFrom( "attachment3", direction );
 
-		var offset = WorldRotation.Inverse * (TargetBodyPosition( _enemy ) - (WorldPosition + WorldRotation.Up * 64));
+		var offset = WorldRotation.Inverse * (TargetBodyPosition( _enemy ) - (WorldPosition + WorldRotation.Up * (64 * AttackScale)));
 		var desired = offset.EulerAngles.Normal;
-		if ( offset.Length > 400 || System.MathF.Abs( desired.yaw ) > 60 )
+		if ( offset.Length > 400 * AttackScale || System.MathF.Abs( desired.yaw ) > 60 )
 		{
 			_endFlame -= 0.5f;
 			_nextFlame -= 0.5f;
@@ -67,8 +67,8 @@ public sealed partial class Gargantua
 
 	Vector3 BurnFrom( string hand, Vector3 aim )
 	{
-		var origin = Renderer.GetAttachment( hand )?.Position ?? WorldPosition + Vector3.Up * 64;
-		var trace = Scene.Trace.Ray( origin, origin + aim * 330 ).IgnoreGameObjectHierarchy( GameObject ).UseHitboxes().Run();
+		var origin = Renderer.GetAttachment( hand )?.Position ?? WorldPosition + Vector3.Up * (64 * AttackScale);
+		var trace = Scene.Trace.Ray( origin, origin + aim * (330 * AttackScale) ).IgnoreGameObjectHierarchy( GameObject ).UseHitboxes().Run();
 		if ( trace.Hit )
 		{
 			var decal = trace.GameObject?.GetComponentInParent<IDamageable>() is null ? Game.Random.Int( 1, 3 ) : 0;
@@ -86,7 +86,7 @@ public sealed partial class Gargantua
 			var near = origin + aim * System.Math.Clamp( Vector3.Dot( target - origin, aim ), 0, length );
 			var obstruction = Scene.Trace.Ray( near, target ).IgnoreGameObjectHierarchy( GameObject ).UseHitboxes().Run();
 			if ( obstruction.Hit && obstruction.GameObject?.GetComponentInParent<IDamageable>() != (IDamageable)victim ) continue;
-			var damage = 5 - System.MathF.Max( near.Distance( obstruction.EndPosition ) - 64, 0 ) * 0.4f;
+			var damage = FlameDamage - System.MathF.Max( near.Distance( obstruction.EndPosition ) - 64 * AttackScale, 0 ) * 0.4f;
 			if ( damage <= 0 ) continue;
 			var info = new DamageInfo { Damage = damage, Origin = near, Position = obstruction.EndPosition, Hitbox = obstruction.Hitbox, Attacker = GameObject, Weapon = GameObject };
 			info.Tags.Add( "burn" );
@@ -98,7 +98,7 @@ public sealed partial class Gargantua
 	[Rpc.Broadcast( NetFlags.HostOnly )]
 	void FlameImpact( Vector3 position, Vector3 normal, int decal )
 	{
-		if ( Application.IsDedicatedServer || Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( Application.IsDedicatedServer || EffectsMount is not { } mount ) return;
 		if ( !_impactSparks.IsValid() )
 		{
 			var go = new GameObject( GameObject, false, "Gargantua flame impacts" ) { NetworkMode = NetworkMode.Never };
@@ -135,7 +135,7 @@ public sealed partial class Gargantua
 
 	void CreateFlameEffects()
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( EffectsMount is not { } mount ) return;
 		var sprite = mount.GetIndexedSprite( "xbeam3" );
 		for ( int i = 0; i < 4; ++i )
 		{
@@ -145,7 +145,7 @@ public sealed partial class Gargantua
 			go.LocalPosition = Vector3.Zero;
 			var effect = go.AddComponent<BeamEffect>();
 			effect.BeamLifetime = 5;
-			effect.Scale = i < 2 ? 24 : 14;
+			effect.Scale = (i < 2 ? 24 : 14) * AttackScale;
 			Color color = i < 2 ? new Color32( 255, 130, 90 ) : new Color32( 0, 120, 255 );
 			effect.BeamColor = color;
 			effect.Brightness = 0.75f;
@@ -162,7 +162,7 @@ public sealed partial class Gargantua
 			go.Enabled = true;
 			_flames.Add( effect );
 		}
-		if ( mount.NpcAudio.Find( "garg/gar_flamerun1.wav" ) is { } path && SoundFile.Load( path ) is { } sound )
+		if ( mount.NpcAudio.Find( VoiceSample( "gar_flamerun1.wav" ) ) is { } path && SoundFile.Load( path ) is { } sound )
 			_flameSound = GoldSrcSoundEvents.Play( sound, WorldPosition );
 	}
 

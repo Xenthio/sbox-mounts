@@ -5,6 +5,9 @@ public sealed class StompWave : Component
 {
 	[Property] public GameObject Attacker { get; set; }
 	[Property] public Vector3 End { get; set; }
+	[Property] public float Damage { get; set; } = 100;
+	[Property] public float EffectScale { get; set; } = 1;
+	[Property] public string MountIdent { get; set; } = "hl1";
 	Vector3 _direction;
 	float _speed, _acceleration = 30;
 	ParticleEffect _dust;
@@ -12,13 +15,16 @@ public sealed class StompWave : Component
 	Vector3 _lastTrace;
 	SoundHandle _buzz;
 
-	internal static void Spawn( Gargantua source, Vector3 start, Vector3 end )
+	internal static void Spawn( GargantuaNpc source, Vector3 start, Vector3 end, float damage, float scale )
 	{
 		var go = new GameObject( false, "Stomp wave" );
 		go.WorldPosition = start;
 		var wave = go.AddComponent<StompWave>();
 		wave.Attacker = source.GameObject;
 		wave.End = end;
+		wave.Damage = damage;
+		wave.EffectScale = scale;
+		wave.MountIdent = source.Definition.Mount;
 		go.Enabled = true;
 		go.NetworkSpawn( true, null );
 	}
@@ -27,12 +33,12 @@ public sealed class StompWave : Component
 	{
 		_direction = (End - WorldPosition).Normal;
 		_lastTrace = WorldPosition;
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( Sandbox.Mounting.Directory.Get( MountIdent ) is not GameMount mount ) return;
 		if ( mount.GetIndexedSprite( "gargeye1" ) is { } sprite )
 		{
 			_dust = GameObject.AddComponent<ParticleEffect>();
 			_dust.Lifetime = 0.3f;
-			_dust.InitialScale = 16;
+			_dust.InitialScale = 16 * EffectScale;
 			var renderer = GameObject.AddComponent<ParticleSpriteRenderer>();
 			renderer.Sprite = sprite;
 			renderer.Additive = true;
@@ -76,12 +82,12 @@ public sealed class StompWave : Component
 
 	void Sweep( Vector3 start )
 	{
-		var trace = Scene.Trace.Ray( start + Vector3.Up * 30, WorldPosition + Vector3.Up * 30 ).Size( 32 );
+		var trace = Scene.Trace.Ray( start + Vector3.Up * (30 * EffectScale), WorldPosition + Vector3.Up * (30 * EffectScale) ).Size( 32 * EffectScale );
 		if ( Attacker.IsValid() ) trace = trace.IgnoreGameObjectHierarchy( Attacker );
 		var hit = trace.Run();
 		if ( hit.GameObject?.GetComponentInParent<IDamageable>() is { } victim )
 		{
-			var damage = new DamageInfo { Damage = 100, Origin = start, Position = hit.EndPosition, Attacker = Attacker, Weapon = GameObject };
+			var damage = new DamageInfo { Damage = Damage, Origin = start, Position = hit.EndPosition, Attacker = Attacker, Weapon = GameObject };
 			damage.Tags.Add( "sonic" );
 			victim.OnDamage( damage );
 		}
