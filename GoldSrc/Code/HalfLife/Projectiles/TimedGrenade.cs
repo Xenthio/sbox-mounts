@@ -4,7 +4,7 @@ namespace GoldSrc.HalfLife;
 public class TimedGrenade : Component, Component.ICollisionListener
 {
 	[Property] public GameObject Thrower { get; set; }
-	GameMount _effectsMount;
+	protected GameMount EffectsMount { get; private set; }
 	TimeUntil _fuse, _nextBounce, _nextImpact, _nextTumble;
 	bool _settledWarning;
 	protected float FuseRemaining => _fuse;
@@ -59,7 +59,7 @@ public class TimedGrenade : Component, Component.ICollisionListener
 		body.GravityScale = grenade.GravityScale;
 		body.EnableImpactDamage = false;
 		grenade.Thrower = owner;
-		grenade._effectsMount = effectsMount;
+		grenade.EffectsMount = effectsMount;
 		grenade._fuse = fuse;
 		grenade._nextTumble = 0.1f;
 		body.RigidbodyFlags |= RigidbodyFlags.DisableCollisionSounds;
@@ -102,7 +102,7 @@ public class TimedGrenade : Component, Component.ICollisionListener
 
 	internal virtual void OnBounce( Rigidbody body )
 	{
-		var mount = _effectsMount ?? Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
+		var mount = EffectsMount ?? Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
 		mount?.NpcAudio.Emit( "weapons/grenade_hit", WorldPosition, volume: 0.25f );
 	}
 
@@ -139,10 +139,12 @@ public class TimedGrenade : Component, Component.ICollisionListener
 		GameObject.Destroy();
 	}
 
-	internal virtual void Detonate()
+	internal virtual void Detonate() => Explode();
+
+	protected Vector3 Explode()
 	{
 		var floor = Scene.Trace.Ray( WorldPosition + Vector3.Up * 8, WorldPosition + Vector3.Down * 40 )
 			.IgnoreGameObjectHierarchy( GameObject ).Run();
-		Blast.Detonate( GameObject, Thrower, floor.Hit ? floor.EndPosition : WorldPosition, floor.Normal, 100, floor.Hit, _effectsMount );
+		return Blast.Detonate( GameObject, Thrower, floor.Hit ? floor.EndPosition : WorldPosition, floor.Normal, 100, floor.Hit, EffectsMount );
 	}
 }

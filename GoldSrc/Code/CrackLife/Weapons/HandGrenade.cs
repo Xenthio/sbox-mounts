@@ -15,10 +15,13 @@ public abstract class CrackLifeHandGrenade : ClassicHandGrenade
 {
 	internal override float ThrowSpeed( float pitch ) => System.Math.Clamp( (90 - pitch) * 4, 0, 500 );
 
-	internal override void SpawnGrenade( Vector3 origin, Vector3 velocity, float fuse )
+	internal override void SpawnGrenade( Vector3 origin, Vector3 velocity, float fuse ) =>
+		SpawnGrenade<TimedGrenade>( origin, velocity, fuse, "Hand grenade" );
+
+	protected void SpawnGrenade<T>( Vector3 origin, Vector3 velocity, float fuse, string name ) where T : TimedGrenade, new()
 	{
 		if ( ContentMount is not { } mount || mount.FindMountPath( "models/w_grenade.mdl" ) is not { } path ) return;
-		TimedGrenade.Spawn<TimedGrenade>( Owner.GameObject, origin, velocity, fuse, "Hand grenade",
+		TimedGrenade.Spawn<T>( Owner.GameObject, origin, velocity, fuse, name,
 			$"mount://{mount.Ident}/{path}.vmdl", effectsMount: mount );
 	}
 }

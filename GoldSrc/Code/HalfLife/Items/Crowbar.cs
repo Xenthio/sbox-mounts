@@ -35,7 +35,7 @@ public abstract class ClassicCrowbar : CrowbarWeapon
 			var damage = SwingDamage( _fullDamageAt <= 0 );
 			ShootBullet( hit, damage, 0, hitboxTags: false );
 			SetNextPrimaryFire( HitDelay );
-			_fullDamageAt = 1.25f;
+			_fullDamageAt = HitDelay + 1;
 		}
 		else if ( first )
 		{

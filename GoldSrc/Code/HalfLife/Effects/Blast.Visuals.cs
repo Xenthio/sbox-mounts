@@ -2,7 +2,7 @@ namespace GoldSrc.HalfLife;
 
 internal static partial class Blast
 {
-	internal static void Detonate( GameObject inflictor, GameObject owner, Vector3 contact, Vector3 normal, float damage, bool hit, GameMount mount = null )
+	internal static Vector3 Detonate( GameObject inflictor, GameObject owner, Vector3 contact, Vector3 normal, float damage, bool hit, GameMount mount = null )
 	{
 		var origin = hit ? contact + normal * ((damage - 24) * 0.6f) : contact;
 		DamageInRadius( inflictor, owner, origin, damage, damage * 2.5f, "blast" );
@@ -13,6 +13,7 @@ internal static partial class Blast
 			mount.NpcAudio.Emit( $"weapons/explode{Game.Random.Int( 3, 5 )}.wav", origin, attenuation: 0.3f );
 			mount.NpcAudio.Emit( "weapons/debris", origin, volume: 0.55f );
 		}
+		return origin;
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
