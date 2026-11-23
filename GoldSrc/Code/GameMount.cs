@@ -187,6 +187,14 @@ public partial class HalfLifeMount : GameMount
 	}
 }
 
+public class HalfLifeMModMount : GameMount
+{
+	public override string Ident => "hl1mmod";
+	public override string Title => "Half-Life: MMod";
+	public override long AppId => 1761270;
+	public override IReadOnlyList<string> GameDirs => ["HL1MMod", "valve"];
+}
+
 public class OpposingForceMount : GameMount
 {
 	public override string Ident => "opfor";
@@ -217,6 +225,14 @@ public class ConditionZeroMount : GameMount
 	public override string Title => "Counter-Strike: Condition Zero";
 	public override long AppId => 80;
 	public override IReadOnlyList<string> GameDirs => ["czero_hd", "czero"];
+}
+
+public class ConditionZeroDeletedScenesMount : GameMount
+{
+	public override string Ident => "czeror";
+	public override string Title => "Counter-Strike: Condition Zero Deleted Scenes";
+	public override long AppId => 100;
+	public override IReadOnlyList<string> GameDirs => ["czeror"];
 }
 
 public class RicochetMount : GameMount
