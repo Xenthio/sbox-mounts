@@ -3,9 +3,9 @@ namespace GoldSrc.HalfLife;
 internal static partial class BloodEffects
 {
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	internal static void Stream( Npc.BloodColor color, Vector3 point, Vector3 direction, float damage )
+	internal static void Stream( Npc.BloodColor color, Vector3 point, Vector3 direction, float damage, string mountIdent = "hl1" )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( Sandbox.Mounting.Directory.Get( mountIdent ) is not GameMount mount ) return;
 		int speed = System.Math.Clamp( (int)damage, 0, 255 );
 		var jet = CreateStreamParticles( point, 2, 0.4f );
 		for ( int i = 0; i < 100; i++ )
@@ -28,7 +28,7 @@ internal static partial class BloodEffects
 		}
 	}
 
-	static void EmitStreamParticle( ParticleEffect effect, HalfLifeMount mount, Npc.BloodColor color, Vector3 position, Vector3 velocity )
+	static void EmitStreamParticle( ParticleEffect effect, GameMount mount, Npc.BloodColor color, Vector3 position, Vector3 velocity )
 	{
 		if ( effect.Emit( position, 0 ) is not { } particle ) return;
 		particle.Color = mount.PaletteColor( System.Math.Min( 255, (int)color + Game.Random.Int( 0, 9 ) ) );
