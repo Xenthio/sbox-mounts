@@ -10,6 +10,7 @@ public abstract class BipodRifle : DayOfDefeatFirearm, PlayerController.IEvents
 
 	TimeUntil _bipodBusy;
 	float _deploymentYaw;
+	MachineGunNest _supportNest;
 
 	internal abstract string CarriedModel { get; }
 	internal abstract string DeployedModel { get; }
@@ -40,7 +41,7 @@ public abstract class BipodRifle : DayOfDefeatFirearm, PlayerController.IEvents
 
 	public override bool CanSecondaryAttack() =>
 		IsActive && NextSecondaryFire <= 0 && _bipodBusy <= 0 && !IsReloading &&
-		(BipodDeployed || (Owner is { } owner && HasSupport( owner )));
+		(BipodDeployed || (Owner is { } owner && HasStableFooting( owner ) && (owner.IsDucking || MachineGunNest.Find( owner ).IsValid())));
 
 	public override bool CanReload() => _bipodBusy <= 0 && base.CanReload();
 
@@ -54,25 +55,33 @@ public abstract class BipodRifle : DayOfDefeatFirearm, PlayerController.IEvents
 			SetBipod( false );
 			return;
 		}
-		if ( Owner is not { } owner || !HasSupport( owner ) ) return;
+		if ( Owner is not { } owner || !HasStableFooting( owner ) ) return;
+
+		// Sandbox's crouch provides the portable low stance. Standing deployment uses the map's nest.
+		var nest = owner.IsDucking ? null : MachineGunNest.Find( owner );
+		if ( !owner.IsDucking && !nest.IsValid() ) return;
+		_supportNest = nest;
 		_deploymentYaw = owner.EyeAngles.yaw;
 		SetBipod( true );
 	}
 
-	// Sandbox's standard player controller uses crouch as its supported low stance.
-	static bool HasSupport( PlayerController owner ) =>
-		owner.IsDucking && owner.IsOnGround && !owner.IsSwimming &&
+	static bool HasStableFooting( PlayerController owner ) =>
+		owner.IsOnGround && !owner.IsSwimming &&
 		owner.Velocity.WithZ( 0 ).LengthSquared <= 400 && owner.WishVelocity.WithZ( 0 ).LengthSquared <= 1;
 
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-		if ( !IsProxy && IsActive && BipodDeployed && Owner is { } owner && !HasSupport( owner ) )
+		if ( !IsProxy && IsActive && BipodDeployed && Owner is { } owner &&
+			(!HasStableFooting( owner ) || !StillSupported( owner )) )
 		{
 			CancelReload();
 			SetBipod( false );
 		}
 	}
+
+	bool StillSupported( PlayerController owner ) =>
+		_supportNest is null ? owner.IsDucking : _supportNest.IsValid() && _supportNest.Supports( owner );
 
 	void PlayerController.IEvents.OnEyeAngles( ref Angles input )
 	{
@@ -86,6 +95,7 @@ public abstract class BipodRifle : DayOfDefeatFirearm, PlayerController.IEvents
 	void SetBipod( bool deployed )
 	{
 		BipodDeployed = deployed;
+		if ( !deployed ) _supportNest = null;
 		_bipodBusy = BipodTime;
 		SetNextFire( BipodTime );
 		var view = ViewModel?.GetComponent<StudioWeaponView>();
@@ -102,6 +112,7 @@ public abstract class BipodRifle : DayOfDefeatFirearm, PlayerController.IEvents
 	{
 		base.OnHolstered();
 		BipodDeployed = false;
+		_supportNest = null;
 		_bipodBusy = 0;
 	}
 }

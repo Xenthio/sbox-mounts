@@ -16,6 +16,12 @@ partial class MapBuilder
 		var bspModel = bsp.Models[modelIndex];
 		var className = entity.ClassName;
 
+		if ( className == "dod_trigger_sandbag" )
+		{
+			SpawnMachineGunNest( entity, bspModel );
+			return;
+		}
+
 		if ( className == "func_monsterclip" )
 		{
 			var clip = new GameObject( false, EntityName( entity ) ) { IsStatic = true, WorldPosition = entity.Origin };
