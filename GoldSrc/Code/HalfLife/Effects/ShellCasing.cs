@@ -6,12 +6,12 @@ public sealed class ShellCasing : Component, Component.ICollisionListener
 	bool _shotgun;
 	GameMount _mount;
 
-	internal static void Eject( Vector3 origin, Rotation facing, bool shotgun, Vector3 velocity, GameMount mount = null )
+	internal static void Eject( Vector3 origin, Rotation facing, bool shotgun, Vector3 velocity, GameMount mount = null, string modelPath = null )
 	{
 		if ( Application.IsDedicatedServer ) return;
 
 		mount ??= Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
-		var relativePath = shotgun ? "models/shotgunshell.mdl" : "models/shell.mdl";
+		var relativePath = modelPath ?? (shotgun ? "models/shotgunshell.mdl" : "models/shell.mdl");
 		var path = mount is HalfLifeMount ? $"valve/{relativePath}" : mount?.FindMountPath( relativePath );
 		if ( path is null ) return;
 		var model = Model.Load( $"mount://{mount.Ident}/{path}.vmdl" );
