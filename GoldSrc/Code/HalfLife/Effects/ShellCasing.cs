@@ -6,7 +6,7 @@ public sealed class ShellCasing : Component, Component.ICollisionListener
 	bool _shotgun;
 	GameMount _mount;
 
-	internal static void Eject( Vector3 origin, Rotation facing, bool shotgun, Vector3 velocity, GameMount mount = null, string modelPath = null )
+	internal static void Eject( Vector3 origin, Rotation facing, bool shotgun, Vector3 velocity, GameMount mount = null, string modelPath = null, int bodyGroup = 0 )
 	{
 		if ( Application.IsDedicatedServer ) return;
 
@@ -23,7 +23,9 @@ public sealed class ShellCasing : Component, Component.ICollisionListener
 		shell.Tags.Add( "nocollide_props" );
 		shell.WorldPosition = origin;
 		shell.WorldRotation = Rotation.FromYaw( facing.Angles().yaw );
-		shell.AddComponent<ModelRenderer>().Model = model;
+		var renderer = shell.AddComponent<ModelRenderer>();
+		renderer.Model = model;
+		if ( bodyGroup != 0 ) renderer.SetBodyGroup( 0, bodyGroup );
 		var collider = shell.AddComponent<ModelCollider>();
 		collider.Model = model;
 		collider.ColliderFlags |= ColliderFlags.IgnoreTraces;
