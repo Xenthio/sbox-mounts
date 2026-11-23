@@ -36,6 +36,14 @@ public abstract class RushingMeleeNpc : CryOfFearMeleeNpc
 			EmitSound( voice, WorldPosition, speaker: this );
 
 		if ( victim?.GameObject.GetComponent<PlayerController>() is { } player )
-			PunchPlayer( player, WorldRotation.Right * (id == 2 ? 100 : -100), new Angles( 5, 0, id == 3 ? 0 : id == 2 ? 18 : -18 ) );
+		{
+			var push = id switch
+			{
+				1 => -WorldRotation.Right * 100,
+				2 => WorldRotation.Right * 100,
+				_ => -WorldRotation.Forward * 100
+			};
+			PunchPlayer( player, push, new Angles( 5, 0, id == 3 ? 0 : id == 2 ? 18 : -18 ) );
+		}
 	}
 }
