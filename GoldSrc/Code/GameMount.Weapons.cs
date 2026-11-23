@@ -15,7 +15,7 @@ public abstract partial class GameMount
 			var className = Path.GetFileNameWithoutExtension( pickup.PrefabPath );
 			var icon = new WeaponIconLoader( className );
 			context.Add( ResourceType.Texture, $"icons/{className}", icon );
-			var preview = pickup.PreviewModel is null ? model : models.GetValueOrDefault( $"models/{pickup.PreviewModel}.mdl", model );
+			var preview = pickup.PreviewModel is null ? model : models.GetValueOrDefault( pickup.ModelPath( pickup.PreviewModel ), model );
 			if ( pickup.PreviewPitch != 0 )
 			{
 				var upright = $"previews/{className}";

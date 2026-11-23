@@ -14,16 +14,18 @@ internal sealed class WeaponPickupAttribute( string model, string ammo, int limi
 	{
 		get
 		{
-			yield return $"models/v_{Model}.mdl";
-			if ( AlternateModel is not null ) yield return $"models/v_{AlternateModel}.mdl";
+			yield return ModelPath( $"v_{Model}" );
+			if ( AlternateModel is not null ) yield return ModelPath( $"v_{AlternateModel}" );
 		}
 	}
 	public string ClassName { get; set; }
 	public string PickupModel { get; set; }
+	public string ModelDirectory { get; set; } = "models";
 	public string PreviewModel { get; set; }
 	public int PreviewPitch { get; set; }
 	public string Mount { get; set; } = "hl1";
-	internal string WorldPickupPath => $"models/{PickupModel ?? $"w_{model}"}.mdl";
+	internal string ModelPath( string name ) => $"{ModelDirectory}/{name}.mdl";
+	internal string WorldPickupPath => ModelPath( PickupModel ?? $"w_{model}" );
 	internal string PrefabPath => $"entities/items/weapon_{ClassName ?? model}.prefab";
 }
 
@@ -266,7 +268,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 	protected override void CreateViewModel()
 	{
 		if ( ViewModel.IsValid() || IsProxy || Holder is not PlayerController ) return;
-		ViewModel = MakeModel( $"models/v_{HeldModelName}.mdl", GameObject, true );
+		ViewModel = MakeModel( Definition.ModelPath( $"v_{HeldModelName}" ), GameObject, true );
 	}
 
 	GameObject MakeModel( string relativePath, GameObject parent, bool firstPerson )
