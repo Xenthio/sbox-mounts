@@ -21,12 +21,19 @@ internal static class FortressSpeed
 		Apply( player, limits );
 	}
 
+	internal static void SetLegDamage( PlayerController player, float damage )
+	{
+		var limits = Active.GetValue( player, controller => new Limits( controller ) );
+		limits.LegDamage = damage;
+		Apply( player, limits );
+	}
+
 	static void Apply( PlayerController player, Limits limits )
 	{
 		player.WalkSpeed = limits.Walk.Apply( player.WalkSpeed, limits );
 		player.RunSpeed = limits.Run.Apply( player.RunSpeed, limits );
 		player.DuckedSpeed = limits.Ducked.Apply( player.DuckedSpeed, limits );
-		if ( !limits.Tranquilized && limits.AimLimit is null ) Active.Remove( player );
+		if ( !limits.Tranquilized && limits.AimLimit is null && limits.LegDamage == 0 ) Active.Remove( player );
 	}
 
 	sealed class Limits( PlayerController player )
@@ -36,6 +43,7 @@ internal static class FortressSpeed
 		internal Speed Ducked = new( player.DuckedSpeed );
 		internal bool Tranquilized;
 		internal float? AimLimit;
+		internal float LegDamage;
 	}
 
 	struct Speed( float initial )
@@ -47,6 +55,7 @@ internal static class FortressSpeed
 		{
 			if ( current != _applied ) _original = current;
 			var scaled = limits.Tranquilized ? _original * 0.5f : _original;
+			scaled *= 1 - limits.LegDamage * 0.1f;
 			_applied = MathF.Min( scaled, limits.AimLimit ?? float.PositiveInfinity );
 			return _applied;
 		}
