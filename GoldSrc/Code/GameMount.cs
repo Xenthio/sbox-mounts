@@ -156,6 +156,8 @@ public abstract partial class GameMount : BaseGameMount
 
 		MountSurfaces( context );
 		MountDecals( context );
+		if ( this is CounterStrikeMount or ConditionZeroMount )
+			CounterStrike.SniperScope.Mount( this, context );
 		if ( registry.HasEntries )
 			registry.Mount( context, gameplayModels, originalModels );
 		if ( this is HalfLifeMount or HalfLifeMModMount )

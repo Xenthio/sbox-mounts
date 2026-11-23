@@ -250,7 +250,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 		if ( GetComponent<ModelRenderer>( true ) is { } loose ) loose.Enabled = !IsHeld;
 	}
 
-	protected bool Zoomed { get; private set; }
+	protected bool Zoomed { get; set; }
 	internal virtual float ZoomFieldOfView => 0;
 
 	public override void SecondaryAttack()
