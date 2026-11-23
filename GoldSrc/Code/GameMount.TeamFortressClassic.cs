@@ -18,12 +18,13 @@ public partial class TeamFortressClassicMount
 		"items/medshot4.wav", "items/medshot5.wav", "ambience/steamburst1.wav",
 		"weapons/grenade_hit1.wav", "weapons/grenade_hit2.wav", "weapons/grenade_hit3.wav",
 		"weapons/explode3.wav", "weapons/explode4.wav", "weapons/explode5.wav",
+		"weapons/mine_activate.wav", "weapons/mine_charge.wav", "weapons/mortarhit.wav",
 		"weapons/debris1.wav", "weapons/debris2.wav", "weapons/debris3.wav",
 		"player/pl_shell1.wav", "player/pl_shell2.wav", "player/pl_shell3.wav"
 	];
 	static readonly string[] SharedSprites = ["sprites/smoke.spr", "sprites/muzzleflash1.spr", "sprites/muzzleflash2.spr",
 		"sprites/laserdot.spr", "sprites/crosshairs.spr", "sprites/WXplo1.spr", "sprites/bubble.spr", "sprites/shockwave.spr",
-		"sprites/320hud1.spr", "sprites/640hud1.spr"];
+		"sprites/320hud1.spr", "sprites/640hud1.spr", "sprites/flare3.spr"];
 
 	protected override string FindFallbackFile( string relativePath )
 	{

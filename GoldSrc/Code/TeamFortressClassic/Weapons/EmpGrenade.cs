@@ -33,6 +33,8 @@ public sealed class FortressEmpGrenade : FortressHandGrenade
 
 		foreach ( var pipe in Scene.GetAllComponents<FortressGrenade>() )
 			if ( InRange( pipe.WorldPosition ) ) pipe.TriggerEmp();
+		foreach ( var pack in Scene.GetAllComponents<FortressDetpack>() )
+			if ( InRange( pack.WorldPosition ) ) pack.TriggerEmp();
 
 		foreach ( var player in Scene.GetAllComponents<PlayerController>().ToArray() )
 		{
