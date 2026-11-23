@@ -35,7 +35,7 @@ public abstract class DayOfDefeatRifle : DayOfDefeatFirearm
 	{
 		if ( !Owner.IsValid() ) return;
 		SetNextFire( SecondaryDelay );
-		var trace = BulletTrace( Owner.EyeTransform.ForwardRay, 64, 0 );
+		var trace = TraceLineOfFire( Owner.EyeTransform.ForwardRay, 64, 0 );
 		var hit = trace.Run();
 		if ( !hit.Hit ) hit = trace.Size( MeleeHull ).Run();
 

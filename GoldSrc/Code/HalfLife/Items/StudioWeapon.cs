@@ -130,7 +130,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 	protected override SceneTrace BulletTrace( Ray ray, float distance, float radius ) =>
 		TraceLineOfFire( ray, distance, radius );
 
-	SceneTrace TraceLineOfFire( Ray ray, float distance, float radius ) =>
+	protected SceneTrace TraceLineOfFire( Ray ray, float distance, float radius ) =>
 		base.BulletTrace( ray, distance, radius ).WithCollisionRules( "bullet" ).WithoutTags( "playercontroller" );
 
 	protected Ray OffsetLaunchRay( Vector3 offset )
