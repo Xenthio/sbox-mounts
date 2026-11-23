@@ -27,9 +27,14 @@ internal static partial class BloodEffects
 			go.Enabled = true;
 		}
 
+		EmitDroplets( mount, point, size, shade - 1 );
+	}
+
+	internal static void EmitDroplets( GameMount mount, Vector3 point, int size, int shade )
+	{
 		if ( mount.GetIndexedSpriteFrames( "blood" ) is not { Length: > 0 } frames ) return;
 		var groups = new ParticleEffect[frames.Length];
-		var tint = mount.PaletteColor( shade - 1 );
+		var tint = mount.PaletteColor( shade );
 		var count = size + Game.Random.Int( 1, 8 ) + Game.Random.Int( 1, 8 );
 		for ( int i = 0; i < count; i++ )
 		{

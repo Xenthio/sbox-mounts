@@ -1,6 +1,6 @@
 namespace GoldSrc;
 
-public partial class HalfLifeMount
+public abstract partial class GameMount
 {
 	byte[] _palette;
 
