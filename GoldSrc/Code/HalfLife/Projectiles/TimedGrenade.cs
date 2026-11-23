@@ -101,26 +101,35 @@ public class TimedGrenade : Component, Component.ICollisionListener
 			mount.NpcAudio.Emit( "weapons/grenade_hit", WorldPosition, volume: 0.25f );
 	}
 
+	internal virtual bool ReadyToDetonate( Rigidbody body ) => true;
+	internal virtual void OnTumble( Rigidbody body ) { }
+
 	protected override void OnFixedUpdate()
 	{
 		if ( !Networking.IsHost ) return;
-		if ( _fuse > 0 )
+		var body = GetComponent<Rigidbody>();
+		if ( _fuse <= 0 && ReadyToDetonate( body ) )
 		{
-			if ( _nextTumble > 0 ) return;
-			_nextTumble = 0.1f;
-			var body = GetComponent<Rigidbody>();
-			if ( _fuse < 1 )
-			{
-				var landing = WorldPosition + body.Velocity * (float)_fuse;
-				Scene.GetSystem<Sandbox.Npcs.NpcSystem>().EmitStimulus( DangerStimulus, landing, GameObject, 400, 0.1f );
-			}
-			if ( WaterBody.Find( Scene, WorldPosition ).IsValid() )
-			{
-				body.Velocity *= 0.5f;
-				body.AngularVelocity *= 0.5f;
-			}
+			OnFuseExpired();
 			return;
 		}
+		if ( _nextTumble > 0 ) return;
+		_nextTumble = 0.1f;
+		if ( _fuse > 0 && _fuse < 1 )
+		{
+			var landing = WorldPosition + body.Velocity * (float)_fuse;
+			Scene.GetSystem<Sandbox.Npcs.NpcSystem>().EmitStimulus( DangerStimulus, landing, GameObject, 400, 0.1f );
+		}
+		if ( WaterBody.Find( Scene, WorldPosition ).IsValid() )
+		{
+			body.Velocity *= 0.5f;
+			body.AngularVelocity *= 0.5f;
+		}
+		OnTumble( body );
+	}
+
+	internal virtual void OnFuseExpired()
+	{
 		Detonate();
 		GameObject.Destroy();
 	}
