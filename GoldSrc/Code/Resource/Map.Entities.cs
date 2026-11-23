@@ -120,6 +120,7 @@ partial class MapBuilder
 	private void SpawnPointEntity( BspFile bsp, Entity entity )
 	{
 		if ( SpawnEffectEntity( entity ) ) return;
+		if ( Host is DayOfDefeatMount && SpawnDoDObjective( entity ) ) return;
 		var className = entity.ClassName;
 		if ( TrySpawnPickup( entity ) || TrySpawnNpc( bsp, entity ) ) return;
 		var isMonster = MonsterModel( entity ) is not null;
