@@ -6,7 +6,7 @@ namespace GoldSrc.TeamFortressClassic;
 
 [Title( "Spanner" ), Category( "Team Fortress Classic" )]
 [WeaponPickup( "tfc_spanner", "uranium", 200, EntityName = "tf_weapon_spanner", PickupModel = "p_spanner", Bucket = 0, Weight = 4, Mount = "tfc" )]
-public sealed class Spanner : FortressMelee
+public sealed partial class Spanner : FortressMelee
 {
 	TimeUntil _nextRepair;
 
@@ -14,7 +14,8 @@ public sealed class Spanner : FortressMelee
 	internal override (string Name, float? Delay) IdleAnimation => ("idle", 12.5f);
 	internal override string SwingSequence( SceneTraceResult hit, Vector3 forward ) => hit.Hit ? "attack1" : "use";
 
-	public override bool CanSecondaryAttack() => IsActive && Owner.IsValid() && NextSecondaryFire <= 0;
+	public override bool CanPrimaryAttack() => !IsBuilding && base.CanPrimaryAttack();
+	public override bool CanSecondaryAttack() => !IsBuilding && IsActive && Owner.IsValid() && NextSecondaryFire <= 0;
 
 	public override void PrimaryAttack()
 	{
@@ -36,10 +37,17 @@ public sealed class Spanner : FortressMelee
 	[Rpc.Host( NetFlags.OwnerOnly )]
 	void Repair()
 	{
-		if ( !IsActive || !Owner.IsValid() || !Inventory.IsValid() || _nextRepair > 0 ) return;
+		if ( !IsActive || IsBuilding || !Owner.IsValid() || !Inventory.IsValid() || _nextRepair > 0 ) return;
 		_nextRepair = PrimaryDelay;
 
-		var target = TraceSwing( AimRay ).GameObject?.GetComponentInParent<PlayerController>();
+		var targetObject = TraceSwing( AimRay ).GameObject;
+		if ( targetObject?.GetComponentInParent<FortressDispenser>() is { } dispenser )
+		{
+			dispenser.Service( Inventory, PrimaryAmmoType );
+			return;
+		}
+
+		var target = targetObject?.GetComponentInParent<PlayerController>();
 		if ( !target.IsValid() || !target.Enabled || MapState.PlayerVitals( target ) is not { Health: > 0, MaxArmour: > 0 } vitals ) return;
 
 		var cells = Math.Min( 10, Inventory.GetAmmo( PrimaryAmmoType ) );

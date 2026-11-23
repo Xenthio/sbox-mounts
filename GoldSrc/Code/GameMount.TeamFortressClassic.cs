@@ -14,7 +14,7 @@ public partial class TeamFortressClassicMount
 		"ambience/fire1.wav", "ambience/flameburst1.wav",
 		"weapons/cbar_hit1.wav", "weapons/cbar_hit2.wav", "weapons/cbar_hitbod1.wav",
 		"weapons/cbar_hitbod2.wav", "weapons/cbar_hitbod3.wav", "weapons/cbar_miss1.wav",
-		"items/cliprelease1.wav", "items/clipinsert1.wav",
+		"items/cliprelease1.wav", "items/clipinsert1.wav", "items/ammopickup2.wav",
 		"items/medshot4.wav", "items/medshot5.wav", "ambience/steamburst1.wav",
 		"weapons/grenade_hit1.wav", "weapons/grenade_hit2.wav", "weapons/grenade_hit3.wav",
 		"weapons/explode3.wav", "weapons/explode4.wav", "weapons/explode5.wav",
