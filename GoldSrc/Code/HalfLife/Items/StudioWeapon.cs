@@ -213,7 +213,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 			pickup.BindPresentation( this, GetComponent<SkinnedModelRenderer>( true ) );
 	}
 
-	protected void EjectShells( int count, bool shotgun )
+	protected void EjectShells( int count, bool shotgun, string modelPath = null )
 	{
 		if ( Application.IsDedicatedServer || !Owner.IsValid() ) return;
 		var pose = Owner.EyeTransform;
@@ -222,7 +222,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 		{
 			var velocity = Owner.Velocity + pose.Rotation.Right * Game.Random.Float( 50, 70 )
 				+ pose.Rotation.Up * Game.Random.Float( 100, 150 ) + pose.Rotation.Forward * 25;
-			ShellCasing.Eject( origin, pose.Rotation, shotgun, velocity, ContentMount );
+			ShellCasing.Eject( origin, pose.Rotation, shotgun, velocity, ContentMount, modelPath );
 		}
 	}
 

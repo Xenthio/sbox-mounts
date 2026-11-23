@@ -220,7 +220,8 @@ public class ConditionZeroMount : GameMount
 	public override string Ident => "czero";
 	public override string Title => "Counter-Strike: Condition Zero";
 	public override long AppId => 80;
-	public override IReadOnlyList<string> GameDirs => ["czero_hd", "czero"];
+	// Condition Zero names cstrike as its fallback directory in liblist.gam.
+	public override IReadOnlyList<string> GameDirs => ["czero_hd", "czero", "cstrike"];
 }
 
 public class ConditionZeroDeletedScenesMount : GameMount

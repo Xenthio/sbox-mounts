@@ -92,7 +92,10 @@ public abstract class CounterStrikeRifle : CounterStrikeFirearm
 	protected override void OnShootEffects( ShotEffect shot )
 	{
 		base.OnShootEffects( shot );
-		if ( !shot.NoEvents && !IsProxy && Owner is { ThirdPerson: false } )
+		if ( shot.NoEvents ) return;
+
+		EjectShells( 1, false, "models/rshell.mdl" );
+		if ( !IsProxy && Owner is { ThirdPerson: false } )
 			MeleeViewPunch.Apply( Scene.Camera, new Angles( -Recoil, 0, 0 ) );
 	}
 
