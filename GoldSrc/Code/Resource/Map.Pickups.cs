@@ -11,7 +11,7 @@ partial class MapBuilder
 		var halfLifeItems = Host is HalfLifeMount or HalfLifeMModMount;
 		var weapon = name.StartsWith( "weapon_", System.StringComparison.Ordinal ) ||
 			name.StartsWith( "tf_weapon_", System.StringComparison.Ordinal );
-		var cryOfFearAmmo = Host is CryOfFearMount && name is ("ammo_shells" or "ammo_p345");
+		var cryOfFearAmmo = Host is CryOfFearMount && name is ("ammo_shells" or "ammo_p345" or "ammo_vp70");
 		if ( !weapon && !halfLifeItems && !cryOfFearAmmo ) return false;
 		GameObject go;
 		var transform = new Transform( entity.Origin, entity.Rotation );
@@ -66,6 +66,7 @@ partial class MapBuilder
 				"ammo_buckshot" => ("w_shotbox", "buckshot", 12),
 				"ammo_shells" when cryOfFearAmmo => ("ammo/ammo_shotshells", "buckshot", 9),
 				"ammo_p345" when cryOfFearAmmo => ("ammo/p345_clip", "p345", 8),
+				"ammo_vp70" when cryOfFearAmmo => ("ammo/vp70_clip", "vp70", 18),
 				"ammo_357" => ("w_357ammobox", "357", 6),
 				"ammo_gaussclip" => ("w_gaussammo", "uranium", 20),
 				"ammo_crossbow" => ("w_crossbow_clip", "bolts", 5),
