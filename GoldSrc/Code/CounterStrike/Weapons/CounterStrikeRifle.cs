@@ -40,22 +40,29 @@ public abstract class CounterStrikeRifle : CounterStrikeFirearm
 
 	public override bool CanSecondaryAttack() => SupportsSecondary && NextSecondaryFire <= 0 && !IsReloading;
 
-	public override void PrimaryAttack()
-	{
-		if ( IsHeld && !TakePrimaryAmmo() ) return;
+	public override void PrimaryAttack() => FireRifleRound( out _ );
 
-		var spread = Owner switch
+	protected bool FireRifleRound( out float spread, float spreadOffset = 0 )
+	{
+		spread = 0;
+		if ( IsHeld && !TakePrimaryAmmo() ) return false;
+
+		spread = Owner switch
 		{
 			{ IsOnGround: false } => MovingPenalty + AirborneSpread * _accuracy,
 			{ } player when player.Velocity.WithZ( 0 ).LengthSquared > 140 * 140 => MovingPenalty + MovingSpread * _accuracy,
 			_ => StandingSpread * _accuracy
 		};
 
+		spread += spreadOffset;
 		++_shotsFired;
 		_accuracy = MathF.Min( MaxAccuracy, _shotsFired * _shotsFired * _shotsFired / AccuracyDivisor + AccuracyOffset );
 		_nextRecovery = null;
 		SetNextFire( FireDelay );
 		FireRound( spread );
+		if ( !IsProxy && Owner is { ThirdPerson: false } )
+			MeleeViewPunch.Apply( Scene.Camera, new Angles( -Recoil, 0, 0 ) );
+		return true;
 	}
 
 	protected override void Think()
@@ -95,8 +102,6 @@ public abstract class CounterStrikeRifle : CounterStrikeFirearm
 		if ( shot.NoEvents ) return;
 
 		EjectShells( 1, false, "models/rshell.mdl" );
-		if ( !IsProxy && Owner is { ThirdPerson: false } )
-			MeleeViewPunch.Apply( Scene.Camera, new Angles( -Recoil, 0, 0 ) );
 	}
 
 	public override void DryFire()
