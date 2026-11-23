@@ -1,11 +1,14 @@
 namespace GoldSrc.HalfLife;
 
 [Hide]
-public sealed class TimedGrenade : Component, Component.ICollisionListener
+public class TimedGrenade : Component, Component.ICollisionListener
 {
 	[Property] public GameObject Thrower { get; set; }
 	TimeUntil _fuse, _nextBounce, _nextImpact, _nextTumble;
 	bool _settledWarning;
+	internal virtual float GravityScale => 0.5f;
+	internal virtual float Friction => 0.8f;
+	internal virtual bool DealsImpactDamage => true;
 	internal const string DangerStimulus = "grenade";
 
 	internal static bool TryAim( Npc owner, Vector3 origin, GameObject target, Vector3 end, out Vector3 velocity, float flightTime = 1, bool requireFloor = true )
@@ -31,22 +34,27 @@ public sealed class TimedGrenade : Component, Component.ICollisionListener
 
 	internal static void Throw( Npc owner, Vector3 origin, Vector3 velocity, float fuse ) => Throw( owner.GameObject, origin, velocity, fuse );
 
-	internal static void Throw( GameObject owner, Vector3 origin, Vector3 velocity, float fuse )
+	internal static void Throw( GameObject owner, Vector3 origin, Vector3 velocity, float fuse ) =>
+		Spawn<TimedGrenade>( owner, origin, velocity, fuse, "Hand grenade", "mount://hl1/valve/models/w_grenade.mdl.vmdl" );
+
+	internal static void Spawn<T>( GameObject owner, Vector3 origin, Vector3 velocity, float fuse, string name, string modelPath, System.Action<T> configure = null )
+		where T : TimedGrenade, new()
 	{
-		var go = new GameObject( false, "Hand grenade" );
+		var go = new GameObject( false, name );
 		go.WorldPosition = origin;
 		if ( !velocity.IsNearlyZero() ) go.WorldRotation = Rotation.LookAt( velocity );
-		var model = Model.Load( "mount://hl1/valve/models/w_grenade.mdl.vmdl" );
+		var model = Model.Load( modelPath );
 		go.AddComponent<ModelRenderer>().Model = model;
+		var grenade = go.AddComponent<T>();
+		configure?.Invoke( grenade );
 		var collider = go.AddComponent<ModelCollider>();
 		collider.Model = model;
 		collider.Elasticity = 0.45f;
-		collider.Friction = 0.8f;
+		collider.Friction = grenade.Friction;
 		var body = go.AddComponent<Rigidbody>();
 		body.EnhancedCcd = true;
-		body.GravityScale = 0.5f;
+		body.GravityScale = grenade.GravityScale;
 		body.EnableImpactDamage = false;
-		var grenade = go.AddComponent<TimedGrenade>();
 		grenade.Thrower = owner;
 		grenade._fuse = fuse;
 		grenade._nextTumble = 0.1f;
@@ -65,7 +73,7 @@ public sealed class TimedGrenade : Component, Component.ICollisionListener
 		var body = GetComponent<Rigidbody>();
 		if ( !body.IsValid() ) return;
 		var velocity = body.Velocity;
-		if ( _nextImpact <= 0 && collision.Contact.Speed.Length > 100 )
+		if ( DealsImpactDamage && _nextImpact <= 0 && collision.Contact.Speed.Length > 100 )
 		{
 			_nextImpact = 1;
 			if ( other.IsValid() && Thrower.IsValid() && other.GetComponentInParent<IDamageable>() is { } victim )
@@ -84,6 +92,11 @@ public sealed class TimedGrenade : Component, Component.ICollisionListener
 		if ( rolling ) body.Velocity *= 0.8f;
 		if ( rolling || _nextBounce > 0 || System.MathF.Abs( collision.Contact.NormalSpeed ) < 10 ) return;
 		_nextBounce = 0.12f;
+		OnBounce( body );
+	}
+
+	internal virtual void OnBounce( Rigidbody body )
+	{
 		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
 			mount.NpcAudio.Emit( "weapons/grenade_hit", WorldPosition, volume: 0.25f );
 	}
@@ -108,9 +121,14 @@ public sealed class TimedGrenade : Component, Component.ICollisionListener
 			}
 			return;
 		}
+		Detonate();
+		GameObject.Destroy();
+	}
+
+	internal virtual void Detonate()
+	{
 		var floor = Scene.Trace.Ray( WorldPosition + Vector3.Up * 8, WorldPosition + Vector3.Down * 40 )
 			.IgnoreGameObjectHierarchy( GameObject ).Run();
 		Blast.Detonate( GameObject, Thrower, floor.Hit ? floor.EndPosition : WorldPosition, floor.Normal, 100, floor.Hit );
-		GameObject.Destroy();
 	}
 }

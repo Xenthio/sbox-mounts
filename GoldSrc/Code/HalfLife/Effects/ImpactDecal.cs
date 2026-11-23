@@ -6,9 +6,11 @@ internal static class ImpactDecal
 	[Rpc.Broadcast( NetFlags.HostOnly )]
 	internal static void Gunshot( Vector3 position, Vector3 normal, int variant ) => Place( position, normal, $"shot{variant}", 10 );
 
-	internal static void Place( Vector3 position, Vector3 normal, string name, float size )
+	internal static void Place( Vector3 position, Vector3 normal, string name, float size, GameMount mount = null )
 	{
-		var texture = Texture.Load( $"mount://hl1/valve/textures/decals/{{{name}.vtex" );
+		var texture = mount is null
+			? Texture.Load( $"mount://hl1/valve/textures/decals/{{{name}.vtex" )
+			: mount.GetDecal( $"{{{name}" )?.ColorTexture;
 		if ( !texture.IsValid() || texture.IsError ) return;
 		var go = new GameObject( false, $"{name} decal" );
 		go.NetworkMode = NetworkMode.Never;

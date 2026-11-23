@@ -15,10 +15,10 @@ internal static class StudioSparks
 		Emit( sparks, position, count );
 	}
 
-	internal static ParticleEffect CreateEmitter( GameObject go )
+	internal static ParticleEffect CreateEmitter( GameObject go, GameMount mount = null )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ||
-			mount.GetIndexedSprite( "glow01" ) is not { } sprite ) return null;
+		mount ??= Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
+		if ( mount?.GetIndexedSprite( "glow01" ) is not { } sprite ) return null;
 		var sparks = go.AddComponent<ParticleEffect>();
 		sparks.Lifetime = 0.3f;
 		sparks.InitialScale = 1;

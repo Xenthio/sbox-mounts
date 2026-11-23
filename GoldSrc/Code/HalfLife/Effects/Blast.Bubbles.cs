@@ -2,10 +2,10 @@ namespace GoldSrc.HalfLife;
 
 internal static partial class Blast
 {
-	internal static void Bubbles( Vector3 origin, float radius, int count, string name )
+	internal static void Bubbles( Vector3 origin, float radius, int count, string name, GameMount mount = null )
 	{
 		var water = WaterBody.Find( Game.ActiveScene, origin );
-		if ( !water.IsValid() || CreateBubbles( origin, name ) is not { } effect ) return;
+		if ( !water.IsValid() || CreateBubbles( origin, name, mount ) is not { } effect ) return;
 		for ( int i = 0; i < count; ++i )
 		{
 			var offset = new Vector3( Game.Random.Float( -radius, radius ), Game.Random.Float( -radius, radius ), Game.Random.Float( -radius, radius ) );
@@ -42,9 +42,10 @@ internal static partial class Blast
 		bubble.DeathTime = bubble.BornTime + lifetime;
 	}
 
-	static ParticleEffect CreateBubbles( Vector3 origin, string name )
+	static ParticleEffect CreateBubbles( Vector3 origin, string name, GameMount mount = null )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount || mount.GetIndexedSprite( "bubble" ) is not { } sprite ) return null;
+		mount ??= Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
+		if ( mount?.GetIndexedSprite( "bubble" ) is not { } sprite ) return null;
 		var go = new GameObject( false, name );
 		go.NetworkMode = NetworkMode.Never;
 		go.WorldPosition = origin;

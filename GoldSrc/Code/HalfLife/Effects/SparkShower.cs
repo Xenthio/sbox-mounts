@@ -7,11 +7,11 @@ public sealed class SparkShower : Component
 	Vector3 _velocity;
 	TimeUntil _nextBurst, _expires;
 
-	internal static void Spawn( Vector3 origin, Vector3 normal )
+	internal static void Spawn( Vector3 origin, Vector3 normal, GameMount mount = null )
 	{
 		var go = new GameObject( false, "Explosion spark shower" ) { NetworkMode = NetworkMode.Never, WorldPosition = origin };
 		var shower = go.AddComponent<SparkShower>();
-		shower._sparks = StudioSparks.CreateEmitter( go );
+		shower._sparks = StudioSparks.CreateEmitter( go, mount );
 		if ( shower._sparks is null ) { go.Destroy(); return; }
 		var velocity = normal * Game.Random.Float( 200, 300 );
 		velocity.x += Game.Random.Float( -100, 100 );
