@@ -13,17 +13,21 @@ partial class MapBuilder
 	/// Textures with no embedded pixels are pulled out of the WAD3 files the map names in its
 	/// worldspawn "wad" key, falling back to any WAD the mount found.
 	/// </summary>
-	private void ResolveExternalTextures( BspFile bsp, bool[] used )
+	private BspTexture[] ResolveExternalTextures( BspFile bsp, bool[] used )
 	{
-		var missing = bsp.Textures.Where( (texture, index) => used[index] && !texture.HasPixels ).ToList();
+		var missing = Enumerable.Range( 0, used.Length )
+			.Where( index => used[index] && !bsp.Textures[index].HasPixels ).ToList();
 		if ( missing.Count == 0 )
-			return;
+			return bsp.Textures;
 
+		// The BSP dimensions still define the face UVs. Use the WAD's dimensions to decode and upload its pixels.
+		var sources = bsp.Textures.ToArray();
 		foreach ( var wad in OrderedWads( bsp ) )
 		{
 			for ( var i = missing.Count - 1; i >= 0; --i )
 			{
-				var data = wad.GetLumpDataOrDefault( missing[i].Name );
+				var index = missing[i];
+				var data = wad.GetLumpDataOrDefault( sources[index].Name );
 				if ( data is null )
 					continue;
 
@@ -31,17 +35,17 @@ partial class MapBuilder
 				if ( decoded is null || !decoded.HasPixels )
 					continue;
 
-				missing[i].Indices = decoded.Indices;
-				missing[i].Palette = decoded.Palette;
+				sources[index] = decoded;
 				missing.RemoveAt( i );
 			}
 
 			if ( missing.Count == 0 )
-				return;
+				break;
 		}
 
-		foreach ( var texture in missing )
-			Log.Warning( $"{FilePath}: texture '{texture.Name}' was not found in the map's WADs; using black." );
+		foreach ( var index in missing )
+			Log.Warning( $"{FilePath}: texture '{sources[index].Name}' was not found in the map's WADs; using black." );
+		return sources;
 	}
 
 	/// <summary>
@@ -88,21 +92,21 @@ partial class MapBuilder
 			if ( !texture.IsTool && !texture.IsSky )
 				used[index] = true;
 		}
-		ResolveExternalTextures( bsp, used );
+		var sources = ResolveExternalTextures( bsp, used );
 		_textures = new Texture[count];
 		var decoded = new byte[count][];
 
 		Sandbox.Utility.Parallel.For( 0, count, i =>
 		{
-			var texture = bsp.Textures[i];
+			var texture = sources[i];
 			if ( !used[i] || !texture.HasPixels ) return;
-			decoded[i] = MipTex.ToRgba( texture, texture.IsMasked );
+			decoded[i] = MipTex.ToRgba( texture, bsp.Textures[i].IsMasked );
 		} );
 
 		for ( var i = 0; i < count; ++i )
 		{
 			if ( !used[i] ) continue;
-			var texture = bsp.Textures[i];
+			var texture = sources[i];
 			if ( !texture.HasPixels )
 			{
 				_textures[i] = _blackTexture;
