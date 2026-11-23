@@ -9,6 +9,15 @@ public sealed class AcidSpit : NpcProjectile
 	internal override float LaunchSpeed => 900;
 	internal override string HitTag => "generic";
 
+	internal static void Launch( Npc shooter, GameObject target, bool muzzleDroplets = false )
+	{
+		var mouth = shooter.AttackOrigin;
+		var direction = (Npc.TargetEyePosition( target ) - mouth).Normal;
+		direction += new Vector3( Game.Random.Float( -0.05f, 0.05f ), Game.Random.Float( -0.05f, 0.05f ), Game.Random.Float( -0.05f, 0 ) );
+		if ( muzzleDroplets ) MuzzleDroplets( mouth );
+		Fire<AcidSpit>( shooter.GameObject, null, shooter.Definition.Damage, target, mouth, direction, null );
+	}
+
 	protected override void OnStart()
 	{
 		if ( Sandbox.Mounting.Directory.Get( "cof" ) is not GameMount mount || mount.GetIndexedSprite( "flier_spit" ) is not { } sprite )

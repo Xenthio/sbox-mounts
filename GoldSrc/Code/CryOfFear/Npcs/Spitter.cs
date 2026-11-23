@@ -70,13 +70,9 @@ public sealed class Spitter : VoicedNpc
 	{
 		HeadYaw = (WorldRotation.Inverse * (target.WorldPosition - WorldPosition)).EulerAngles.Normal.yaw;
 		if ( _nextSpit > 0 || Find( "spit" ) is not { } sequence ) return;
-		var mouth = Renderer.GetAttachment( "attachment1" )?.Position ?? EyePosition;
-		var direction = (TargetEyePosition( target ) - mouth).Normal;
-		direction += new Vector3( Game.Random.Float( -0.05f, 0.05f ), Game.Random.Float( -0.05f, 0.05f ), Game.Random.Float( -0.05f, 0 ) );
 		_nextSpit = Game.Random.Float( 1, 3 );
 		PlayAction( sequence );
-		AcidSpit.MuzzleDroplets( mouth );
-		NpcProjectile.Fire<AcidSpit>( GameObject, null, Definition.Damage, target, mouth, direction, null );
+		AcidSpit.Launch( this, target, muzzleDroplets: true );
 	}
 
 	internal override void ModifyDamage( Component.IDamageable.DamageEvent damage )
