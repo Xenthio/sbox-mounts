@@ -4,14 +4,15 @@ namespace GoldSrc;
 
 public abstract partial class GameMount
 {
-	private static void MountWeapons( MountContext context, Dictionary<string, string> models, (TypeDescription Type, WeaponPickupAttribute Pickup)[] weapons )
+	private void MountWeapons( MountContext context, Dictionary<string, string> models, (TypeDescription Type, WeaponPickupAttribute Pickup)[] weapons )
 	{
 		foreach ( var ammo in weapons.Select( weapon => weapon.Pickup ).Where( pickup => pickup.Ammo is not null ).GroupBy( pickup => pickup.Ammo ) )
 			context.Add( ResourceType.GameResource, $"ammo/{ammo.Key}.ammo", new AmmoLoader( ammo.Key, ammo.Max( pickup => pickup.Limit ) ) );
 
 		foreach ( var (type, pickup) in weapons )
 		{
-			if ( !models.TryGetValue( pickup.WorldPickupPath, out var model ) ) continue;
+			var model = models.GetValueOrDefault( pickup.WorldPickupPath ) ?? FindFallbackFile( pickup.WorldPickupPath );
+			if ( model is null ) continue;
 			var className = Path.GetFileNameWithoutExtension( pickup.PrefabPath );
 			var icon = new WeaponIconLoader( className );
 			context.Add( ResourceType.Texture, $"icons/{className}", icon );

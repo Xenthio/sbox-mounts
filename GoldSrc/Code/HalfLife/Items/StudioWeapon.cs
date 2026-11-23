@@ -286,9 +286,10 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 	GameObject MakeModel( string relativePath, GameObject parent, bool firstPerson )
 	{
 		if ( ContentMount is not { } mount ) return null;
-		foreach ( var dir in mount.GameDirs )
+		var candidates = mount.GameDirs.Select( dir => $"{dir}/{relativePath}" ).Append( mount.FindMountPath( relativePath ) );
+		foreach ( var candidate in candidates.OfType<string>().Distinct( System.StringComparer.OrdinalIgnoreCase ) )
 		{
-			var path = $"mount://{Definition.Mount}/{dir}/{relativePath}.vmdl";
+			var path = $"mount://{Definition.Mount}/{candidate}.vmdl";
 			if ( mount.GetByPath( path ) is not ModelLoader loader ) continue;
 			var model = Model.Load( path );
 			if ( !model.IsValid() || model.IsError ) continue;
@@ -308,7 +309,7 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 				view.TracerEffect = null;
 				view.Initialize( this, loader, mount.NpcAudio );
 			}
-			else AlignHeldModel( renderer, dir.EndsWith( "_hd" ) );
+			else AlignHeldModel( renderer, candidate.Split( '/' )[0].EndsWith( "_hd" ) );
 			go.Enabled = true;
 			return go;
 		}

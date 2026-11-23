@@ -4,19 +4,21 @@ namespace GoldSrc;
 
 public partial class TeamFortressClassicMount
 {
-	static readonly string[] SharedModels = ["models/rpgrocket.mdl", "models/shotgunshell.mdl"];
+	static readonly string[] SharedModels = ["models/rpgrocket.mdl", "models/shotgunshell.mdl", "models/v_rpg.mdl", "models/w_rpg.mdl"];
 	static readonly string[] SharedSounds =
 	[
 		"weapons/357_cock1.wav", "weapons/reload1.wav", "weapons/reload3.wav", "weapons/scock1.wav",
 		"weapons/rocket1.wav", "weapons/rocketfire1.wav", "weapons/sbarrel1.wav",
 		"weapons/glauncher.wav", "ambience/rifle1.wav",
+		"ambience/fire1.wav", "ambience/flameburst1.wav",
 		"weapons/cbar_hit1.wav", "weapons/cbar_hit2.wav", "weapons/cbar_hitbod1.wav",
 		"weapons/cbar_hitbod2.wav", "weapons/cbar_hitbod3.wav", "weapons/cbar_miss1.wav",
 		"items/cliprelease1.wav", "items/clipinsert1.wav",
 		"weapons/grenade_hit1.wav", "weapons/grenade_hit2.wav", "weapons/grenade_hit3.wav",
 		"weapons/explode3.wav", "weapons/explode4.wav", "weapons/explode5.wav"
 	];
-	static readonly string[] SharedSprites = ["sprites/smoke.spr", "sprites/muzzleflash1.spr", "sprites/muzzleflash2.spr", "sprites/laserdot.spr", "sprites/crosshairs.spr"];
+	static readonly string[] SharedSprites = ["sprites/smoke.spr", "sprites/muzzleflash1.spr", "sprites/muzzleflash2.spr",
+		"sprites/laserdot.spr", "sprites/crosshairs.spr", "sprites/WXplo1.spr"];
 
 	protected override string FindFallbackFile( string relativePath )
 	{
@@ -35,7 +37,7 @@ public partial class TeamFortressClassicMount
 		foreach ( var relative in SharedModels )
 		{
 			if ( FindFile( relative ) is { } path && path.StartsWith( "valve/", StringComparison.Ordinal ) )
-				context.Add( ResourceType.Model, path, new ModelLoader( path ) );
+				context.Add( ResourceType.Model, path, new ModelLoader( path, relative == "models/v_rpg.mdl" ) );
 		}
 		foreach ( var sample in SharedSounds )
 		{
