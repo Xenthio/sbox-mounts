@@ -6,13 +6,14 @@ public abstract class RocketProjectile : NpcProjectile
 	internal abstract float IgnitionDelay { get; }
 	internal abstract float SmokeLifetime { get; }
 	internal virtual float BurnTime => float.PositiveInfinity;
+	internal virtual GameMount EffectMount => Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
 	bool _ignited;
 	SoundHandle _motor;
 	PointLight _lamp;
 
 	protected override void OnUpdate()
 	{
-		if ( !_ignited && Age >= IgnitionDelay && Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
+		if ( !_ignited && Age >= IgnitionDelay && EffectMount is { } mount )
 		{
 			_ignited = true;
 			ProjectileTrail.Attach( GameObject, mount, "Rocket exhaust", "smoke", SmokeLifetime, 5, new Color32( 224, 224, 255, 255 ) );

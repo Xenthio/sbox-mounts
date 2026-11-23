@@ -42,8 +42,10 @@ public abstract partial class GameMount : BaseGameMount
 				return fullPath;
 		}
 
-		return null;
+		return FindFallbackFile( relativePath );
 	}
+
+	protected virtual string FindFallbackFile( string relativePath ) => null;
 
 	/// <summary>
 	/// Resolve the game-relative path for building "mount://" resource paths.
@@ -240,7 +242,7 @@ public class RicochetMount : GameMount
 	public override IReadOnlyList<string> GameDirs => ["ricochet_hd", "ricochet"];
 }
 
-public class TeamFortressClassicMount : GameMount
+public partial class TeamFortressClassicMount : GameMount
 {
 	public override string Ident => "tfc";
 	public override string Title => "Team Fortress Classic";

@@ -29,7 +29,7 @@ public abstract partial class GameMount
 		if ( _indexedSprites.TryGetValue( name, out var sprite ) )
 			return sprite;
 
-		var path = GameDirs.Select( dir => $"{dir}/sprites/{name}.spr" ).FirstOrDefault( FileSystem.FileExists );
+		var path = FindFile( $"sprites/{name}.spr" );
 		if ( path is null ) return null;
 		var images = ReadSpriteFrames( FileSystem.OpenRead( path ) );
 		if ( images is null ) return null;
