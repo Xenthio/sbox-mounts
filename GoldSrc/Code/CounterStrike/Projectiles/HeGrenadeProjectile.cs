@@ -3,49 +3,28 @@ using GoldSrc.HalfLife;
 namespace GoldSrc.CounterStrike;
 
 [Hide]
-public sealed partial class HeGrenadeProjectile : TimedGrenade
+public sealed partial class HeGrenadeProjectile : CounterStrikeTimedGrenade
 {
-	[Property] public string MountId { get; set; }
-	GameMount ContentMount => Sandbox.Mounting.Directory.Get( MountId ) as GameMount;
-	int _bounces;
-
 	internal override float GravityScale => 0.55f;
 	internal override float Friction => 0.7f;
-	internal override bool DealsImpactDamage => false;
 
-	internal static void Throw( GameObject owner, Vector3 origin, Vector3 velocity, GameMount mount )
-	{
-		if ( mount?.FindFile( "models/w_hegrenade.mdl" ) is not { } path ) return;
-		Spawn<HeGrenadeProjectile>( owner, origin, velocity, 1.5f, "HE grenade", $"mount://{mount.Ident}/{path}.vmdl",
-			grenade => grenade.MountId = mount.Ident );
-	}
+	internal static void Throw( GameObject owner, Vector3 origin, Vector3 velocity, GameMount mount ) =>
+		ThrowTimed<HeGrenadeProjectile>( owner, origin, velocity, mount, "HE grenade", "w_hegrenade" );
 
-	internal override void OnBounce( Rigidbody body )
-	{
-		if ( _bounces < 5 ) ContentMount?.NpcAudio.Emit( "weapons/he_bounce-1.wav", WorldPosition, volume: 0.25f );
-		if ( _bounces >= 10 )
-		{
-			body.Velocity = Vector3.Zero;
-			body.AngularVelocity = Vector3.Zero;
-		}
-		_bounces++;
-	}
+	internal override void PlayBounceSound() =>
+		ContentMount?.NpcAudio.Emit( "weapons/he_bounce-1.wav", WorldPosition, volume: 0.25f );
 
 	internal override void Detonate()
 	{
 		const float damage = 100;
 		const float radius = damage * 3.5f;
-		var floor = TraceCover( WorldPosition + Vector3.Up * 8, WorldPosition + Vector3.Down * 32 ).Run();
+		var floor = TraceFloor();
 		var origin = floor.Hit ? floor.EndPosition + floor.Normal * ((damage - 24) * 0.6f) : WorldPosition;
 		ApplyBlastDamage( origin, damage, radius );
 		ShowExplosion( MountId, origin, floor.EndPosition, floor.Normal, floor.Hit );
 		ContentMount?.NpcAudio.Emit( "weapons/hegrenade-", origin );
 		ContentMount?.NpcAudio.Emit( "weapons/debris", origin, volume: 0.55f );
 	}
-
-	SceneTrace TraceCover( Vector3 start, Vector3 end ) =>
-		Scene.Trace.Ray( start, end ).IgnoreGameObjectHierarchy( GameObject )
-			.WithoutTags( "trigger", "debris", "playercontroller", "player", "npc" );
 
 	void ApplyBlastDamage( Vector3 origin, float damage, float radius )
 	{
