@@ -143,6 +143,7 @@ public partial class Npc : BaseNpc
 	internal virtual bool FollowLeader() => false;
 	internal virtual void FinishAction( string name ) { }
 	internal virtual void FinishMovementCycle() { }
+	internal virtual string SequenceSoundSample( string sample ) => sample;
 	internal virtual void PlaySequenceSound( NpcAudio audio, int id ) { }
 	internal virtual void HandleActionEvent( Mdl.Event e ) => HandleActionEvent( e.Index );
 	internal virtual void HandleActionEvent( int id ) { }

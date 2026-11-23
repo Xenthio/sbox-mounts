@@ -47,7 +47,7 @@ internal sealed class StudioSequenceEvents
 					npc.GetComponent<Maps.Monster>()?.FireAnimationTarget( e.Options );
 				break;
 			case 1004:
-				NpcAudio.Play( audio.Find( e.Options ), position, attenuation: GoldSrcSoundEvents.Idle );
+				NpcAudio.Play( audio.Find( npc?.SequenceSoundSample( e.Options ) ?? e.Options ), position, attenuation: GoldSrcSoundEvents.Idle );
 				break;
 			case 1008:
 				if ( npc is TalkingNpc speaker )

@@ -289,8 +289,9 @@ public partial class Npc
 
 	internal Component TraceMelee( float reach, float amount, string tag, out bool contact, string extraTag = null )
 	{
-		var origin = WorldPosition + Vector3.Up * (Definition.Height * 0.5f);
 		var half = new Vector3( 16, 16, 18 );
+		// Keep short monsters' attack hulls clear of their supporting floor.
+		var origin = WorldPosition + Vector3.Up * MathF.Max( Definition.Height * 0.5f, half.z + 0.5f );
 		var hit = Scene.Trace.Box( new BBox( -half, half ), origin, origin + WorldRotation.Forward * reach )
 			.IgnoreGameObjectHierarchy( GameObject ).UseHitboxes().Run();
 		var victim = hit.GameObject?.GetComponentInParent<IDamageable>();
