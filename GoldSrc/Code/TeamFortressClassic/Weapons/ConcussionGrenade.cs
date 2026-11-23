@@ -6,7 +6,7 @@ namespace GoldSrc.TeamFortressClassic;
 
 [Title( "Concussion Grenade" ), Category( "Team Fortress Classic" )]
 [WeaponPickup( "grenade", "tfc_concussion_grenades", 3, EntityName = "tf_weapon_concussiongrenade",
-	PickupModel = "conc_grenade", Bucket = 4, Mount = "tfc" )]
+	PickupModel = "conc_grenade", HudIcon = "d_concussiongrenade", Bucket = 4, Mount = "tfc" )]
 public sealed class ConcussionGrenade : FortressHandGrenadeWeapon
 {
 	internal override void Configure()

@@ -23,6 +23,7 @@ internal sealed class WeaponPickupAttribute( string model, string ammo, int limi
 	public string PickupModel { get; set; }
 	public string ModelDirectory { get; set; } = "models";
 	public string PreviewModel { get; set; }
+	public string HudIcon { get; set; }
 	public int PreviewPitch { get; set; }
 	public string Mount { get; set; } = "hl1";
 	internal string ModelPath( string name ) => $"{ModelDirectory}/{name}.mdl";

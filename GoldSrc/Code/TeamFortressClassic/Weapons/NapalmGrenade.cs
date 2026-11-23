@@ -3,7 +3,8 @@ using GoldSrc.HalfLife;
 namespace GoldSrc.TeamFortressClassic;
 
 [Title( "Napalm Grenade" ), Category( "Team Fortress Classic" )]
-[WeaponPickup( "grenade", "tfc_napalm_grenades", 4, EntityName = "tf_weapon_napalmgrenade", PickupModel = "napalm", Bucket = 4, Mount = "tfc" )]
+[WeaponPickup( "grenade", "tfc_napalm_grenades", 4, EntityName = "tf_weapon_napalmgrenade",
+	PickupModel = "napalm", HudIcon = "d_napalmgrenade", Bucket = 4, Mount = "tfc" )]
 public sealed class NapalmGrenade : FortressHandGrenadeWeapon
 {
 	internal override void Configure()

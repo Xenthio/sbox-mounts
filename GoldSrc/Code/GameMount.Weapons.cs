@@ -14,7 +14,7 @@ public abstract partial class GameMount
 			var model = models.GetValueOrDefault( pickup.WorldPickupPath ) ?? FindFallbackFile( pickup.WorldPickupPath );
 			if ( model is null ) continue;
 			var className = Path.GetFileNameWithoutExtension( pickup.PrefabPath );
-			var icon = new WeaponIconLoader( className );
+			var icon = new WeaponIconLoader( className, pickup.HudIcon );
 			context.Add( ResourceType.Texture, $"icons/{className}", icon );
 			var preview = pickup.PreviewModel is null ? model : models.GetValueOrDefault( pickup.ModelPath( pickup.PreviewModel ), model );
 			if ( pickup.PreviewPitch != 0 )

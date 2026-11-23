@@ -3,7 +3,8 @@ using GoldSrc.HalfLife;
 namespace GoldSrc.TeamFortressClassic;
 
 [Title( "Fragmentation Grenade" ), Category( "Team Fortress Classic" )]
-[WeaponPickup( "grenade", "tfc_frag_grenades", 4, EntityName = "tf_weapon_normalgrenade", Bucket = 4, Mount = "tfc" )]
+[WeaponPickup( "grenade", "tfc_frag_grenades", 4, EntityName = "tf_weapon_normalgrenade",
+	HudIcon = "d_normalgrenade", Bucket = 4, Mount = "tfc" )]
 public sealed class FragGrenade : FortressHandGrenadeWeapon
 {
 	internal override void Configure()

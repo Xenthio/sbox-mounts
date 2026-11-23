@@ -4,7 +4,7 @@ namespace GoldSrc.TeamFortressClassic;
 
 [Title( "Caltrop Canister" ), Category( "Team Fortress Classic" )]
 [WeaponPickup( "grenade", "tfc_caltrop_canisters", 3, EntityName = "tf_weapon_caltropgrenade",
-	PickupModel = "caltrop", Bucket = 4, Mount = "tfc" )]
+	PickupModel = "caltrop", HudIcon = "d_caltrop", Bucket = 4, Mount = "tfc" )]
 public sealed class CaltropCanister : FortressHandGrenadeWeapon
 {
 	internal override float HeldFuse => MinimumPinTime + 0.5f;

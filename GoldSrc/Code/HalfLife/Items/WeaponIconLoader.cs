@@ -3,13 +3,13 @@ using System;
 namespace GoldSrc.HalfLife;
 
 /// <summary>Loads weapon selection art from the installed Half-Life HUD sprite manifests.</summary>
-internal sealed class WeaponIconLoader( string className ) : ResourceLoader<GameMount>
+internal sealed class WeaponIconLoader( string className, string hudIcon ) : ResourceLoader<GameMount>
 {
 	protected override object Load()
 	{
-		var sharedHud = Host is DayOfDefeatMount;
+		var sharedHud = hudIcon is not null || Host is DayOfDefeatMount;
 		var manifestName = sharedHud ? "hud" : className;
-		var entryName = sharedHud ? className : "weapon";
+		var entryName = hudIcon ?? (sharedHud ? className : "weapon");
 		foreach ( var dir in Host.GameDirs )
 		{
 			var manifest = $"{dir}/sprites/{manifestName}.txt";
@@ -22,10 +22,12 @@ internal sealed class WeaponIconLoader( string className ) : ResourceLoader<Game
 			{
 				if ( !int.TryParse( row[3], out var x ) || !int.TryParse( row[4], out var y ) ||
 					!int.TryParse( row[5], out var width ) || !int.TryParse( row[6], out var height ) ) continue;
-				foreach ( var spriteDir in Host.GameDirs )
+				var sprite = $"sprites/{row[2]}.spr";
+				var paths = Host.GameDirs.Select( dir => $"{dir}/{sprite}" ).Append( Host.FindFile( sprite ) )
+					.Distinct( StringComparer.OrdinalIgnoreCase );
+				foreach ( var path in paths )
 				{
-					var path = $"{spriteDir}/sprites/{row[2]}.spr";
-					if ( !Host.FileSystem.FileExists( path ) ) continue;
+					if ( path is null || !Host.FileSystem.FileExists( path ) ) continue;
 					if ( GameMount.ReadSpriteFrames( Host.FileSystem.OpenRead( path ) ) is not { Count: > 0 } frames ) continue;
 					var frame = frames[0];
 					if ( x < 0 || y < 0 || width <= 0 || height <= 0 || x > frame.Width - width || y > frame.Height - height ) continue;

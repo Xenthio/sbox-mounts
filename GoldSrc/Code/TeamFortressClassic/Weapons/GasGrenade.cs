@@ -4,7 +4,7 @@ namespace GoldSrc.TeamFortressClassic;
 
 [Title( "Gas Grenade" ), Category( "Team Fortress Classic" )]
 [WeaponPickup( "grenade", "tfc_gas_grenades", 2, EntityName = "tf_weapon_gasgrenade",
-	PickupModel = "spy_grenade", Bucket = 4, Mount = "tfc" )]
+	PickupModel = "spy_grenade", HudIcon = "d_gasgrenade", Bucket = 4, Mount = "tfc" )]
 public sealed class GasGrenade : FortressHandGrenadeWeapon
 {
 	internal override void Configure()
