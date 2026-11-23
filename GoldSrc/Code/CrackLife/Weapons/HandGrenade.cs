@@ -13,6 +13,8 @@ public sealed class CampaignHandGrenade : CrackLifeHandGrenade;
 [Hide]
 public abstract class CrackLifeHandGrenade : ClassicHandGrenade
 {
+	internal override float ThrowSpeed( float pitch ) => System.Math.Clamp( (90 - pitch) * 4, 0, 500 );
+
 	internal override void SpawnGrenade( Vector3 origin, Vector3 velocity, float fuse )
 	{
 		if ( ContentMount is not { } mount || mount.FindMountPath( "models/w_grenade.mdl" ) is not { } path ) return;

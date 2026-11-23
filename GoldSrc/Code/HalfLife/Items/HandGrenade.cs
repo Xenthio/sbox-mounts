@@ -19,10 +19,12 @@ public abstract class ClassicHandGrenade : PinGrenadeWeapon
 
 	internal override string LaunchGrenade( Vector3 origin, Vector3 direction, float pitch, float pinAge )
 	{
-		var speed = System.Math.Clamp( (90 - pitch) * 6.5f, 0, 1000 );
+		var speed = ThrowSpeed( pitch );
 		SpawnGrenade( origin, direction * speed + Owner.Velocity, System.MathF.Max( 0, 3 - pinAge ) );
 		return speed < 500 ? "throw1" : speed < 1000 ? "throw2" : "throw3";
 	}
+
+	internal virtual float ThrowSpeed( float pitch ) => System.Math.Clamp( (90 - pitch) * 6.5f, 0, 1000 );
 
 	internal virtual void SpawnGrenade( Vector3 origin, Vector3 velocity, float fuse ) =>
 		TimedGrenade.Throw( Owner.GameObject, origin, velocity, fuse );
