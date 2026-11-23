@@ -278,6 +278,12 @@ partial class MapBuilder
 				AddMultiSource( go, entity );
 				return;
 
+			case "cof_triggeron" when Host is CryOfFearMount:
+				var enableTouch = go.AddComponent<CryOfFear.TriggerOn>();
+				enableTouch.TargetName = entity.TargetName;
+				RegisterTarget( entity, enableTouch );
+				return;
+
 			case "trigger_counter":
 				var counter = go.AddComponent<Counter>();
 				counter.TargetName = entity.TargetName;

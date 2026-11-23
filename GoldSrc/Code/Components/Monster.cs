@@ -30,12 +30,21 @@ public sealed class Monster : MapEntity
 	[Property] public string IdleSequence { get; set; }
 
 	[Property] public string DamageTarget { get; set; }
+	[Property] public string DeathTarget { get; set; }
 
 	internal void FireDamageTarget()
 	{
 		if ( string.IsNullOrEmpty( DamageTarget ) ) return;
 		var target = DamageTarget;
 		DamageTarget = null;
+		FireAnimationTarget( target );
+	}
+
+	internal void FireDeathTarget()
+	{
+		if ( string.IsNullOrEmpty( DeathTarget ) ) return;
+		var target = DeathTarget;
+		DeathTarget = null;
 		FireAnimationTarget( target );
 	}
 

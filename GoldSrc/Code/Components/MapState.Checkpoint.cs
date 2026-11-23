@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace GoldSrc.Maps;
 
-public sealed partial class MapState : Component.IDamageable.IEvents
+public sealed partial class MapState
 {
 	private string _checkpoint;
 	private bool _loading;
@@ -97,11 +97,6 @@ public sealed partial class MapState : Component.IDamageable.IEvents
 				Log.Warning( $"Could not load Half-Life checkpoint {_checkpoint}" );
 		}
 		finally { _loading = false; }
-	}
-
-	void Component.IDamageable.IEvents.OnDied( Component.IDamageable.DeathEvent death )
-	{
-		if ( Networking.IsHost && death.Victim.GetComponent<PlayerController>( true ) is { IsProxy: false } ) LoadCheckpoint();
 	}
 
 	internal string CaptureCheckpoint()

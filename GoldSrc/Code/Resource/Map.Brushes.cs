@@ -333,6 +333,11 @@ partial class MapBuilder
 		trigger.ClientsOnlyFire = (entity.SpawnFlags & 16) != 0;
 		trigger.TargetOnce = (entity.SpawnFlags & 1) != 0;
 
+		// Cry of Fear gates touch on iuser1 until cof_triggeron clears it.
+		if ( Host is CryOfFearMount && !trigger.Hurt && entity.GetInt( "iuser1" ) != 0 &&
+			go.GetComponent<Collider>( true ) is { } touchCollider )
+			touchCollider.Enabled = false;
+
 		if ( trigger.Hurt ) RegisterTarget( entity, trigger );
 		else RegisterTarget( entity, trigger, null, null, null, nameof( MapEntity.Kill ) );
 		WireTrigger( entity, trigger );

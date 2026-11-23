@@ -3,7 +3,7 @@ using System;
 namespace GoldSrc.Maps;
 
 [Hide]
-public sealed partial class MapState : Component
+public sealed partial class MapState : Component, Component.IDamageable.IEvents
 {
 	[Property] public List<MapEntity> Entities { get; set; } = [];
 	[Property, Sync( SyncFlags.FromHost )] public NetDictionary<string, int> Globals { get; set; } = new();
@@ -26,6 +26,14 @@ public sealed partial class MapState : Component
 			_removals.RemoveAt( i );
 			if ( entry.Entity.IsValid() ) entry.Entity.Kill();
 		}
+	}
+
+	void Component.IDamageable.IEvents.OnDied( Component.IDamageable.DeathEvent death )
+	{
+		if ( !Networking.IsHost ) return;
+		if ( death.Victim.GetComponent<Monster>( true ) is { } actor && actor.Map == this )
+			actor.FireDeathTarget();
+		if ( death.Victim.GetComponent<PlayerController>( true ) is { IsProxy: false } ) LoadCheckpoint();
 	}
 
 	public int GetGlobal( string name ) => Globals.TryGetValue( name, out var state ) ? state : 0;
