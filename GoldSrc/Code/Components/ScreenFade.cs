@@ -38,13 +38,15 @@ public sealed class ScreenFadeDisplay : Component
 	private bool _fadeIn, _modulate;
 	private TimeSince _elapsed;
 
-	internal void Start( ScreenFade fade )
+	internal void Start( ScreenFade fade ) => Start( fade.Tint, fade.Duration, fade.Hold, fade.FadeIn, fade.Modulate );
+
+	internal void Start( Color tint, float duration, float hold, bool fadeIn, bool modulate = false )
 	{
-		_tint = fade.Tint;
-		_duration = fade.Duration;
-		_hold = fade.Hold;
-		_fadeIn = fade.FadeIn;
-		_modulate = fade.Modulate;
+		_tint = tint;
+		_duration = duration;
+		_hold = hold;
+		_fadeIn = fadeIn;
+		_modulate = modulate;
 		_elapsed = 0;
 		Enabled = true;
 	}

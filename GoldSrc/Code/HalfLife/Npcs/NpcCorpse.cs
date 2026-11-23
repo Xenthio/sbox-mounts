@@ -77,6 +77,7 @@ public class NpcCorpse : Component
 	internal virtual bool WaitForFloor => false;
 	internal virtual float GravityScale => 1;
 	internal virtual void SetBody() { }
+	internal virtual bool PlayEventsOnClients => false;
 	internal virtual void HandleEvent( int id ) { }
 
 	protected override void OnStart() => StartPose();
@@ -137,7 +138,7 @@ public class NpcCorpse : Component
 		var time = Math.Clamp( (float)Age - (_finishing ? FinalStart : 0), 0, _sequence.Duration );
 		Renderer.Animation.Parameters.Set( _sequence.TimeParameter, time / _sequence.Duration );
 		_sequenceEvents.Update( _audio, Renderer, time, false, grounded: Landed );
-		if ( Networking.IsHost )
+		if ( Networking.IsHost || PlayEventsOnClients )
 		{
 			while ( _nextEvent < _sequence.Events.Length && _sequence.Events[_nextEvent].Frame <= time * _sequence.Description.Fps )
 				HandleEvent( _sequence.Events[_nextEvent++].Index );
