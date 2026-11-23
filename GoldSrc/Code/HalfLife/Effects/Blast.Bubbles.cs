@@ -16,7 +16,7 @@ internal static partial class Blast
 	internal static void BulletBubbles( Scene scene, Vector3 start, Vector3 end ) =>
 		BubbleTrail( scene, start, end, System.Math.Min( 255, (int)(start.Distance( end ) / 64) ), "Bullet bubbles" );
 
-	internal static void BubbleTrail( Scene scene, Vector3 start, Vector3 end, int count, string name )
+	internal static void BubbleTrail( Scene scene, Vector3 start, Vector3 end, int count, string name, GameMount mount = null )
 	{
 		if ( count < 1 ) return;
 		var water = WaterBody.Find( scene, start );
@@ -25,7 +25,7 @@ internal static partial class Blast
 			water = WaterBody.Find( scene, end );
 			if ( !water.IsValid() || !water.Contains( end + Vector3.Up * 8 ) ) return;
 		}
-		if ( CreateBubbles( start, name ) is not { } effect ) return;
+		if ( CreateBubbles( start, name, mount ) is not { } effect ) return;
 		for ( int i = 0; i < count; ++i )
 			EmitBubble( effect, water, Vector3.Lerp( start, end, (i + Game.Random.Float( 0, 1 )) / count ), 256 );
 	}

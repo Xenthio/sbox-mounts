@@ -4,7 +4,7 @@ namespace GoldSrc;
 
 public partial class TeamFortressClassicMount
 {
-	static readonly string[] SharedModels = ["models/rpgrocket.mdl", "models/shotgunshell.mdl", "models/v_rpg.mdl", "models/w_rpg.mdl"];
+	static readonly string[] SharedModels = ["models/rpgrocket.mdl", "models/shotgunshell.mdl", "models/v_rpg.mdl", "models/w_rpg.mdl", "models/w_egon.mdl"];
 	static readonly string[] SharedSounds =
 	[
 		"weapons/357_cock1.wav", "weapons/reload1.wav", "weapons/reload3.wav", "weapons/scock1.wav",
@@ -18,7 +18,7 @@ public partial class TeamFortressClassicMount
 		"weapons/explode3.wav", "weapons/explode4.wav", "weapons/explode5.wav"
 	];
 	static readonly string[] SharedSprites = ["sprites/smoke.spr", "sprites/muzzleflash1.spr", "sprites/muzzleflash2.spr",
-		"sprites/laserdot.spr", "sprites/crosshairs.spr", "sprites/WXplo1.spr"];
+		"sprites/laserdot.spr", "sprites/crosshairs.spr", "sprites/WXplo1.spr", "sprites/bubble.spr"];
 
 	protected override string FindFallbackFile( string relativePath )
 	{
