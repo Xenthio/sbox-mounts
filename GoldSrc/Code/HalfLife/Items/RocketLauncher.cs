@@ -2,7 +2,20 @@ namespace GoldSrc.HalfLife;
 
 [Title( "Rocket Launcher" ), Category( "Half-Life" )]
 [WeaponPickup( "rpg", "rockets", 5, Bucket = 3, Weight = 20, SkipAutoSelect = true )]
-public sealed partial class RocketLauncher : ProjectileWeapon
+public sealed class RocketLauncher : GuidedRocketLauncher
+{
+	internal override int FreshPickupRounds => Networking.MaxPlayers > 1 ? 2 : 1;
+
+	internal override PlayerRocket LaunchRocket( Ray ray )
+	{
+		var damage = Networking.MaxPlayers > 1 ? 120 : 100;
+		return NpcProjectile.Fire<PlayerRocket>( Owner.GameObject, "mount://hl1/valve/models/rpgrocket.mdl.vmdl",
+			damage, null, ray.Position, ray.Forward, 250 );
+	}
+}
+
+[Hide]
+public abstract partial class GuidedRocketLauncher : ProjectileWeapon
 {
 	internal override string DeploySequence => Clip1 > 0 ? "draw1" : "draw2";
 	internal override string ShotSequence => "fire";
@@ -31,12 +44,11 @@ public sealed partial class RocketLauncher : ProjectileWeapon
 		ClipMaxSize = 1;
 	}
 
-	internal override int FreshPickupRounds => Networking.MaxPlayers > 1 ? 2 : 1;
+	internal abstract PlayerRocket LaunchRocket( Ray ray );
 
 	internal override bool Release( Ray ray )
 	{
-		var damage = Networking.MaxPlayers > 1 ? 120 : 100;
-		var rocket = NpcProjectile.Fire<PlayerRocket>( Owner.GameObject, "mount://hl1/valve/models/rpgrocket.mdl.vmdl", damage, null, ray.Position, ray.Forward, 250 );
+		var rocket = LaunchRocket( ray );
 		rocket.Launcher = this;
 		ActiveRockets++;
 		return true;

@@ -133,6 +133,16 @@ public abstract partial class StudioWeapon : BaseCombatWeapon
 	SceneTrace TraceLineOfFire( Ray ray, float distance, float radius ) =>
 		base.BulletTrace( ray, distance, radius ).WithCollisionRules( "bullet" ).WithoutTags( "playercontroller" );
 
+	protected Ray OffsetLaunchRay( Vector3 offset )
+	{
+		var eye = Owner.EyeTransform;
+		var direction = eye.Rotation * offset;
+		var cover = TraceLineOfFire( new Ray( eye.Position, direction.Normal ), direction.Length, 0 ).Run();
+		var origin = cover.StartedSolid ? eye.Position : cover.EndPosition;
+		if ( cover.Hit && !cover.StartedSolid ) origin -= direction.Normal * 0.1f;
+		return new Ray( origin, eye.Forward );
+	}
+
 	Transform _worldMuzzle;
 	SkinnedModelRenderer _viewRenderer;
 

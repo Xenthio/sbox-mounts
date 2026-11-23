@@ -1,9 +1,11 @@
 namespace GoldSrc.HalfLife;
 
 [Hide]
-public sealed class CrossbowBolt : NpcProjectile
+public class CrossbowBolt : NpcProjectile
 {
 	internal const string ModelAsset = "mount://hl1/valve/models/crossbow_bolt.mdl.vmdl";
+	internal virtual bool Explosive => Networking.MaxPlayers > 1;
+	internal virtual string ImpactMount => "hl1";
 	TimeUntil? _detonateAt;
 	float _nextBubble = 0.2f;
 
@@ -27,13 +29,13 @@ public sealed class CrossbowBolt : NpcProjectile
 			var player = hit.GameObject.GetComponentInParent<PlayerController>().IsValid();
 			var tags = new TagSet { "nevergib" };
 			if ( !player ) tags.Add( "bullet" );
-			var damage = player ? (Networking.MaxPlayers > 1 ? 20 : 10) : Damage;
+			var damage = player ? (Explosive ? 20 : 10) : Damage;
 			BaseCombatWeapon.ShootBullet( hit, damage, 0, Shooter, GameObject, tags );
 		}
 		WorldPosition = hit.EndPosition + (victim is null ? -direction * 12 : hit.Normal * 2);
 		Velocity = Vector3.Zero;
-		ImpactEffects( hit.EndPosition, direction, victim is not null, false );
-		if ( Networking.MaxPlayers > 1 )
+		ImpactEffects( hit.EndPosition, direction, victim is not null, false, ImpactMount );
+		if ( Explosive )
 		{
 			_detonateAt = 0.1f;
 			return;
@@ -73,9 +75,9 @@ public sealed class CrossbowBolt : NpcProjectile
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	internal static void ImpactEffects( Vector3 position, Vector3 direction, bool body, bool stick )
+	internal static void ImpactEffects( Vector3 position, Vector3 direction, bool body, bool stick, string mountId = "hl1" )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( Sandbox.Mounting.Directory.Get( mountId ) is not GameMount mount ) return;
 		if ( body )
 		{
 			NpcAudio.Play( mount.NpcAudio.Find( "weapons/xbow_hitbod" ), position );

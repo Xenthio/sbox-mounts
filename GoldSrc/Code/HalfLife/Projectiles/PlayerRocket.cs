@@ -1,13 +1,13 @@
 namespace GoldSrc.HalfLife;
 
 [Hide]
-public sealed class PlayerRocket : RocketProjectile
+public class PlayerRocket : RocketProjectile
 {
 	internal override float IgnitionDelay => 0.4f;
 	internal override float SmokeLifetime => 4;
 	internal override float BurnTime => 1;
 	internal override float Lifetime => float.PositiveInfinity;
-	internal RocketLauncher Launcher { get; set; }
+	internal GuidedRocketLauncher Launcher { get; set; }
 	float _nextSteer;
 
 	internal override void PrepareLaunch()
@@ -59,7 +59,7 @@ public sealed class PlayerRocket : RocketProjectile
 		var forward = WorldRotation.Forward;
 		var direction = forward;
 		var best = 4096f;
-		foreach ( var launcher in Scene.GetAllComponents<RocketLauncher>() )
+		foreach ( var launcher in Scene.GetAllComponents<GuidedRocketLauncher>() )
 		{
 			if ( !launcher.IsActive || launcher.SpotPosition is not { } spot ) continue;
 			var delta = spot - WorldPosition;

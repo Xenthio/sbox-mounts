@@ -1,8 +1,8 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class RocketLauncher
+public abstract partial class GuidedRocketLauncher
 {
-	[Sync( SyncFlags.FromHost )] bool LaserEnabled { get; set; } = true;
+	[Sync( SyncFlags.FromHost )] protected bool LaserEnabled { get; private set; } = true;
 	[Sync( SyncFlags.FromHost )] internal int ActiveRockets { get; set; }
 	TimeUntil _nextToggle, _spotSuspended;
 	SpriteRenderer _dot;
@@ -21,12 +21,17 @@ public sealed partial class RocketLauncher
 		if ( !IsActive || IsReloading || _nextToggle > 0 || _spotSuspended > 0 ) return;
 		LaserEnabled = !LaserEnabled;
 		_nextToggle = SecondaryDelay;
+		OnLaserToggled();
 	}
+
+	internal virtual void OnLaserToggled() { }
+
+	internal virtual float LaserReloadDelay => 2.1f;
 
 	protected override void OnReloadStarted()
 	{
 		base.OnReloadStarted();
-		if ( LaserEnabled ) _spotSuspended = 2.1f;
+		if ( LaserEnabled ) _spotSuspended = LaserReloadDelay;
 	}
 
 	protected override void OnUpdate()

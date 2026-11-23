@@ -52,7 +52,7 @@ public abstract partial class StudioWeapon
 	private WeaponCrosshairs _crosshairs;
 
 	// Sandbox Mode exposes its HUD visibility policy; other games can draw the weapon HUD directly.
-	private static bool CrosshairVisible()
+	protected static bool CrosshairVisible()
 	{
 		var visible = TypeLibrary.GetType( "Sandbox.Hud" )?.GetMethod( "IsVisible" );
 		var element = TypeLibrary.GetType( "HudElement" );
