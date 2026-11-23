@@ -7,8 +7,11 @@ partial class MapBuilder
 {
 	private bool TrySpawnPickup( Entity entity )
 	{
-		if ( Host is not HalfLifeMount ) return false;
 		var name = entity.ClassName.ToLowerInvariant();
+		var halfLifeItems = Host is HalfLifeMount or HalfLifeMModMount;
+		var weapon = name.StartsWith( "weapon_", System.StringComparison.Ordinal ) ||
+			name.StartsWith( "tf_weapon_", System.StringComparison.Ordinal );
+		if ( !weapon && !halfLifeItems ) return false;
 		GameObject go;
 		var transform = new Transform( entity.Origin, entity.Rotation );
 		if ( name == "world_items" && entity.GetInt( "type" ) == 45 ) name = "item_suit";
@@ -44,9 +47,9 @@ partial class MapBuilder
 			go.Enabled = true;
 			return true;
 		}
-		if ( name.StartsWith( "weapon_", System.StringComparison.Ordinal ) )
+		if ( weapon )
 		{
-			var canonical = name switch { "weapon_glock" => "weapon_9mmhandgun", "weapon_mp5" => "weapon_9mmar", "weapon_python" => "weapon_357", _ => name };
+			var canonical = !halfLifeItems ? name : name switch { "weapon_glock" => "weapon_9mmhandgun", "weapon_mp5" => "weapon_9mmar", "weapon_python" => "weapon_357", _ => name };
 			var path = $"mount://{Host.Ident}/entities/items/{canonical}.prefab";
 			if ( Host.GetByPath( path ) is not WeaponPickupLoader ) return false;
 			go = GameObject.Clone( PrefabFile.Load( path ), transform, startEnabled: false );
@@ -70,6 +73,7 @@ partial class MapBuilder
 			var resource = LoadMountedModel( $"models/{model}.mdl" );
 			if ( resource is not { IsError: false } ) return false;
 			var ammo = GameResource.Load<BaseAmmoResource>( $"mount://{Host.Ident}/ammo/{pool}.ammo" );
+			if ( Host is HalfLifeMModMount && ammo is null ) return false;
 			go = HalfLife.AmmoPickup.Create( transform, resource, ammo, amount, pool );
 		}
 

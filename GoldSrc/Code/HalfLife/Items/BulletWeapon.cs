@@ -14,7 +14,7 @@ public abstract class BulletWeapon : StudioWeapon
 		base.OnShootEffects( shot );
 		if ( !Application.IsDedicatedServer && (shot.Hit || shot.HitPosition != default) )
 			Blast.BulletBubbles( Scene, GetMuzzleTransform().Position, shot.HitPosition );
-		if ( !shot.NoEvents ) ShowPlayerMuzzleFlash();
+		if ( !shot.NoEvents && PlayerMuzzleFlash >= 0 ) ShowPlayerMuzzleFlash();
 	}
 
 	protected void ShowPlayerMuzzleFlash()
