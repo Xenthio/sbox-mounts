@@ -14,7 +14,7 @@ partial class GameMount
 		return path is not null && _sprites.TryGetValue( path, out var sprite ) ? sprite : null;
 	}
 
-	private void MountSprite( MountContext context, string path )
+	protected void MountSprite( MountContext context, string path )
 	{
 		try
 		{

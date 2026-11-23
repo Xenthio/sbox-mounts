@@ -9,12 +9,12 @@ public partial class TeamFortressClassicMount
 	[
 		"weapons/357_cock1.wav", "weapons/reload1.wav", "weapons/reload3.wav", "weapons/scock1.wav",
 		"weapons/rocket1.wav", "weapons/rocketfire1.wav", "weapons/sbarrel1.wav",
-		"weapons/glauncher.wav",
+		"weapons/glauncher.wav", "ambience/rifle1.wav",
 		"items/cliprelease1.wav", "items/clipinsert1.wav",
 		"weapons/grenade_hit1.wav", "weapons/grenade_hit2.wav", "weapons/grenade_hit3.wav",
 		"weapons/explode3.wav", "weapons/explode4.wav", "weapons/explode5.wav"
 	];
-	static readonly string[] SharedSprites = ["sprites/smoke.spr", "sprites/muzzleflash1.spr", "sprites/muzzleflash2.spr"];
+	static readonly string[] SharedSprites = ["sprites/smoke.spr", "sprites/muzzleflash1.spr", "sprites/muzzleflash2.spr", "sprites/laserdot.spr", "sprites/crosshairs.spr"];
 
 	protected override string FindFallbackFile( string relativePath )
 	{
@@ -43,6 +43,12 @@ public partial class TeamFortressClassicMount
 			if ( FileSystem.FileExists( path ) ) context.Add( ResourceType.Sound, $"tfc/{relative}", new WavSoundLoader( path ) );
 		}
 
-		return base.Mount( context );
+		var mounting = base.Mount( context );
+		foreach ( var relative in SharedSprites )
+		{
+			if ( FindFile( relative ) is { } path && path.StartsWith( "valve/", StringComparison.Ordinal ) )
+				MountSprite( context, path );
+		}
+		return mounting;
 	}
 }
