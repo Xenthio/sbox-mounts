@@ -6,11 +6,13 @@ namespace GoldSrc.CryOfFear;
 [WeaponPickup( "shotgun", "buckshot", 50, Bucket = 3, ModelDirectory = "models/weapons/shotgun", Mount = "cof" )]
 public sealed class Shotgun : BulletWeapon
 {
+	const float SightTransitionTime = 0.3f;
 	const float OpenTime = 0.5f;
 	const float InsertTime = 0.6f;
 	const float InsertInterval = 0.65f;
 	TimeUntil? _nextInsert;
 	TimeUntil? _shellEjection;
+	TimeUntil? _reloadAfterSights;
 	bool _reloadStartedEmpty;
 
 	internal override int FreshPickupRounds => 9;
@@ -40,15 +42,29 @@ public sealed class Shotgun : BulletWeapon
 		Ballistics = new() { Damage = 5, Pellets = 8, Range = 2048, Radius = 0 };
 	}
 
-	public override bool CanReload() => NextPrimaryFire <= 0 && base.CanReload();
+	public override bool CanReload() => IsActive && NextPrimaryFire <= 0 && base.CanReload();
 
 	public override bool CanSecondaryAttack() => IsActive && NextPrimaryFire <= 0 && base.CanSecondaryAttack();
 
 	public override void SecondaryAttack()
 	{
 		base.SecondaryAttack();
-		ViewModel?.GetComponent<StudioWeaponView>()?.Play( Zoomed ? "iron_to" : "iron_from" );
-		SetNextPrimaryFire( 0.167f );
+		ViewModel?.GetComponent<StudioWeaponView>()?.Play( Zoomed ? "iron_to" : "iron_from", idleAfter: SightTransitionTime );
+		SetNextFire( SightTransitionTime );
+	}
+
+	public override void Reload()
+	{
+		if ( !CanReload() ) return;
+		if ( !Zoomed )
+		{
+			base.Reload();
+			return;
+		}
+
+		// Finish the owner's sight transition before asking the host to open the tube.
+		SecondaryAttack();
+		_reloadAfterSights = SightTransitionTime;
 	}
 
 	public override void PrimaryAttack()
@@ -101,6 +117,11 @@ public sealed class Shotgun : BulletWeapon
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
+		if ( _reloadAfterSights is { } reload && reload <= 0 )
+		{
+			_reloadAfterSights = null;
+			base.Reload();
+		}
 		if ( _nextInsert is { } insert && insert <= 0 )
 		{
 			_nextInsert = null;
@@ -111,5 +132,11 @@ public sealed class Shotgun : BulletWeapon
 			_shellEjection = null;
 			if ( IsActive ) EjectShells( 1, true, "models/weapons/shotgunshell.mdl" );
 		}
+	}
+
+	protected override void OnHolstered()
+	{
+		_reloadAfterSights = null;
+		base.OnHolstered();
 	}
 }
