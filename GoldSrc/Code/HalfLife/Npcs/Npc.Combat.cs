@@ -34,6 +34,7 @@ public partial class Npc
 	protected bool IsFirstStrike => _nextHit <= 1;
 
 	internal virtual float AttackRange => Definition.Range;
+	internal virtual float StrikeRange => Definition.Range;
 
 	internal virtual bool InAttackRange( GameObject target, Vector3 aim ) => AttackOrigin.Distance( aim ) <= AttackRange;
 
@@ -229,7 +230,7 @@ public partial class Npc
 		var origin = AttackOrigin;
 		var direction = (end - origin).Normal;
 		SetAimBlend( _action, end - AimOrigin );
-		if ( origin.Distance( end ) > Definition.Range + 24 || !CanHit( _target, end ) )
+		if ( origin.Distance( end ) > StrikeRange + 24 || !CanHit( _target, end ) )
 		{
 			return;
 		}

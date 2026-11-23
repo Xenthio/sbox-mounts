@@ -76,8 +76,8 @@ public partial class Npc : BaseNpc
 
 		try
 		{
-			var mount = await Sandbox.Mounting.Directory.Mount( "hl1" );
-			if ( mount is not HalfLifeMount halfLife || mount.GetByPath( ModelPath ) is not ModelLoader loader )
+			var mount = await Sandbox.Mounting.Directory.Mount( Definition.Mount );
+			if ( mount is not GameMount gameMount || mount.GetByPath( ModelPath ) is not ModelLoader loader )
 				return;
 
 			var model = await Model.LoadAsync( ModelPath );
@@ -85,7 +85,7 @@ public partial class Npc : BaseNpc
 				return;
 
 			loader.EnsureNpcAnimations();
-			_audio = halfLife.NpcAudio;
+			_audio = gameMount.NpcAudio;
 			Renderer.Model = model;
 			OnModelLoaded( loader );
 			ApplyAppearance( model );
@@ -108,7 +108,7 @@ public partial class Npc : BaseNpc
 		}
 		catch ( Exception e )
 		{
-			Log.Warning( $"Could not load Half-Life NPC '{ClassName}': {e.Message}" );
+			Log.Warning( $"Could not load GoldSrc NPC '{ClassName}': {e.Message}" );
 		}
 	}
 
@@ -132,6 +132,9 @@ public partial class Npc : BaseNpc
 
 	internal virtual string[] ControllerParameters => [];
 	internal virtual void OnModelLoaded( ModelLoader loader ) { }
+	internal virtual void ApplyMapProperties( Bsp.Entity entity ) { }
+	internal virtual string MapModel( Bsp.Entity entity ) =>
+		entity.ClassName is "monster_generic" or "monster_furniture" ? entity.GetString( "model" ) : null;
 	internal virtual int EffectiveBody => Body;
 	internal virtual int EffectiveSkin => Skin;
 	internal virtual string[] ExtraActions => [];

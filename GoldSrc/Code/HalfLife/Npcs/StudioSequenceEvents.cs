@@ -95,7 +95,10 @@ internal sealed class StudioSequenceEvents
 	internal static void ShowMuzzleFlash( GameMount mount, SkinnedModelRenderer model, Transform muzzle, int type )
 	{
 		var index = System.Math.Max( 0, type % 10 ) % 3;
-		if ( mount?.GetIndexedSprite( $"muzzleflash{index + 1}" ) is not { } sprite ) return;
+		var sprite = mount?.GetIndexedSprite( $"muzzleflash{index + 1}" );
+		if ( sprite is null && mount is ConditionZeroDeletedScenesMount )
+			sprite = mount.GetIndexedSprite( "muzzleflash4" );
+		if ( sprite is null ) return;
 		var texture = sprite.Animations[0].Frames[0].Texture;
 		var scale = type / 10 > 0 ? (type / 10) * 0.1f : 0.5f;
 		var go = new GameObject( false, "Muzzle flash" );

@@ -81,7 +81,8 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 			if ( source is null || string.IsNullOrWhiteSpace( sequence.Label ) ) continue;
 			sequences.Add( CreateSequence( main, sequence.Label, sequence, source.Transforms, source.PitchFrames ) );
 		}
-		PrepareSkeleton( mdlFile, main, mdlFile.Bones.ToArray() );
+		var bones = mdlFile.Bones.ToArray();
+		PrepareSkeleton( mdlFile, main, bones, BoneNames( bones ) );
 		Sequences = sequences;
 	}
 
@@ -109,7 +110,7 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 		}
 	}
 
-	void PrepareSkeleton( Mdl.File mdlFile, BinaryReader main, Mdl.Bone[] mdlBones )
+	void PrepareSkeleton( Mdl.File mdlFile, BinaryReader main, Mdl.Bone[] mdlBones, string[] names )
 	{
 		if ( mdlFile.Header.NumTransitions is > 0 and <= 255 )
 		{
@@ -126,18 +127,30 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 			{
 				var controller = new Mdl.BoneController( main );
 				if ( (uint)controller.Index < Controllers.Length && (uint)controller.Bone < mdlBones.Length )
-					Controllers[controller.Index] = new( BoneName( mdlBones, controller.Bone ), controller.Type, controller.Start, controller.End );
+					Controllers[controller.Index] = new( names[controller.Bone], controller.Type, controller.Start, controller.End );
 			}
 		}
 		_skeleton = new SkeletonBuilder();
 		for ( int i = 0; i < mdlBones.Length; ++i )
 		{
 			var bone = mdlBones[i];
-			_skeleton.AddBone( BoneName( mdlBones, i ), BindTransform( bone ), bone.Parent >= 0 ? BoneName( mdlBones, bone.Parent ) : null );
+			_skeleton.AddBone( names[i], BindTransform( bone ), bone.Parent >= 0 ? names[bone.Parent] : null );
 		}
 	}
 
-	static string BoneName( Mdl.Bone[] bones, int index ) => string.IsNullOrWhiteSpace( bones[index].Name ) ? $"unnamed bone {index}" : bones[index].Name;
+	// Studio animation tracks are indexed, but the Sandbox skeleton also requires unique names.
+	static string[] BoneNames( Mdl.Bone[] bones )
+	{
+		var names = new string[bones.Length];
+		var used = new HashSet<string>( StringComparer.OrdinalIgnoreCase );
+		for ( var i = 0; i < bones.Length; ++i )
+		{
+			var name = string.IsNullOrWhiteSpace( bones[i].Name ) ? $"unnamed bone {i}" : bones[i].Name;
+			while ( !used.Add( name ) ) name = $"{name}_{i}";
+			names[i] = name;
+		}
+		return names;
+	}
 
 	static Transform BindTransform( Mdl.Bone bone ) => new( new Vector3( bone.Value[0], bone.Value[1], bone.Value[2] ),
 		AngleQuaternion( new Vector3( bone.Value[3], bone.Value[4], bone.Value[5] ) ) );
@@ -165,7 +178,8 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 		var builder = Model.Builder.WithName( Path ).WithSurface( Host.GetSurfaceBindingName( 'C' ) );
 
 		var mdlBones = mdlFile.Bones.ToArray();
-		if ( npcAnimations ) PrepareSkeleton( mdlFile, main, mdlBones );
+		var boneNames = BoneNames( mdlBones );
+		if ( npcAnimations ) PrepareSkeleton( mdlFile, main, mdlBones, boneNames );
 		var skeletonTransforms = new List<(Transform tx, int parent)>();
 		skeletonTransforms.AddRange( mdlFile.Bones
 			.Select( x => (BindTransform( x ), x.Parent) ) );
@@ -184,7 +198,7 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 		foreach ( var bone in mdlBones )
 		{
 			var transform = boneTransforms[boneIndex];
-			var name = BoneName( mdlBones, boneIndex );
+			var name = boneNames[boneIndex];
 			bones.Add( new ModelBuilder.Bone( name, bone.Parent == -1 ? null : bones[bone.Parent].Name, transform.Position, transform.Rotation ) );
 			boneIndex++;
 		}

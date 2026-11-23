@@ -6,6 +6,7 @@ namespace GoldSrc.HalfLife;
 [Alias( "GoldSrc.HalfLifeNpcCorpse" )]
 public class NpcCorpse : Component
 {
+	[Property, Hide] public string MountIdent { get; set; } = "hl1";
 	[Property] public string ModelPath { get; set; }
 	[Property] public float ModelOriginHeight { get; set; }
 	[Property] public string DeathSequence { get; set; }
@@ -43,6 +44,7 @@ public class NpcCorpse : Component
 		renderer.UseAnimGraph = true;
 
 		var corpse = npc.AddCorpseComponent( go );
+		corpse.MountIdent = npc.Definition.Mount;
 		corpse.ModelPath = npc.ModelPath;
 		corpse.ModelOriginHeight = npc.ModelOriginHeight;
 		corpse.FadeOnDeath = npc.FadeCorpse;
@@ -82,7 +84,7 @@ public class NpcCorpse : Component
 	void StartPose()
 	{
 		if ( _poseStarted || !Renderer.IsValid() ) return;
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount || mount.GetByPath( ModelPath ) is not ModelLoader loader ) return;
+		if ( Sandbox.Mounting.Directory.Get( MountIdent ) is not GameMount mount || mount.GetByPath( ModelPath ) is not ModelLoader loader ) return;
 
 		// Hotloading the mount can give an existing actor a fresh loader for its corpse.
 		loader.EnsureNpcAnimations();

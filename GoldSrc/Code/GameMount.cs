@@ -66,12 +66,12 @@ public abstract partial class GameMount : BaseGameMount
 
 		wads.Clear();
 		_sprites.Clear();
-		var registry = this is HalfLifeMount ? new NpcRegistry() : null;
+		var registry = new NpcRegistry( Ident );
 		var weapons = Game.TypeLibrary.GetTypes<StudioWeapon>()
 			.Select( type => (Type: type, Pickup: type.GetAttribute<WeaponPickupAttribute>()) )
 			.Where( entry => entry.Pickup?.Mount == Ident ).ToArray();
 		var viewModels = weapons.SelectMany( entry => entry.Pickup.ViewModelPaths ).ToHashSet( System.StringComparer.OrdinalIgnoreCase );
-		var gameplayModels = registry is not null || weapons.Length > 0 ? new Dictionary<string, string>( StringComparer.OrdinalIgnoreCase ) : null;
+		var gameplayModels = registry.HasEntries || weapons.Length > 0 ? new Dictionary<string, string>( StringComparer.OrdinalIgnoreCase ) : null;
 		var originalModels = new Dictionary<string, string>( System.StringComparer.OrdinalIgnoreCase );
 		foreach ( var dir in GameDirs )
 		{
@@ -127,11 +127,11 @@ public abstract partial class GameMount : BaseGameMount
 						continue;
 
 					var modelPath = relativePath.Replace( '\\', '/' );
-					var npc = registry?.FindModel( modelPath );
+					var npc = registry.FindModel( modelPath );
 					var animated = npc is not null || viewModels.Contains( modelPath );
 					context.Add( ResourceType.Model, path, new ModelLoader( fullPath, animated, npc ) );
 					gameplayModels?.TryAdd( modelPath, path );
-					if ( registry is not null && dir == "valve" ) originalModels[modelPath] = path;
+					if ( this is HalfLifeMount && dir == "valve" ) originalModels[modelPath] = path;
 				}
 				else if ( ext == ".wav" )
 				{
@@ -154,7 +154,8 @@ public abstract partial class GameMount : BaseGameMount
 
 		MountSurfaces( context );
 		MountDecals( context );
-		registry?.Mount( context, gameplayModels, originalModels );
+		if ( registry.HasEntries )
+			registry.Mount( context, gameplayModels, originalModels );
 		if ( this is HalfLifeMount )
 			context.Add( ResourceType.GameResource, Rifle.GrenadeAmmoPath, new AmmoLoader( "AR grenades", 10 ) );
 		if ( weapons.Length > 0 )

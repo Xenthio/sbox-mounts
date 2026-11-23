@@ -95,8 +95,8 @@ partial class MapBuilder
 			npc.Body = entity.GetInt( "body" );
 			npc.Skin = entity.GetInt( "skin" );
 			if ( entity.GetFloat( "health" ) > 0 ) npc.Health = entity.GetFloat( "health" );
-			if ( entity.ClassName is "monster_generic" or "monster_furniture"
-				&& LoadMountedModel( entity.GetString( "model" ) ) is { IsError: false } model )
+			npc.ApplyMapProperties( entity );
+			if ( LoadMountedModel( npc.MapModel( entity ) ) is { IsError: false } model )
 			{
 				npc.ModelPath = model.ResourcePath;
 				npc.Renderer.Model = model;
