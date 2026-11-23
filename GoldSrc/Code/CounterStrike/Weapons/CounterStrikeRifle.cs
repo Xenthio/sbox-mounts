@@ -7,18 +7,22 @@ namespace GoldSrc.CounterStrike;
 public abstract class CounterStrikeRifle : CounterStrikeFirearm
 {
 	int _shotsFired;
-	float _accuracy = 0.2f;
+	float? _accuracy;
 	TimeUntil? _nextRecovery;
 
 	internal abstract float AccuracyDivisor { get; }
 	internal virtual float AccuracyOffset => 0.3f;
 	internal virtual float MaxAccuracy => 1;
+	internal virtual float InitialAccuracy => 0.2f;
 	internal virtual float ReloadAccuracy => 0.2f;
+	internal virtual bool ResetAccuracyWhenIdle => true;
 	internal virtual float StandingSpread => 0.02f;
 	internal virtual float AirborneSpread => 0.4f;
 	internal virtual float MovingSpread => 0.07f;
 	internal virtual float MovingPenalty => 0.035f;
+	internal virtual float MovingSpreadSpeed => 140;
 	internal virtual float Recoil => 1;
+	internal virtual string BrassModel => "models/rshell.mdl";
 	internal virtual float FireDelay => PrimaryDelay;
 	internal virtual bool SupportsSecondary => false;
 
@@ -47,22 +51,34 @@ public abstract class CounterStrikeRifle : CounterStrikeFirearm
 		spread = 0;
 		if ( IsHeld && !TakePrimaryAmmo() ) return false;
 
+		var accuracy = _accuracy ?? InitialAccuracy;
 		spread = Owner switch
 		{
-			{ IsOnGround: false } => MovingPenalty + AirborneSpread * _accuracy,
-			{ } player when player.Velocity.WithZ( 0 ).LengthSquared > 140 * 140 => MovingPenalty + MovingSpread * _accuracy,
-			_ => StandingSpread * _accuracy
+			{ IsOnGround: false } => MovingPenalty + AirborneSpread * accuracy,
+			{ } moving when moving.Velocity.WithZ( 0 ).LengthSquared > MovingSpreadSpeed * MovingSpreadSpeed => MovingPenalty + MovingSpread * accuracy,
+			_ => StandingSpread * accuracy
 		};
 
 		spread += spreadOffset;
-		++_shotsFired;
-		_accuracy = MathF.Min( MaxAccuracy, _shotsFired * _shotsFired * _shotsFired / AccuracyDivisor + AccuracyOffset );
+		_accuracy = FiringAccuracy( ++_shotsFired );
 		_nextRecovery = null;
 		SetNextFire( FireDelay );
 		FireRound( spread );
-		if ( !IsProxy && Owner is { ThirdPerson: false } )
-			MeleeViewPunch.Apply( Scene.Camera, new Angles( -Recoil, 0, 0 ) );
+		if ( !IsProxy && Owner is { ThirdPerson: false } player )
+			ApplyFiringRecoil( player, _shotsFired );
 		return true;
+	}
+
+	internal virtual float FiringAccuracy( int shots ) =>
+		MathF.Min( MaxAccuracy, shots * shots * shots / AccuracyDivisor + AccuracyOffset );
+
+	internal virtual void ApplyFiringRecoil( PlayerController player, int shots ) =>
+		MeleeViewPunch.Apply( Scene.Camera, new Angles( -Recoil, 0, 0 ) );
+
+	protected override void OnEquipped()
+	{
+		_accuracy = InitialAccuracy;
+		base.OnEquipped();
 	}
 
 	protected override void Think()
@@ -77,7 +93,7 @@ public abstract class CounterStrikeRifle : CounterStrikeFirearm
 		}
 		if ( _nextRecovery.Value > 0 ) return;
 		_nextRecovery = 0.0225f;
-		if ( --_shotsFired == 0 ) _accuracy = 0.2f;
+		if ( --_shotsFired == 0 && ResetAccuracyWhenIdle ) _accuracy = InitialAccuracy;
 	}
 
 	protected override void OnReloadStarted()
@@ -92,7 +108,7 @@ public abstract class CounterStrikeRifle : CounterStrikeFirearm
 	{
 		base.OnHolstered();
 		_shotsFired = 0;
-		_accuracy = 0.2f;
+		_accuracy = InitialAccuracy;
 		_nextRecovery = null;
 	}
 
@@ -101,7 +117,7 @@ public abstract class CounterStrikeRifle : CounterStrikeFirearm
 		base.OnShootEffects( shot );
 		if ( shot.NoEvents ) return;
 
-		EjectShells( 1, false, "models/rshell.mdl" );
+		EjectShells( 1, false, BrassModel );
 	}
 
 	public override void DryFire()

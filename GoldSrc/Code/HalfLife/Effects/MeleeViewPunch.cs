@@ -7,6 +7,9 @@ internal sealed class MeleeViewPunch : CameraEffectSystem.BaseEffect
 	static readonly ConditionalWeakTable<CameraComponent, MeleeViewPunch> Active = new();
 	Angles _angles;
 
+	internal static Angles Current( CameraComponent camera ) =>
+		camera.IsValid() && Active.TryGetValue( camera, out var punch ) ? punch._angles : Angles.Zero;
+
 	internal static void Apply( CameraComponent camera, Angles hit )
 	{
 		if ( !camera.IsValid() ) return;
