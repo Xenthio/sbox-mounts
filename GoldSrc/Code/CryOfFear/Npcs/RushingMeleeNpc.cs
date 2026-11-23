@@ -10,6 +10,7 @@ public abstract class RushingMeleeNpc : CryOfFearMeleeNpc
 
 	internal abstract string ChaseSequence { get; }
 	internal virtual string StrikeVoice => null;
+	internal virtual string StrikeDamageTag => null;
 	internal override string WallSounds => SwingSounds;
 
 	internal override bool Pursue( Vector3 goal )
@@ -29,7 +30,7 @@ public abstract class RushingMeleeNpc : CryOfFearMeleeNpc
 	{
 		if ( id is not (1 or 2 or 3) ) return;
 
-		var victim = TraceMelee( ClawReach, Definition.Damage, "slash", out var contact );
+		var victim = TraceMelee( ClawReach, Definition.Damage, "slash", out var contact, StrikeDamageTag );
 		var sound = victim.IsValid() ? HitSounds : contact ? WallSounds : SwingSounds;
 		EmitSound( sound, WorldPosition, pitch: Game.Random.Int( 95, 105 ) / 100f );
 		if ( StrikeVoice is { } voice && Game.Random.Int( 0, 1 ) == 1 )
