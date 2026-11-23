@@ -42,6 +42,8 @@ public sealed class MedikitInfection : Component
 
 	internal static void Infect( PlayerController player, GameObject attacker )
 	{
+		if ( FortressPlayer.ClassOf( player ) == FortressClass.Medic ||
+			FortressPlayer.AreTeammates( attacker?.GetComponent<PlayerController>(), player ) == true ) return;
 		if ( player.GetComponentInChildren<MedikitInfection>().IsValid() ) return;
 		var effect = new GameObject( player.GameObject, true, "TFC infection" ) { NetworkMode = NetworkMode.Never };
 		var infection = effect.AddComponent<MedikitInfection>();

@@ -23,7 +23,25 @@ public sealed partial class Spanner : FortressMelee
 		base.PrimaryAttack();
 	}
 
-	// Sandbox has no TFC team assignment, so the second trigger selects the friendly action.
+	internal override void SwingHit( SceneTraceResult hit, Vector3 forward, bool usedHull )
+	{
+		if ( IsFriendly( hit.GameObject ) == true )
+			Repair();
+		else
+			base.SwingHit( hit, forward, usedHull );
+	}
+
+	protected override bool OnValidateShotClaim( in ShotClaim claim ) =>
+		base.OnValidateShotClaim( claim ) && !claim.Pellets.Any( pellet => IsFriendly( pellet.HitObject ) == true );
+
+	bool? IsFriendly( GameObject target )
+	{
+		if ( !target.IsValid() ) return null;
+		var owner = target.GetComponentInParent<FortressBuilding>()?.Builder ?? target.GetComponentInParent<PlayerController>();
+		return FortressPlayer.AreTeammates( Owner, owner );
+	}
+
+	// The second trigger also lets unassigned Sandbox players explicitly repair.
 	public override void SecondaryAttack()
 	{
 		SetNextFire( PrimaryDelay );
@@ -41,6 +59,7 @@ public sealed partial class Spanner : FortressMelee
 		_nextRepair = PrimaryDelay;
 
 		var targetObject = TraceSwing( AimRay ).GameObject;
+		if ( IsFriendly( targetObject ) == false ) return;
 		if ( targetObject?.GetComponentInParent<FortressBuilding>() is { } building )
 		{
 			building.Service( Inventory, PrimaryAmmoType );

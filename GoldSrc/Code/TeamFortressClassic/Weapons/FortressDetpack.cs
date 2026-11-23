@@ -54,6 +54,8 @@ public sealed class FortressDetpack : Component, Component.IPressable
 		new( "Detpack", "timer", Disarmer == e.Source ? "Defusing" : "Hold Use to defuse", CanDefuse( e.Source as PlayerController ) );
 
 	bool CanDefuse( PlayerController player ) => player.IsValid() && player.Enabled && player != Planter &&
+		FortressPlayer.ClassOf( player ) is FortressClass.Unassigned or FortressClass.Scout &&
+		FortressPlayer.AreTeammates( Planter, player ) != true &&
 		(!Disarmer.IsValid() || Disarmer == player) && FuseRemaining > 0 &&
 		player.EyePosition.DistanceSquared( WorldPosition ) <= DefuseReach * DefuseReach &&
 		MapState.PlayerVitals( player ) is { Health: > 0 };

@@ -47,7 +47,7 @@ public sealed class FortressTeleporter : FortressBuilding
 		{
 			if ( !IsAlive( Traveller ) || (_arriving && _phaseComplete <= 0) )
 				EndTransfer();
-			else if ( !_arriving && (!IsStandingOnPad( Traveller ) || !_destination.IsValid()) )
+			else if ( !_arriving && (!CanTravel( Traveller ) || !IsStandingOnPad( Traveller ) || !_destination.IsValid()) )
 				CancelTransfer();
 			else if ( !_arriving && _phaseComplete <= 0 )
 				SendTraveller();
@@ -64,7 +64,7 @@ public sealed class FortressTeleporter : FortressBuilding
 		if ( !ready || IsExit ) return;
 
 		var traveller = Scene.GetAllComponents<PlayerController>().FirstOrDefault( player =>
-			IsAlive( player ) && IsStandingOnPad( player ) && player.Velocity.LengthSquared <= 4 &&
+			IsAlive( player ) && CanTravel( player ) && IsStandingOnPad( player ) && player.Velocity.LengthSquared <= 4 &&
 			!Scene.GetAllComponents<FortressTeleporter>().Any( pad => pad.Traveller == player ) );
 		if ( !traveller.IsValid() ) return;
 
@@ -80,6 +80,8 @@ public sealed class FortressTeleporter : FortressBuilding
 
 	static bool IsAlive( PlayerController player ) => player.IsValid() && player.Enabled &&
 		MapState.PlayerVitals( player ) is { Health: > 0 };
+
+	bool CanTravel( PlayerController player ) => FortressPlayer.AreTeammates( Builder, player ) != false;
 
 	bool IsStandingOnPad( PlayerController player )
 	{

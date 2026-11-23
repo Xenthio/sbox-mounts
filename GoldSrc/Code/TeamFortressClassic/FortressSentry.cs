@@ -148,7 +148,8 @@ public sealed class FortressSentry : FortressBuilding
 			target.WorldPosition.DistanceSquared( EyePosition ) > SightRange * SightRange ) return false;
 		if ( target.GetComponent<PlayerController>() is { } player )
 		{
-			if ( MapState.PlayerVitals( player ) is not { Health: > 0 } ) return false;
+			if ( FortressPlayer.AreTeammates( Builder, player ) == true ||
+				MapState.PlayerVitals( player ) is not { Health: > 0 } ) return false;
 		}
 		else if ( target.GetComponent<BaseNpc>() is not { Health: > 0 } ) return false;
 
@@ -178,7 +179,8 @@ public sealed class FortressSentry : FortressBuilding
 		Shells--;
 		var hit = Scene.Trace.Ray( muzzle, muzzle + direction * 2048 ).WithCollisionRules( "bullet" ).UseHitboxes()
 			.IgnoreGameObjectHierarchy( GameObject ).WithoutTags( "trigger", "playercontroller" ).Run();
-		if ( hit.GameObject?.GetComponentInParent<IDamageable>() is { } victim && hit.GameObject.Root != Builder.GameObject.Root )
+		if ( hit.GameObject?.GetComponentInParent<IDamageable>() is { } victim && hit.GameObject.Root != Builder.GameObject.Root &&
+			FortressPlayer.AreTeammates( Builder, hit.GameObject.GetComponentInParent<PlayerController>() ) != true )
 		{
 			var damage = new DamageInfo { Damage = BulletDamage, Attacker = Builder.GameObject, Weapon = GameObject,
 				Origin = muzzle, Position = hit.EndPosition, Hitbox = hit.Hitbox };

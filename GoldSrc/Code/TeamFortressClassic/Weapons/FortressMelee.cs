@@ -72,10 +72,13 @@ public abstract class FortressMelee : CrowbarWeapon
 		var hit = TraceMelee( aim, Ballistics.Range, out var usedHull );
 		ViewModel?.GetComponent<StudioWeaponView>()?.Play( SwingSequence( hit, aim.Forward ), idleAfter: 5 );
 		if ( hit.Hit )
-			ShootBullet( hit, SwingDamage( hit.GameObject, aim.Forward, usedHull ), 0, hitboxTags: false );
+			SwingHit( hit, aim.Forward, usedHull );
 
 		ShootEffects( new ShotEffect( hit.EndPosition, hit.Hit, hit.Normal, hit.GameObject, hit.Surface, Origin: aim.Position ) );
 	}
+
+	internal virtual void SwingHit( SceneTraceResult hit, Vector3 forward, bool usedHull ) =>
+		ShootBullet( hit, SwingDamage( hit.GameObject, forward, usedHull ), 0, hitboxTags: false );
 
 	internal virtual float SwingDamage( GameObject target, Vector3 forward, bool usedHull ) => Ballistics.Damage;
 

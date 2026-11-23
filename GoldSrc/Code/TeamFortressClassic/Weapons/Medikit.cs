@@ -20,7 +20,7 @@ public sealed class Medikit : CrowbarWeapon
 		Ballistics = new() { Range = 32, Radius = 0 };
 	}
 
-	// Sandbox has no TFC team assignment. The two triggers explicitly select treatment or infection.
+	// Keep the explicit treatment and infection controls for players without team assignments.
 	public override void PrimaryAttack() => Use( false );
 	public override void SecondaryAttack() => Use( true );
 
@@ -45,7 +45,8 @@ public sealed class Medikit : CrowbarWeapon
 		var player = hit.GameObject?.GetComponentInParent<PlayerController>();
 		if ( !player.IsValid() || !player.Enabled || MapState.PlayerVitals( player ) is not { Health: > 0 } vitals ) return;
 
-		if ( infect )
+		var teammates = FortressPlayer.AreTeammates( Owner, player );
+		if ( !teammates ?? infect )
 		{
 			var damage = new DamageInfo { Damage = 10, Attacker = Owner.GameObject, Weapon = GameObject,
 				Origin = aim.Position, Position = hit.EndPosition, Hitbox = hit.Hitbox };
