@@ -85,9 +85,3 @@ public sealed partial class Tor
 		portal.GetComponent<TemporaryEffect>().DestroyAfterSeconds = 2;
 	}
 }
-
-[Hide]
-[NpcDefinition( "monster_alien_grunt", "agrunt", MonsterClass.AlienMilitary, 150, 32, 64, 125,
-	Mount = "svencoop", ShowInSpawnMenu = false, ArmorGroup = 10, Attack = NpcAttack.Projectile, Damage = 10,
-	Range = 1024, ProjectileModel = "hornet", Gibs = GibSet.Alien, Blood = Npc.BloodColor.Yellow )]
-public sealed class SummonedAlienGrunt : AlienGrunt;

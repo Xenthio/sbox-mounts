@@ -1,4 +1,5 @@
 using GoldSrc.HalfLife;
+using Sandbox.Npcs.Layers;
 
 namespace GoldSrc.SvenCoop;
 
@@ -7,10 +8,16 @@ namespace GoldSrc.SvenCoop;
 	Mount = "svencoop", Attack = NpcAttack.Melee, Range = 128, IdleSequence = "idle", Blood = BloodColor.Yellow )]
 public sealed class SnarkNest : Npc
 {
+	const string Prefab = "mount://svencoop/entities/npcs/monster_sqknest.prefab";
 	[Property, Sync( SyncFlags.FromHost )] public bool Friendly { get; set; }
 	[Sync( SyncFlags.FromHost ), Change( nameof( OnRuptured ) )] bool Ruptured { get; set; }
 	TimeUntil _release;
 	int _remaining;
+	SummonedAlienGrunt _thrower;
+	Vector3? _launchVelocity;
+	bool _inFlight;
+	TimeUntil _groundCheck;
+	PhysicsFilter _throwerCollision;
 
 	internal override float ViewDot => -1;
 	internal override MonsterClass Classification => Friendly ? MonsterClass.PlayerAlly : base.Classification;
@@ -24,6 +31,60 @@ public sealed class SnarkNest : Npc
 	internal override void OnModelLoaded( ModelLoader loader ) => EyeHeight = 20;
 	internal override bool Pursue( Vector3 goal ) => MoveToward( goal, 64 );
 
+	internal static SnarkNest Throw( SummonedAlienGrunt owner, Vector3 origin, Vector3 velocity )
+	{
+		var prefab = GameObject.GetPrefab( Prefab );
+		if ( !prefab.IsValid() ) return null;
+		var go = prefab.Clone( new Transform( origin, owner.WorldRotation ), startEnabled: false );
+		var nest = go.GetComponent<SnarkNest>( true );
+		nest.Friendly = owner.Friendly;
+		nest._thrower = owner;
+		nest._launchVelocity = velocity;
+		if ( owner.Tags.Has( Maps.MonsterClip.MonsterTag ) ) Maps.MonsterClip.Restrict( go );
+		go.Enabled = true;
+		go.NetworkSpawn( true, null );
+		return nest;
+	}
+
+	internal override void PlaceAtSpawn()
+	{
+		if ( _launchVelocity is not { } velocity ) return;
+		_launchVelocity = null;
+		_inFlight = true;
+		_groundCheck = 0.15f;
+
+		if ( Movement.IsValid() ) Movement.Enabled = false;
+		var body = GetComponent<Rigidbody>();
+		var hull = GetComponentInChildren<BoxCollider>();
+		hull.Friction = 0.8f;
+		hull.Elasticity = 0.5f;
+		if ( _thrower.IsValid() )
+		{
+			_throwerCollision = GameObject.AddComponent<PhysicsFilter>();
+			_throwerCollision.Body = _thrower.GameObject;
+		}
+		// The bounce is part of the attack and must not count as NPC fall damage.
+		Launch( velocity );
+		body.AngularVelocity = Vector3.Up * 200f.DegreeToRadian();
+	}
+
+	void UpdateFlight()
+	{
+		if ( _groundCheck > 0 ) return;
+		_groundCheck = 0.05f;
+		var body = GetComponent<Rigidbody>();
+		var floor = Scene.Trace.Ray( WorldPosition + Vector3.Up, WorldPosition + Vector3.Down * 3 )
+			.IgnoreGameObjectHierarchy( GameObject ).WithoutTags( "npc", "player", "trigger", "debris" ).Run();
+		if ( !floor.Hit || floor.Normal.z < 0.6f || body.Velocity.LengthSquared > 40 * 40 ) return;
+
+		_inFlight = false;
+		_throwerCollision?.Destroy();
+		body.AngularVelocity = Vector3.Zero;
+		body.Velocity = Vector3.Zero;
+		body.MotionEnabled = false;
+		if ( GetComponent<NavigationLayer>( true ) is { } navigation ) navigation.Enabled = true;
+	}
+
 	internal override void PlaySequenceSound( NpcAudio audio, int id )
 	{
 		if ( id != 1 ) return;
@@ -35,7 +96,7 @@ public sealed class SnarkNest : Npc
 
 	internal override void BeginAttack( GameObject target )
 	{
-		if ( Ruptured ) return;
+		if ( Ruptured || _inFlight ) return;
 		Movement?.Stop();
 		BeginRupture();
 		_remaining = 5;
@@ -44,7 +105,7 @@ public sealed class SnarkNest : Npc
 
 	protected override void Think()
 	{
-		if ( !Ruptured ) base.Think();
+		if ( !Ruptured && !_inFlight && !_launchVelocity.HasValue ) base.Think();
 	}
 
 	internal override void ModifyDamage( Component.IDamageable.DamageEvent hit )
@@ -55,6 +116,12 @@ public sealed class SnarkNest : Npc
 
 	protected override void OnUpdate()
 	{
+		if ( _inFlight && !Ruptured )
+		{
+			if ( Networking.IsHost && Health > 0 ) UpdateFlight();
+			return;
+		}
+
 		base.OnUpdate();
 		if ( !Networking.IsHost || Health <= 0 || !Ruptured || _release > 0 ) return;
 
@@ -104,6 +171,11 @@ public sealed class SnarkNest : Npc
 		var go = prefab.Clone( new Transform( WorldPosition + Vector3.Up, Rotation.LookAt( velocity.WithZ( 0 ) ) ), startEnabled: false );
 		var snark = go.GetComponent<NestSnark>( true );
 		snark.Friendly = Friendly;
+		if ( _thrower.IsValid() )
+		{
+			snark.Thrower = _thrower.GameObject;
+			_thrower.RegisterHatchling( snark );
+		}
 		if ( GameObject.Tags.Has( Maps.MonsterClip.MonsterTag ) ) Maps.MonsterClip.Restrict( go );
 		go.Enabled = true;
 		snark.Launch( velocity );
