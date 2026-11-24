@@ -10,6 +10,7 @@ public abstract class ClassicPistol : BulletWeapon
 	internal override int PlayerMuzzleFlash => 21;
 
 	bool _rapidFire;
+	internal virtual float ShotDamage => Deathmatch ? 12 : 8;
 
 	internal override bool CanIdle => Clip1 > 0;
 	internal override (string Name, float? Delay) IdleAnimation => Game.Random.Float( 0, 1 ) switch
@@ -45,7 +46,7 @@ public abstract class ClassicPistol : BulletWeapon
 	void FireRound( bool rapid )
 	{
 		_rapidFire = rapid;
-		Ballistics = Ballistics with { Damage = Deathmatch ? 12 : 8 };
+		Ballistics = Ballistics with { Damage = ShotDamage };
 		base.PrimaryAttack();
 		SetNextFire( rapid ? SecondaryDelay : PrimaryDelay );
 	}

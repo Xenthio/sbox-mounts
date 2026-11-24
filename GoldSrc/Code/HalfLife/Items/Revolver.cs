@@ -10,6 +10,7 @@ public abstract class ClassicRevolver : BulletWeapon
 	internal override int PlayerMuzzleFlash => 31;
 	internal virtual float ShotDamage => Deathmatch ? 50 : 40;
 
+	internal virtual bool HasScope => Deathmatch;
 	internal override float ZoomFieldOfView => 40;
 	internal override (string Name, float? Delay) IdleAnimation => Game.Random.Float( 0, 1 ) switch
 	{
@@ -35,12 +36,12 @@ public abstract class ClassicRevolver : BulletWeapon
 
 	internal override Vector2 PelletSpread => Vector2.One * 0.00873f;
 
-	public override bool CanSecondaryAttack() => Deathmatch && base.CanSecondaryAttack();
+	public override bool CanSecondaryAttack() => HasScope && base.CanSecondaryAttack();
 
 	protected override void CreateViewModel()
 	{
 		base.CreateViewModel();
-		ViewModel?.GetComponent<SkinnedModelRenderer>()?.SetBodyGroup( "scope", Deathmatch ? 1 : 0 );
+		ViewModel?.GetComponent<SkinnedModelRenderer>()?.SetBodyGroup( "scope", HasScope ? 1 : 0 );
 	}
 
 	public override void PrimaryAttack()
