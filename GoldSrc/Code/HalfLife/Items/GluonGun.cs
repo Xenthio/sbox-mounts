@@ -46,30 +46,42 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 
 		var start = _burstExpires <= 0;
 		_burstExpires = PrimaryDelay + 0.15f;
-		var hit = BulletTrace( AimRay, Ballistics.Range, 0 ).Run();
 		if ( start )
 		{
 			_nextCell = 0;
 			_firstImpact = true;
 		}
-		else if ( !hit.StartedSolid )
+
+		ShootBeam( start );
+		if ( IsHeld && !HasPrimaryAmmo() ) EndAttack( 1 );
+	}
+
+	protected virtual void ShootBeam( bool start )
+	{
+		var hit = BulletTrace( AimRay, Ballistics.Range, 0 ).Run();
+		if ( !start && !hit.StartedSolid )
 		{
 			if ( hit.Hit )
 			{
 				ShootBullet( hit, BeamDamage, 0, BeamDamageTags );
-				// Keep the blast's visibility traces outside the surface, including sloped ceilings.
 				ImpactPulse( hit.EndPosition, hit.Normal, _firstImpact );
 				_firstImpact = false;
 			}
-			if ( IsHeld && _nextCell <= 0 )
-			{
-				TakePrimaryAmmo();
-				_nextCell = CellInterval;
-			}
+			SpendBeamCell();
 		}
-		ShootEffects( new ShotEffect( hit.EndPosition, hit.Hit, hit.Normal, hit.GameObject, hit.Surface, NoEvents: !start ) );
-		if ( IsHeld && !HasPrimaryAmmo() ) EndAttack( 1 );
+
+		ShowBeamShot( hit, start );
 	}
+
+	protected void SpendBeamCell()
+	{
+		if ( !IsHeld || _nextCell > 0 ) return;
+		TakePrimaryAmmo();
+		_nextCell = CellInterval;
+	}
+
+	protected void ShowBeamShot( SceneTraceResult hit, bool start ) =>
+		ShootEffects( new ShotEffect( hit.EndPosition, hit.Hit, hit.Normal, hit.GameObject, hit.Surface, NoEvents: !start ) );
 
 	[Rpc.Host( NetFlags.OwnerOnly )]
 	void ImpactPulse( Vector3 point, Vector3 normal, bool firstImpact )
@@ -169,7 +181,7 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 		_beamSound = null;
 	}
 
-	void StopBeamVisual()
+	protected virtual void StopBeamVisual()
 	{
 		if ( _beam.IsValid() ) _beam.Stop();
 		_beam = null;

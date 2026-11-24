@@ -5,15 +5,23 @@ namespace GoldSrc.ScientistSlaughterhouse;
 
 [Title( "Gluon Gun" ), Category( "Scientist Slaughterhouse" )]
 [WeaponPickup( "egon", "uranium", 999, Bucket = 5, Weight = 20, Mount = "ssh" )]
-public sealed class GluonGun : ClassicGluonGun
+public sealed partial class GluonGun : ClassicGluonGun
 {
 	static readonly TagSet AntimatterTags = ["energybeam"];
 
-	[Sync( SyncFlags.FromHost )] bool Antimatter { get; set; }
+	enum EgonMode { Gluon, Antimatter, Ion }
+
+	[Sync( SyncFlags.FromHost )] EgonMode Mode { get; set; }
+	bool Antimatter => Mode == EgonMode.Antimatter;
 	TimeUntil _nextModeChange;
 
 	internal override float BeamDamage => Antimatter ? 6 : 14;
-	internal override float CellInterval => Antimatter ? 0.1f : 0.2f;
+	internal override float CellInterval => Mode switch
+	{
+		EgonMode.Antimatter => 0.1f,
+		EgonMode.Ion => 1f / (3 * (IonLevel + 1)),
+		_ => 0.2f
+	};
 	internal override string BeamSprite => Antimatter ? "amp" : base.BeamSprite;
 	internal override string ImpactSprite => Antimatter ? null : base.ImpactSprite;
 	internal override bool HasBeamNoise => !Antimatter;
@@ -24,6 +32,7 @@ public sealed class GluonGun : ClassicGluonGun
 	{
 		base.Configure();
 		StartingAmmo = 100;
+		SecondaryDelay = 1;
 	}
 
 	protected override void Think()
@@ -38,17 +47,22 @@ public sealed class GluonGun : ClassicGluonGun
 	{
 		if ( !IsActive || !Owner.IsValid() || BeamActive || _nextModeChange > 0 ) return;
 		_nextModeChange = 1;
-		Antimatter = !Antimatter;
-		ShowMode( Antimatter );
+		Mode = Mode == EgonMode.Ion ? EgonMode.Gluon : Mode + 1;
+		ShowMode( Mode );
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	void ShowMode( bool antimatter )
+	void ShowMode( EgonMode mode )
 	{
 		if ( IsProxy || Application.IsDedicatedServer ) return;
 		Scene.GetSystem<MessageDisplay>()?.Show( new TitleMessage
 		{
-			Text = antimatter ? "Antimatter Pulverizer mode selected" : "Gluon Gun mode selected",
+			Text = mode switch
+			{
+				EgonMode.Antimatter => "Antimatter Pulverizer mode selected",
+				EgonMode.Ion => "Ion Discharge Cannon mode selected",
+				_ => "Gluon Gun mode selected"
+			},
 			Position = new Vector2( -1, 0.5f ),
 			Color = Color.White,
 			HoldTime = 1,
