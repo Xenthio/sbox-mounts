@@ -74,12 +74,14 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 		using var main = new BinaryReader( stream );
 		ReadAnimations( mdlFile, main, true );
 		var sequences = new List<StudioSequence>();
+		var names = new HashSet<string>( StringComparer.OrdinalIgnoreCase );
 		int index = 0;
 		foreach ( var sequence in mdlFile.Sequences )
 		{
 			var source = mdlFile.SequenceTransforms[index++];
 			if ( source is null || string.IsNullOrWhiteSpace( sequence.Label ) ) continue;
-			sequences.Add( CreateSequence( main, sequence.Label, sequence, source.Transforms, source.PitchFrames ) );
+			var name = AddSequenceName( names, sequence.Label, index - 1 );
+			sequences.Add( CreateSequence( main, name, sequence, source.Transforms, source.PitchFrames ) );
 		}
 		var bones = mdlFile.Bones.ToArray();
 		PrepareSkeleton( mdlFile, main, bones, BoneNames( bones ) );
@@ -88,6 +90,15 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 
 	static StudioSequence CreateSequence( BinaryReader reader, string name, Mdl.SequenceDesc description, Transform[] frames, Transform[] pitchFrames )
 		=> new( name, description, Mdl.File.ReadEvents( reader, description ).OrderBy( x => x.Frame ).ToArray(), frames, pitchFrames );
+
+	static string AddSequenceName( HashSet<string> names, string label, int index )
+	{
+		// Studio models can use the same label for different activities, such as walk and run.
+		if ( names.Add( label ) ) return label;
+		var name = $"{label}_{index}";
+		while ( !names.Add( name ) ) name += "_";
+		return name;
+	}
 
 	void ReadAnimations( Mdl.File mdlFile, BinaryReader main, bool includePitchBlends )
 	{
@@ -326,6 +337,7 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 		if ( bones.Count > 0 ) builder.AddBones( [.. bones] );
 
 		var sequences = new List<StudioSequence>();
+		var sequenceNames = new HashSet<string>( StringComparer.OrdinalIgnoreCase );
 		int sequenceIndex = 0;
 		foreach ( var sequence in mdlFile.Sequences )
 		{
@@ -336,7 +348,8 @@ class ModelLoader( string fullPath, bool npcAnimations = false, HalfLife.NpcDefi
 			var transforms = source.Transforms.AsSpan();
 			int boneCount = bones.Count;
 			var frameCount = sequence.NumFrames;
-			var animation = builder.AddAnimation( sequence.Label, sequence.Fps ).WithLooping( (sequence.Flags & 1) != 0 );
+			var name = AddSequenceName( sequenceNames, sequence.Label, sequenceIndex - 1 );
+			var animation = builder.AddAnimation( name, sequence.Fps ).WithLooping( (sequence.Flags & 1) != 0 );
 
 			for ( var frameIndex = 0; frameIndex < frameCount; ++frameIndex )
 			{
