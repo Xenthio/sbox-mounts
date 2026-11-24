@@ -18,8 +18,15 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 	TimeUntil _nextPulseDeadline, _windupEnds, _idleAfterShutdown;
 	TimeUntil _burstExpires, _nextCell, _nextShake;
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => hd ? new( 29, -5.2f, 0.5f ) : new( 28.4f, -5.1f, 0 );
-	internal float BeamDamage => Networking.MaxPlayers > 1 ? 20 : Ballistics.Damage;
+	internal virtual float BeamDamage => Networking.MaxPlayers > 1 ? 20 : Ballistics.Damage;
+	internal virtual float CellInterval => Networking.MaxPlayers > 1 ? 0.2f : 0.1f;
+	internal virtual string BeamSprite => "xbeam1";
+	internal virtual string ImpactSprite => "xspark1";
+	internal virtual bool HasBeamNoise => true;
 	internal virtual string ObserverEffectSprite => null;
+	protected bool BeamActive => _burstExpires > 0;
+	protected virtual TagSet BeamDamageTags => AttackDamageTags;
+	protected virtual bool HasSplashDamage => Networking.MaxPlayers > 1;
 	public override Ray AimRay => Owner.IsValid() ? Owner.EyeTransform.ForwardRay : base.AimRay;
 
 	protected override void Think()
@@ -40,7 +47,6 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 		var start = _burstExpires <= 0;
 		_burstExpires = PrimaryDelay + 0.15f;
 		var hit = BulletTrace( AimRay, Ballistics.Range, 0 ).Run();
-		var multiplayer = Networking.MaxPlayers > 1;
 		if ( start )
 		{
 			_nextCell = 0;
@@ -50,15 +56,15 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 		{
 			if ( hit.Hit )
 			{
-				ShootBullet( hit, BeamDamage, 0 );
+				ShootBullet( hit, BeamDamage, 0, BeamDamageTags );
 				// Keep the blast's visibility traces outside the surface, including sloped ceilings.
-				ImpactPulse( hit.EndPosition + hit.Normal * 2, _firstImpact );
+				ImpactPulse( hit.EndPosition, hit.Normal, _firstImpact );
 				_firstImpact = false;
 			}
 			if ( IsHeld && _nextCell <= 0 )
 			{
 				TakePrimaryAmmo();
-				_nextCell = multiplayer ? 0.2f : 0.1f;
+				_nextCell = CellInterval;
 			}
 		}
 		ShootEffects( new ShotEffect( hit.EndPosition, hit.Hit, hit.Normal, hit.GameObject, hit.Surface, NoEvents: !start ) );
@@ -66,10 +72,15 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 	}
 
 	[Rpc.Host( NetFlags.OwnerOnly )]
-	void ImpactPulse( Vector3 point, bool firstImpact )
+	void ImpactPulse( Vector3 point, Vector3 normal, bool firstImpact )
 	{
-		if ( !Owner.IsValid() || !IsActive ) return;
-		if ( Networking.MaxPlayers > 1 )
+		if ( Owner.IsValid() && IsActive ) ApplyBeamImpact( point, normal, firstImpact );
+	}
+
+	protected virtual void ApplyBeamImpact( Vector3 point, Vector3 normal, bool firstImpact )
+	{
+		point += normal * 2;
+		if ( HasSplashDamage )
 			Blast.DamageInRadius( GameObject, Owner.GameObject, point, BeamDamage * 0.25f, 128, "energybeam", "blast", "alwaysgib" );
 		if ( !firstImpact && _nextShake > 0 ) return;
 		GroundShake.Emit( Scene, point, 5, 150, 0.75f, 250 );

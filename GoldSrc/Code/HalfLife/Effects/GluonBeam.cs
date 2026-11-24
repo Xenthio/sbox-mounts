@@ -19,11 +19,17 @@ public sealed class GluonBeam : Component
 		beam._gun = gun;
 		beam._end = end;
 		var observerSprite = gun.IsProxy ? gun.ObserverEffectSprite : null;
-		var material = (observerSprite is not null ? mount.GetTrailMaterial( observerSprite ) : null) ?? mount.GetTrailMaterial( "xbeam1" );
+		var material = (observerSprite is not null ? mount.GetTrailMaterial( observerSprite ) : null) ?? mount.GetTrailMaterial( gun.BeamSprite );
 		beam._core = beam.CreateLine( material, 3.5f );
-		beam._noise = beam.CreateLine( material, gun.IsProxy ? 5.5f : 5 );
-		if ( gun.IsProxy ) beam._noise.Color = new Color( 50f / 255, 50f / 255, 1, 100f / 255 );
-		var sprite = (observerSprite is not null ? mount.GetIndexedSprite( observerSprite ) : null) ?? mount.GetIndexedSprite( "xspark1" );
+		if ( gun.HasBeamNoise )
+		{
+			beam._noise = beam.CreateLine( material, gun.IsProxy ? 5.5f : 5 );
+			if ( gun.IsProxy ) beam._noise.Color = new Color( 50f / 255, 50f / 255, 1, 100f / 255 );
+		}
+		else beam._core.Color = Color.White;
+
+		var sprite = observerSprite is not null ? mount.GetIndexedSprite( observerSprite ) : null;
+		if ( sprite is null && gun.ImpactSprite is { } impact ) sprite = mount.GetIndexedSprite( impact );
 		if ( sprite is not null )
 		{
 			var flare = new GameObject( go, true, "Gluon impact" ).AddComponent<SpriteRenderer>();
@@ -67,7 +73,8 @@ public sealed class GluonBeam : Component
 		if ( _stopping ) return;
 		_stopping = true;
 		_fadeAge = 0;
-		_core.Enabled = _noise.Enabled = false;
+		_core.Enabled = false;
+		if ( _noise.IsValid() ) _noise.Enabled = false;
 		if ( !_flare.IsValid() || !_flare.Enabled ) GameObject.Destroy();
 	}
 
@@ -86,7 +93,7 @@ public sealed class GluonBeam : Component
 		var start = _gun.GetMuzzleTransform().Position;
 		var basis = Rotation.LookAt( _end - start );
 		// Half-Life predicts fixed beams for the firing player and pulses the replicated core for observers.
-		if ( _gun.IsProxy )
+		if ( _gun.IsProxy && _noise.IsValid() )
 		{
 			var pulse = System.Math.Clamp( (float)_pulseAge * 10, 0, 1 );
 			_core.Width = 4 - 2 * pulse;
@@ -94,7 +101,7 @@ public sealed class GluonBeam : Component
 				(64 + 80 * System.MathF.Abs( System.MathF.Sin( Time.Now * 10 ) )) / 255, 1 - 180 * pulse / 255 );
 		}
 		UpdateLine( _core, start, basis, 0.2f, _gun.IsProxy ? 50 : 55 );
-		UpdateLine( _noise, start, basis, 0.08f, 25 );
+		if ( _noise.IsValid() ) UpdateLine( _noise, start, basis, 0.08f, 25 );
 	}
 
 	void UpdateLine( LineRenderer line, Vector3 start, Rotation basis, float amplitude, float scroll )
