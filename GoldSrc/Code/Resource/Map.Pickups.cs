@@ -20,6 +20,7 @@ partial class MapBuilder
 			(ScientistSlaughterhouseMount, "ammo_sniperclip") => ("w_m40a1clip", "m40", 5),
 			(CrackLifeCampaignMount, "ammo_snipars") => ("w_357ammobox", "snipars", 10),
 			(CrackLifeCampaignMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 999),
+			(CrackLifeCampaignMount, "ammo_crossbow") => ("w_crossbow_clip", "bolts", 50),
 			_ => default
 		};
 		if ( !weapon && !halfLifeItems && customAmmo.Model is null ) return false;

@@ -2,7 +2,10 @@ namespace GoldSrc.HalfLife;
 
 [Title( "Hivehand" ), Category( "Half-Life" )]
 [WeaponPickup( "hgun", "hornets", 8, ClassName = "hornetgun", Bucket = 3, Weight = 15 )]
-public sealed class Hivehand : ProjectileWeapon
+public sealed class Hivehand : ClassicHivehand;
+
+[Hide]
+public abstract class ClassicHivehand : ProjectileWeapon
 {
 	internal override string DeploySequence => "up";
 	internal override string ShotSequence => "Shoot";
@@ -14,11 +17,15 @@ public sealed class Hivehand : ProjectileWeapon
 		<= 0.875f => ("fidgetSway", 40f / 16),
 		_ => ("fidgetShake", 35f / 16)
 	};
-	static float RechargeTime => Networking.MaxPlayers > 1 ? 0.3f : 0.5f;
+	internal virtual float RechargeInterval => Networking.MaxPlayers > 1 ? 0.3f : 0.5f;
+	internal virtual float RechargeDelay => RechargeInterval;
+	internal virtual float EmptyPrimaryDelay => RechargeInterval;
+	internal virtual float EmptySecondaryDelay => 0.5f;
 	static float HornetDamage => Networking.MaxPlayers > 1 ? 10 : 7;
 	int _phase;
 	TimeUntil _regenerate;
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => hd ? new( 19.1f, 0.7f, -2.2f ) : new( 19.3f, 0.9f, -0.6f );
+	public override Ray AimRay => Owner.IsValid() ? OffsetLaunchRay( new Vector3( 16, -8, -12 ) ) : base.AimRay;
 
 	internal override void Configure()
 	{
@@ -33,27 +40,27 @@ public sealed class Hivehand : ProjectileWeapon
 	public override bool HasSecondaryAmmo() => HasPrimaryAmmo();
 	public override void PrimaryAttack()
 	{
-		SetNextPrimaryFire( PrimaryDelay + (Ammo1 == 1 ? RechargeTime : 0) );
+		SetNextPrimaryFire( PrimaryDelay + (Ammo1 == 1 ? EmptyPrimaryDelay : 0) );
 		LaunchHornet( AimRay, false );
 	}
 
 	public override void SecondaryAttack()
 	{
-		SetNextFire( SecondaryDelay + (Ammo1 == 1 ? 0.5f : 0) );
+		SetNextFire( SecondaryDelay + (Ammo1 == 1 ? EmptySecondaryDelay : 0) );
 		LaunchHornet( AimRay, true );
 	}
 
 	[Rpc.Host( NetFlags.OwnerOnly )]
 	void LaunchHornet( Ray ray, bool dart )
 	{
-		var emptyDelay = dart ? 0.5f : RechargeTime;
+		var emptyDelay = dart ? EmptySecondaryDelay : EmptyPrimaryDelay;
 		TryLaunch( ray, dart ? ReleaseDart : Release, dart, Ammo1 == 1 ? emptyDelay : 0 );
 	}
 
 	internal override bool Release( Ray ray )
 	{
-		_regenerate = RechargeTime;
-		NpcProjectile.Fire<Hornet>( Owner.GameObject, "mount://hl1/valve/models/hornet.mdl.vmdl", HornetDamage, null, ray.Position, ray.Forward, 300 );
+		if ( !SpawnHornet<Hornet>( ray.Position, ray.Forward, 300 ) ) return false;
+		_regenerate = RechargeDelay;
 		return true;
 	}
 
@@ -61,11 +68,18 @@ public sealed class Hivehand : ProjectileWeapon
 	{
 		var up = _phase is 7 or 0 or 1 ? 8 : _phase is 3 or 4 or 5 ? -8 : 0;
 		var right = _phase is 1 or 2 or 3 ? 8 : _phase is 5 or 6 or 7 ? -8 : 0;
-		_phase = (_phase + 1) % 8;
 		var basis = Rotation.LookAt( ray.Forward );
 		var origin = ray.Position + basis.Up * up + basis.Right * right;
-		NpcProjectile.Fire<HornetDart>( Owner.GameObject, "mount://hl1/valve/models/hornet.mdl.vmdl", HornetDamage, null, origin, ray.Forward, 1200 );
-		_regenerate = Ammo1 == 1 ? 0.5f : RechargeTime;
+		if ( !SpawnHornet<HornetDart>( origin, ray.Forward, 1200 ) ) return false;
+		_phase = (_phase + 1) % 8;
+		_regenerate = Ammo1 == 1 && EmptySecondaryDelay > 0 ? EmptySecondaryDelay : RechargeDelay;
+		return true;
+	}
+
+	bool SpawnHornet<T>( Vector3 origin, Vector3 direction, float speed ) where T : Hornet, new()
+	{
+		if ( ContentMount is not { } mount || mount.FindMountPath( "models/hornet.mdl" ) is not { } path ) return false;
+		NpcProjectile.Fire<T>( Owner.GameObject, $"mount://{mount.Ident}/{path}.vmdl", HornetDamage, null, origin, direction, speed );
 		return true;
 	}
 
@@ -86,8 +100,8 @@ public sealed class Hivehand : ProjectileWeapon
 	{
 		base.OnUpdate();
 		if ( !Networking.IsHost || !Inventory.IsValid() || Ammo1 >= MaxReserveAmmo || _regenerate > 0 ) return;
-		var rounds = 1 + (int)(-(float)_regenerate / RechargeTime);
-		_regenerate = (float)_regenerate + rounds * RechargeTime;
+		var rounds = 1 + (int)(-(float)_regenerate / RechargeInterval);
+		_regenerate = (float)_regenerate + rounds * RechargeInterval;
 		Inventory.GiveAmmo( PrimaryAmmoType, rounds );
 	}
 }

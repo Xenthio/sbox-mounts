@@ -2,7 +2,10 @@ namespace GoldSrc.HalfLife;
 
 [Title( "Crossbow" ), Category( "Half-Life" )]
 [WeaponPickup( "crossbow", "bolts", 50, Bucket = 2, Weight = 10 )]
-public sealed class Crossbow : ProjectileWeapon
+public sealed class Crossbow : ClassicCrossbow;
+
+[Hide]
+public abstract class ClassicCrossbow : ProjectileWeapon
 {
 	internal override float ZoomFieldOfView => 20;
 
@@ -15,7 +18,7 @@ public sealed class Crossbow : ProjectileWeapon
 			view.Play( Clip1 > 0 ? "fidget1" : "fidget2", idleAfter: Clip1 > 0 ? 3 : 80f / 30 );
 	}
 	internal override string ShotSequence => Clip1 > 0 ? "fire1" : Ammo1 > 0 ? "fire3" : null;
-	internal override float? IdleAfterShot => Clip1 > 0 ? 5 : 0.75f;
+	internal override float? IdleAfterShot => Clip1 > 0 ? 5 : PrimaryDelay;
 
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => hd ? new( 22.4f, 1.5f, 2.9f ) : new( 19.3f, 0.8f, 2.6f );
 
@@ -63,15 +66,18 @@ public sealed class Crossbow : ProjectileWeapon
 		var victim = hit.GameObject?.GetComponentInParent<IDamageable>();
 		if ( victim is not null ) ShootBullet( hit, 120, 0, new TagSet { "bullet", "nevergib" } );
 		var stick = victim is null && hit.Body?.BodyType != PhysicsBodyType.Dynamic && !hit.HasTag( "glass" );
-		CrossbowBolt.ImpactEffects( hit.EndPosition, ray.Forward, victim is not null, stick );
+		CrossbowBolt.ImpactEffects( hit.EndPosition, ray.Forward, victim is not null, stick, Definition.Mount );
 		return true;
 	}
 
 	internal override bool Release( Ray ray )
 	{
+		var speed = WaterBody.Find( Scene, Owner.EyePosition ).IsValid() ? 1000 : 2000;
+		if ( !SpawnBolt( ray, speed ).IsValid() ) return false;
 		GoldSrc.HalfLife.Npc.PunchPlayer( Owner, Vector3.Zero, new Angles( -2, 0, 0 ) );
-		NpcProjectile.Fire<CrossbowBolt>( Owner.GameObject, CrossbowBolt.ModelAsset, 50, null, ray.Position, ray.Forward,
-			WaterBody.Find( Scene, Owner.EyePosition ).IsValid() ? 1000 : 2000 );
 		return true;
 	}
+
+	internal virtual CrossbowBolt SpawnBolt( Ray ray, float speed ) =>
+		NpcProjectile.Fire<CrossbowBolt>( Owner.GameObject, CrossbowBolt.ModelAsset, 50, null, ray.Position, ray.Forward, speed );
 }

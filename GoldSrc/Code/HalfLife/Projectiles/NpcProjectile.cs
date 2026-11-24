@@ -8,6 +8,9 @@ public class NpcProjectile : Component
 {
 	[Property] public GameObject Shooter { get; set; }
 	[Property] public string ModelPath { get; set; }
+	internal GameMount ModelMount => Sandbox.Mounting.MountUtility.TryParse( ModelPath, out var ident )
+		? Sandbox.Mounting.Directory.Get( ident ) as GameMount
+		: null;
 	[Property] public Vector3 Velocity { get; set; }
 	[Property] public float Damage { get; set; }
 	[Property] public string DamageTag { get; set; }

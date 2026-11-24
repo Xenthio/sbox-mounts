@@ -29,8 +29,8 @@ public class Hornet : NpcProjectile, Component.IDamageable
 	protected override void OnUpdate()
 	{
 		if ( _trailStarted || Age < 0.1f || Application.IsDedicatedServer ) return;
+		if ( ModelMount is not { } mount ) return;
 		_trailStarted = true;
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
 		Color tint = Red ? new Color32( 179, 39, 14, 128 ) : new Color32( 255, 128, 0, 128 );
 		ProjectileTrail.Attach( GameObject, mount, "Hornet trail", "laserbeam", 1, 2, tint );
 	}
@@ -65,9 +65,9 @@ public class Hornet : NpcProjectile, Component.IDamageable
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static void ShowPuff( Vector3 position )
+	void ShowPuff( Vector3 position )
 	{
-		var puff = Blast.SpriteEffect( "Hornet attack puff", "muz1", position, 0.2f, 10 );
+		var puff = Blast.SpriteEffect( "Hornet attack puff", "muz1", position, 0.2f, 10, mount: ModelMount );
 		if ( puff.IsValid() ) puff.GetComponent<SpriteRenderer>().Color = Color.White.WithAlpha( 0.5f );
 	}
 
@@ -124,9 +124,9 @@ public class Hornet : NpcProjectile, Component.IDamageable
 		return true;
 	}
 
-	static void PlaySound( string sample, Vector3 position, float volume = 1 )
+	void PlaySound( string sample, Vector3 position, float volume = 1 )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount ) mount.NpcAudio.Emit( sample, position, volume );
+		ModelMount?.NpcAudio.Emit( sample, position, volume );
 	}
 }
 

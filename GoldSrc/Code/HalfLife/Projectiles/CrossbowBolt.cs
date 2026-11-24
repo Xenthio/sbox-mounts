@@ -5,7 +5,7 @@ public class CrossbowBolt : NpcProjectile
 {
 	internal const string ModelAsset = "mount://hl1/valve/models/crossbow_bolt.mdl.vmdl";
 	internal virtual bool Explosive => Networking.MaxPlayers > 1;
-	internal virtual string ImpactMount => "hl1";
+	internal virtual string ImpactMount => ModelMount?.Ident ?? "hl1";
 	TimeUntil? _detonateAt;
 	float _nextBubble = 0.2f;
 
@@ -18,7 +18,7 @@ public class CrossbowBolt : NpcProjectile
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static void Bubble( Vector3 start, Vector3 end ) => Blast.BubbleTrail( Game.ActiveScene, start, end, 1, "Crossbow bubble" );
+	void Bubble( Vector3 start, Vector3 end ) => Blast.BubbleTrail( Scene, start, end, 1, "Crossbow bubble", ModelMount );
 
 	internal override void HandleContact( SceneTraceResult hit )
 	{
@@ -66,11 +66,12 @@ public class CrossbowBolt : NpcProjectile
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static void Explode( Vector3 position )
+	void Explode( Vector3 position )
 	{
-		bool water = WaterBody.Find( Game.ActiveScene, position ).IsValid();
-		Blast.ExplosionFlash( "Crossbow bolt explosion", position, 1, water );
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
+		bool water = WaterBody.Find( Scene, position ).IsValid();
+		var mount = ModelMount;
+		Blast.ExplosionFlash( "Crossbow bolt explosion", position, 1, water, mount );
+		if ( mount is not null )
 			NpcAudio.Play( mount.NpcAudio.Find( $"weapons/explode{Game.Random.Int( 3, 5 )}.wav" ), position, attenuation: 0.3f );
 	}
 
@@ -85,12 +86,12 @@ public class CrossbowBolt : NpcProjectile
 		}
 		NpcAudio.Play( mount.NpcAudio.Find( "weapons/xbow_hit1.wav" ), position, Game.Random.Float( 0.95f, 1 ), Game.Random.Float( 0.98f, 1.05f ) );
 		if ( !WaterBody.Find( Game.ActiveScene, position ).IsValid() ) StudioSparks.Emit( position, 6 );
-		if ( !stick ) return;
+		if ( !stick || mount.FindMountPath( "models/crossbow_bolt.mdl" ) is not { } path ) return;
 		var bolt = new GameObject( false, "Embedded crossbow bolt" );
 		bolt.NetworkMode = NetworkMode.Never;
 		bolt.WorldPosition = position - direction * 10;
 		bolt.WorldRotation = Rotation.LookAt( direction );
-		bolt.AddComponent<ModelRenderer>().Model = Model.Load( ModelAsset );
+		bolt.AddComponent<ModelRenderer>().Model = Model.Load( mountId == "hl1" ? ModelAsset : $"mount://{mountId}/{path}.vmdl" );
 		bolt.AddComponent<TemporaryEffect>().DestroyAfterSeconds = 5;
 		bolt.Enabled = true;
 	}
