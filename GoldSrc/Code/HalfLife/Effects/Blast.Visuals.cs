@@ -10,7 +10,11 @@ internal static partial class Blast
 		mount ??= Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
 		if ( mount is not null )
 		{
-			mount.NpcAudio.Emit( $"weapons/explode{Game.Random.Int( 3, 5 )}.wav", origin, attenuation: 0.3f );
+			var mmod = mount is HalfLifeMModMount;
+			var sample = mmod && WaterBody.Find( inflictor.Scene, origin ).IsValid()
+				? $"weapons/explode_water{Game.Random.Int( 1, 2 )}.wav"
+				: $"weapons/explode{Game.Random.Int( 3, 5 )}.wav";
+			mount.NpcAudio.Emit( sample, origin, attenuation: mmod ? 0.6f : 0.3f );
 			mount.NpcAudio.Emit( "weapons/debris", origin, volume: 0.55f );
 		}
 		return origin;
