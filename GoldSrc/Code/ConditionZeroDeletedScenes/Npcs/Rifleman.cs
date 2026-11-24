@@ -12,6 +12,7 @@ public abstract class Rifleman : CampaignSoldier
 
 	internal override float AttackRange => WeaponRange > 0 ? WeaponRange : Weapon.Range;
 	internal override float StrikeRange => AttackRange;
+	internal override bool CanShootFromRope => Ammo > 0;
 	internal override int WeaponBodyGroup => Weapon.BodyGroup;
 	internal override Vector3 AttackOrigin => WorldPosition + Vector3.Up * 60;
 	internal override string[] ExtraActions => [Weapon.FireSequence, Weapon.ReloadSequence];

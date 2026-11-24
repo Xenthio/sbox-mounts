@@ -103,7 +103,11 @@ public partial class Npc : BaseNpc
 			_modelLoader = loader;
 			Renderer.Animation.Graph = _defaultGraph = loader.AnimationGraphs.GetGraph( [ _idle, _walk, _run, _attack, .. FlinchSequences, .. ExtraSequences, .. _captureAnimations ], loader.Controllers, ControllerParameters );
 			_loaded = true;
-			if ( Networking.IsHost ) PlaceAtSpawn();
+			if ( Networking.IsHost )
+			{
+				PlaceAtSpawn();
+				StartRappel();
+			}
 			UpdateSequence();
 		}
 		catch ( Exception e )
@@ -223,6 +227,7 @@ public partial class Npc : BaseNpc
 			else if ( ScriptedIdle is null ) UpdateLeap();
 		}
 		UpdateSequence();
+		UpdateRappel();
 	}
 
 	protected override void Think()
@@ -328,7 +333,7 @@ public partial class Npc : BaseNpc
 		var sequence = captured ?? Find( Action );
 		var loop = sequence is null;
 		var speed = Animation.MoveVelocity.Length;
-		sequence ??= Find( ScriptedIdle ) ?? ScriptGait ?? MovementSequence( speed ) ?? RestSequence;
+		sequence ??= Find( ScriptedIdle ) ?? ScriptGait ?? (RopeAnchor.HasValue ? Find( RappelSequence ) : null) ?? MovementSequence( speed ) ?? RestSequence;
 		if ( sequence is null || !Renderer.Animation.IsValid )
 			return;
 

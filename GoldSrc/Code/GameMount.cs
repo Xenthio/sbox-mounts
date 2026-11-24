@@ -237,7 +237,7 @@ public class ConditionZeroMount : CounterStrikeGameMount
 
 public class ConditionZeroDeletedScenesMount : GameMount
 {
-	static readonly string[] SharedEffectSprites = ["sprites/smoke.spr", "sprites/steam1.spr", "sprites/WXplo1.spr", "sprites/bubble.spr"];
+	static readonly string[] SharedEffectSprites = ["sprites/smoke.spr", "sprites/steam1.spr", "sprites/WXplo1.spr", "sprites/bubble.spr", "sprites/rope.spr"];
 
 	public override string Ident => "czeror";
 	public override string Title => "Counter-Strike: Condition Zero Deleted Scenes";

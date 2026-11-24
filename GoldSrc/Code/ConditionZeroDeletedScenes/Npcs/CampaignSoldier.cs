@@ -14,6 +14,8 @@ public abstract class CampaignSoldier : Npc
 
 	internal bool IsCounterTerrorist => Classification == MonsterClass.PlayerAlly;
 	internal abstract int WeaponBodyGroup { get; }
+	internal override IEnumerable<StudioSequence> ExtraSequences =>
+		[.. base.ExtraSequences, Find( RappelSequence ), Find( RappelAttack ), Find( RappelLanding )];
 	internal override float SightRange => 4096;
 	internal override float ViewDot => IsCounterTerrorist ? 0.1f : -0.7f;
 	internal override void OnModelLoaded( ModelLoader loader ) => EyeHeight = 55;
