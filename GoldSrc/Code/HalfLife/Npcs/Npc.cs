@@ -263,9 +263,11 @@ public partial class Npc : BaseNpc
 		if ( !Movement.IsValid() || NextWander > 0 ) return;
 		NextWander = Game.Random.Float( 3, 7 );
 		var direction = Rotation.FromYaw( Game.Random.Float( 0, 360 ) ).Forward;
-		MoveToward( _home + direction * Game.Random.Float( 52, 160 ), 10, 0.6f );
+		MoveToward( _home + direction * Game.Random.Float( 52, 160 ), 10, IdleMovementPace );
 		IdleSound();
 	}
+
+	internal virtual float IdleMovementPace => 0.6f;
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
 	internal static void MuzzleFlash( Vector3 position, string sprite, float size )

@@ -4,61 +4,33 @@ using GoldSrc.HalfLife;
 namespace GoldSrc.ConditionZeroDeletedScenes;
 
 [Hide]
-public abstract class Rifleman : Npc
+public abstract class Rifleman : CampaignSoldier
 {
-	[Property, Hide] public int Head { get; set; } = -1;
 	[Property, Hide] public float WeaponRange { get; set; }
 	[Property, Hide] public float WeaponAccuracy { get; set; }
-	[Property, Hide] public bool HoldPosition { get; set; }
-	[Property, Hide] public bool Wander { get; set; }
 	[Sync( SyncFlags.FromHost )] int Ammo { get; set; } = -1;
 
-	internal bool IsCounterTerrorist => Classification == MonsterClass.PlayerAlly;
 	Firearm? _firearm;
 	Firearm Weapon => _firearm ??= SelectFirearm( ClassName, IsCounterTerrorist );
 
 	internal override float AttackRange => WeaponRange > 0 ? WeaponRange : Weapon.Range;
 	internal override float StrikeRange => AttackRange;
-	internal override float SightRange => 4096;
-	internal override float ViewDot => IsCounterTerrorist ? 0.1f : -0.7f;
+	internal override int WeaponBodyGroup => Weapon.BodyGroup;
 	internal override Vector3 AttackOrigin => WorldPosition + Vector3.Up * 60;
 	internal override string[] ExtraActions => [Weapon.FireSequence, Weapon.ReloadSequence];
-	internal override void OnModelLoaded( ModelLoader loader ) => EyeHeight = 55;
 
 	internal override void ApplyMapProperties( Bsp.Entity entity )
 	{
-		Head = entity.GetInt( "head", -1 );
+		base.ApplyMapProperties( entity );
 		WeaponRange = entity.GetFloat( "weaponrange" );
 		WeaponAccuracy = entity.GetFloat( "weaponaccuracy" );
-		Wander = entity.GetInt( "wander" ) != 0;
-		HoldPosition = entity.GetInt( "cantmove" ) != 0;
-		if ( HoldPosition ) HoldMapPosition();
 	}
-
-	internal override string MapModel( Bsp.Entity entity ) =>
-		entity.GetString( "monstermodel" ) is { Length: > 0 } model ? model : entity.GetString( "model" );
 
 	internal override void ApplyEquipment()
 	{
-		var model = Renderer.Model;
-		var weapons = model.Parts.All.FirstOrDefault( part => part.Name == "weapons" );
-		var weapon = Weapon;
-		if ( weapons is not null && weapon.BodyGroup < weapons.Choices.Count )
-			Renderer.SetBodyGroup( weapons.Name, weapon.BodyGroup );
-
-		var heads = model.Parts.All.FirstOrDefault( part => part.Name == "heads" );
-		if ( heads is not null && Head >= 0 && Head < heads.Choices.Count )
-			Renderer.SetBodyGroup( heads.Name, Head );
-
-		if ( Networking.IsHost && Ammo < 0 ) Ammo = weapon.Capacity;
+		base.ApplyEquipment();
+		if ( Networking.IsHost && Ammo < 0 ) Ammo = Weapon.Capacity;
 	}
-
-	internal override void IdleMovement()
-	{
-		if ( Wander && !HoldPosition ) base.IdleMovement();
-	}
-
-	internal override bool Pursue( Vector3 goal ) => !HoldPosition && base.Pursue( goal );
 
 	internal override void BeginAttack( GameObject target )
 	{

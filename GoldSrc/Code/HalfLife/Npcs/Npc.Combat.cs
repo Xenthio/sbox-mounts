@@ -289,15 +289,23 @@ public partial class Npc
 
 	internal Component TraceMelee( float reach, float amount, string tag, out bool contact, string extraTag = null )
 	{
-		var half = new Vector3( 16, 16, 18 );
 		// Keep short monsters' attack hulls clear of their supporting floor.
-		var origin = WorldPosition + Vector3.Up * MathF.Max( Definition.Height * 0.5f, half.z + 0.5f );
-		var hit = Scene.Trace.Box( new BBox( -half, half ), origin, origin + WorldRotation.Forward * reach )
-			.IgnoreGameObjectHierarchy( GameObject ).UseHitboxes().Run();
+		var origin = WorldPosition + Vector3.Up * MathF.Max( Definition.Height * 0.5f, 18.5f );
+		return TraceMelee( new Ray( origin, WorldRotation.Forward ), reach, amount, tag, out contact, extraTag );
+	}
+
+	internal Component TraceMelee( Ray ray, float reach, float amount, string tag, out bool contact,
+		string extraTag = null, bool useHitboxes = true )
+	{
+		var half = new Vector3( 16, 16, 18 );
+		var trace = Scene.Trace.Box( new BBox( -half, half ), ray.Position, ray.Position + ray.Forward * reach )
+			.IgnoreGameObjectHierarchy( GameObject );
+		if ( useHitboxes ) trace = trace.UseHitboxes();
+		var hit = trace.Run();
 		var victim = hit.GameObject?.GetComponentInParent<IDamageable>();
 		contact = hit.Hit || hit.StartedSolid;
 		if ( victim is null || amount <= 0 ) return victim as Component;
-		var damage = new DamageInfo { Damage = amount, Origin = origin, Position = hit.EndPosition, Attacker = GameObject, Weapon = GameObject };
+		var damage = new DamageInfo { Damage = amount, Origin = ray.Position, Position = hit.EndPosition, Attacker = GameObject, Weapon = GameObject };
 		damage.Tags.Add( tag );
 		if ( extraTag is not null ) damage.Tags.Add( extraTag );
 		victim.OnDamage( damage );
