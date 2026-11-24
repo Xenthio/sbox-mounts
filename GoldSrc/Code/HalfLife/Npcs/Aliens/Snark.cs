@@ -22,6 +22,7 @@ public abstract class ClassicSnark : Npc, Component.ICollisionListener
 
 	internal override MonsterClass Classification => _enemy.IsValid() && _enemy.GetComponent<ClassicSnark>() is null && ClassOf( _enemy ) is MonsterClass.Player or MonsterClass.HumanPassive or MonsterClass.HumanMilitary
 		? MonsterClass.AlienMilitary : MonsterClass.AlienWeapon;
+	internal virtual bool CanBite( Component victim ) => victim is not ClassicSnark;
 
 	Rigidbody _body;
 	PhysicsFilter _launchFilter;
@@ -144,13 +145,13 @@ public abstract class ClassicSnark : Npc, Component.ICollisionListener
 		_nextTouch = 0.1f;
 		_nextHunt = 0;
 		var pitch = (155 - 60 * (float)Detonation / Fuse) * 0.01f;
-		if ( _nextBite <= 0 && other?.GetComponentInParent<IDamageable>() is { } victim && victim is not ClassicSnark )
+		if ( _nextBite <= 0 && other?.GetComponentInParent<IDamageable>() is Component victim && CanBite( victim ) )
 		{
 			_nextBite = 0.5f;
 			BlastDamage += PopDamage;
 			var hit = new DamageInfo { Damage = Definition.Damage, Attacker = DamageAttacker, Weapon = GameObject, Origin = WorldPosition, Position = collision.Contact.Point };
 			hit.Tags.Add( "slash" );
-			victim.OnDamage( hit );
+			((IDamageable)victim).OnDamage( hit );
 			EmitSound( "squeek/sqk_deploy1.wav", WorldPosition, pitch: pitch );
 		}
 		if ( Connection.All.Count > 1 && _nextBounceSound > 0 ) return;

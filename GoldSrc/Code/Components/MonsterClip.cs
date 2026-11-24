@@ -6,7 +6,7 @@ namespace GoldSrc.Maps;
 public sealed class MonsterClip : MapEntity
 {
 	internal const string BrushTag = "goldsrc_monsterclip";
-	private const string MonsterTag = "goldsrc_hitmonsterclip";
+	internal const string MonsterTag = "goldsrc_hitmonsterclip";
 	internal static NavMeshAreaDefinition Area => GameResource.Load<NavMeshAreaDefinition>( "goldsrc/monsterclip.navarea" );
 
 	protected override void OnEnabled()
