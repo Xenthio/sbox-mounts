@@ -4,13 +4,21 @@ namespace GoldSrc.HalfLife;
 internal static partial class Blast
 {
 	internal static void DamageInRadius( GameObject inflictor, GameObject attacker, Vector3 origin, float damage, float radius, params System.ReadOnlySpan<string> tags )
+		=> DamageInRadius( inflictor, attacker, origin, damage, radius, null, tags );
+
+	internal static void DamageInRadius( GameObject inflictor, GameObject attacker, Vector3 origin, float damage, float radius,
+		System.Func<Component, bool> canDamage, params System.ReadOnlySpan<string> tags )
 	{
 		inflictor.Scene.GetSystem<Sandbox.Npcs.NpcSystem>()?.EmitStimulus( "explosion", origin, inflictor, 1024, 1 );
-		ApplyRadiusDamage( inflictor, attacker, origin, damage, radius, false, tags );
+		ApplyRadiusDamage( inflictor, attacker, origin, damage, radius, false, canDamage, tags );
 	}
 
 	internal static void ApplyRadiusDamage( GameObject inflictor, GameObject attacker, Vector3 origin, float damage, float radius,
 		bool ignoreAttacker, params System.ReadOnlySpan<string> tags )
+		=> ApplyRadiusDamage( inflictor, attacker, origin, damage, radius, ignoreAttacker, null, tags );
+
+	static void ApplyRadiusDamage( GameObject inflictor, GameObject attacker, Vector3 origin, float damage, float radius,
+		bool ignoreAttacker, System.Func<Component, bool> canDamage, System.ReadOnlySpan<string> tags )
 	{
 		var scene = inflictor.Scene;
 		var submerged = WaterBody.Find( scene, origin ).IsValid();
@@ -19,7 +27,7 @@ internal static partial class Blast
 			.Select( obj => obj.GetComponentInParent<Component.IDamageable>() ).OfType<Component>().Distinct().ToArray();
 		foreach ( var victim in victims )
 		{
-			if ( !victim.IsValid() || (ignoreAttacker && victim.GameObject.Root == attacker?.Root) ||
+			if ( !victim.IsValid() || (ignoreAttacker && victim.GameObject.Root == attacker?.Root) || canDamage?.Invoke( victim ) == false ||
 				!Npc.SharesWaterLevel( victim.GameObject, submerged ) ) continue;
 			var target = Npc.TargetBodyPosition( victim.GameObject );
 			var hit = scene.Trace.Ray( origin, target ).IgnoreGameObjectHierarchy( inflictor ).WithoutTags( "debris" ).Run();

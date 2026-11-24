@@ -8,6 +8,7 @@ namespace GoldSrc.SvenCoop;
 	Mount = "svencoop", Attack = NpcAttack.Shock, Range = 300, Damage = 10, Blood = BloodColor.Yellow )]
 public sealed class Chumtoad : Npc, Component.IPressable
 {
+	internal const string Prefab = "mount://svencoop/entities/npcs/monster_chumtoad.prefab";
 	const int StandUp = 19, GasWiggle = 24, LieDown = 58;
 	const int NoUse = 256;
 	const float FollowDistance = 128;
@@ -42,6 +43,12 @@ public sealed class Chumtoad : Npc, Component.IPressable
 	internal override string MapModel( Bsp.Entity entity ) => entity.GetString( "new_model" );
 
 	internal override void OnModelLoaded( ModelLoader loader ) => EyeHeight = 20;
+
+	protected override void OnStart()
+	{
+		if ( Networking.IsHost ) UpdateOwner();
+		base.OnStart();
+	}
 
 	internal override void ApplyMapProperties( Bsp.Entity entity )
 	{
@@ -154,13 +161,17 @@ public sealed class Chumtoad : Npc, Component.IPressable
 		_nextCloud = 0;
 	}
 
+	void UpdateOwner()
+	{
+		if ( _previousOwner == PetOwner ) return;
+		_previousOwner = PetOwner;
+		Leader = PetOwner;
+		SvenPetCollision.SetIgnoresPlayers( GameObject, PetOwner.IsValid() );
+	}
+
 	protected override void Think()
 	{
-		if ( _previousOwner != PetOwner )
-		{
-			_previousOwner = PetOwner;
-			Leader = PetOwner;
-		}
+		UpdateOwner();
 		if ( !ReleasingGas )
 		{
 			base.Think();
@@ -190,6 +201,14 @@ public sealed class Chumtoad : Npc, Component.IPressable
 	internal override StudioSequence SelectFlinch( Component.IDamageable.DamageEvent damage ) =>
 		ReleasingGas ? null : base.SelectFlinch( damage );
 
+	internal void Retire()
+	{
+		if ( GetComponent<RevivableNpc>() is { } revival ) revival.Allowed = false;
+		var damage = new DamageInfo { Damage = Health, Origin = WorldPosition, Position = WorldPosition };
+		damage.Tags.Add( "nevergib" );
+		((IDamageable)this).OnDamage( damage );
+	}
+
 	bool DamageNearbyEnemies()
 	{
 		var origin = WorldPosition + Vector3.Up * 12;
@@ -199,6 +218,7 @@ public sealed class Chumtoad : Npc, Component.IPressable
 		foreach ( var victim in victims )
 		{
 			if ( !victim.IsValid() || victim == this || !IsLiveTarget( victim.GameObject ) ||
+				(PetOwner.IsValid() && !SvenPetCollision.IsNotPlayer( victim )) ||
 				ClassOf( victim.GameObject ) == MonsterClass.Machine || GetDisposition( victim.GameObject ) != Disposition.Hostile ) continue;
 
 			var point = TargetHullCenter( victim.GameObject );

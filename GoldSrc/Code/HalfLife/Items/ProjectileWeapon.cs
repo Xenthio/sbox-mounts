@@ -17,14 +17,17 @@ public abstract class ProjectileWeapon : StudioWeapon
 	[Rpc.Host( NetFlags.OwnerOnly )]
 	void Launch( Ray ray ) => TryLaunch( ray, Release );
 
-	protected bool TryLaunch( Ray ray, System.Func<Ray, bool> release, bool secondary = false, float extraDelay = 0, bool keepIdleDeadline = false )
+	protected bool TryLaunch( Ray ray, System.Func<Ray, bool> release, bool secondary = false, float extraDelay = 0,
+		bool keepIdleDeadline = false, int ammoCost = 1, float? primaryCooldown = null )
 	{
 		if ( !IsActive || !Owner.IsValid() || (secondary ? _nextSecondary : _nextLaunch) > 0 || !ray.Position.IsFinite || !ray.Forward.IsFinite ||
 			ray.Position.Distance( Owner.EyePosition ) > 96 || !HasPrimaryAmmo() ) return false;
+		if ( ammoCost > 1 && (UsesPrimaryClip ? Clip1 : Ammo1) < ammoCost ) return false;
 		if ( !release( ray ) ) return false;
-		TakePrimaryAmmo();
-		_nextLaunch = (secondary ? SecondaryDelay : PrimaryDelay) + extraDelay;
-		if ( secondary ) _nextSecondary = _nextLaunch;
+		TakePrimaryAmmo( ammoCost );
+		var delay = (secondary ? SecondaryDelay : PrimaryDelay) + extraDelay;
+		_nextLaunch = primaryCooldown ?? delay;
+		if ( secondary ) _nextSecondary = delay;
 		ShowLaunch( ShotSequence, IdleAfterShot, keepIdleDeadline );
 		return true;
 	}

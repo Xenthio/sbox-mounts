@@ -1,5 +1,4 @@
 using GoldSrc.HalfLife;
-using Sandbox.Physics;
 
 namespace GoldSrc.SvenCoop;
 
@@ -13,9 +12,13 @@ public sealed class NestSnark : ClassicSnark
 	const string SnarkTag = "sven_nest_snark";
 
 	[Property, Sync( SyncFlags.FromHost )] public bool Friendly { get; set; }
-	internal override MonsterClass Classification => Friendly ? MonsterClass.PlayerAlly : base.Classification;
+	bool _playerThrown;
+	bool IsAllied => Friendly || _playerThrown;
+	internal override MonsterClass Classification => IsAllied ? MonsterClass.PlayerAlly : base.Classification;
 	internal override bool CanBite( Component victim ) => base.CanBite( victim ) &&
-		(!Friendly || GetDisposition( victim.GameObject ) == Sandbox.Npcs.Disposition.Hostile);
+		(!_playerThrown || SvenPetCollision.IsNotPlayer( victim )) &&
+		(!IsAllied || GetDisposition( victim.GameObject ) == Sandbox.Npcs.Disposition.Hostile);
+	internal override System.Func<Component, bool> BlastVictimFilter => _playerThrown ? SvenPetCollision.IsNotPlayer : null;
 
 	internal override void ApplyMapProperties( Bsp.Entity entity ) =>
 		Friendly = entity.GetInt( "is_player_ally" ) != 0 || entity.GetInt( "classify" ) == (int)MonsterClass.PlayerAlly;
@@ -23,25 +26,10 @@ public sealed class NestSnark : ClassicSnark
 	protected override void OnStart()
 	{
 		GameObject.Tags.Add( SnarkTag );
-		IgnoreVisualDebris();
-		base.OnStart();
-	}
-
-	void IgnoreVisualDebris()
-	{
-		var world = Scene.PhysicsWorld;
-		var existing = world.CollisionRules;
-		var pair = ("debris", SnarkTag);
-		if ( existing?.Pairs.ContainsKey( pair ) == true ) return;
-
 		// GoldSrc's break-model pieces are client effects. They cannot deflect a hatchling.
-		var rules = new CollisionRules();
-		if ( existing is not null )
-		{
-			rules.Defaults = new( existing.Defaults );
-			rules.Pairs = new( existing.Pairs );
-		}
-		rules.Pairs[pair] = CollisionRules.Result.Ignore;
-		world.CollisionRules = Json.Deserialize<CollisionRules>( Json.Serialize( rules ) );
+		SvenPetCollision.Ignore( Scene, SnarkTag, "debris" );
+		_playerThrown = Thrower?.GetComponent<PlayerController>().IsValid() == true;
+		if ( _playerThrown ) SvenPetCollision.SetIgnoresPlayers( GameObject, true );
+		base.OnStart();
 	}
 }

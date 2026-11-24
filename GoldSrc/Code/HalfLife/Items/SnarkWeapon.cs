@@ -39,13 +39,15 @@ public abstract class ClassicSnarkWeapon : ProjectileWeapon
 	{
 		var prefab = GameObject.GetPrefab( $"mount://{Definition.Mount}/entities/npcs/monster_snark.prefab" );
 		if ( !prefab.IsValid() || !TryAimThrow( ray, out var position, out var forward ) ) return false;
-		var snark = prefab.Clone( new Transform( position, Rotation.LookAt( ray.Forward ) ) ).GetComponent<ClassicSnark>();
+		var snark = prefab.Clone( new Transform( position, Rotation.LookAt( ray.Forward ) ), startEnabled: false ).GetComponent<ClassicSnark>( true );
 		snark.Thrower = Owner.GameObject;
-		snark.Launch( forward * 200 + Owner.Velocity );
 		snark.GameObject.NetworkSpawn( true, null );
-		_redraw = 1;
+		snark.Launch( forward * 200 + Owner.Velocity );
+		QueueRedraw();
 		return true;
 	}
+
+	protected void QueueRedraw() => _redraw = 1;
 
 	internal virtual bool TryAimThrow( Ray ray, out Vector3 position, out Vector3 forward )
 	{

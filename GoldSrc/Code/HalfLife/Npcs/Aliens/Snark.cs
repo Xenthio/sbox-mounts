@@ -23,6 +23,7 @@ public abstract class ClassicSnark : Npc, Component.ICollisionListener
 	internal override MonsterClass Classification => _enemy.IsValid() && _enemy.GetComponent<ClassicSnark>() is null && ClassOf( _enemy ) is MonsterClass.Player or MonsterClass.HumanPassive or MonsterClass.HumanMilitary
 		? MonsterClass.AlienMilitary : MonsterClass.AlienWeapon;
 	internal virtual bool CanBite( Component victim ) => victim is not ClassicSnark;
+	internal virtual System.Func<Component, bool> BlastVictimFilter => null;
 
 	Rigidbody _body;
 	PhysicsFilter _launchFilter;
@@ -165,7 +166,7 @@ public abstract class ClassicSnark : Npc, Component.ICollisionListener
 	{
 		BloodEffects.Spray( Definition.Blood, WorldPosition, 80, Definition.Mount );
 		EmitSound( "common/bodysplat.wav", WorldPosition, 0.75f, 2 );
-		Blast.DamageInRadius( GameObject, DamageAttacker, WorldPosition, BlastDamage, BlastDamage * 2.5f, "blast" );
+		Blast.DamageInRadius( GameObject, DamageAttacker, WorldPosition, BlastDamage, BlastDamage * 2.5f, BlastVictimFilter, "blast" );
 		base.OnDeath( death );
 	}
 
