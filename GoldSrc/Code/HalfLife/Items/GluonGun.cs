@@ -18,7 +18,7 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 	TimeUntil _nextPulseDeadline, _windupEnds, _idleAfterShutdown;
 	TimeUntil _burstExpires, _nextCell, _nextShake;
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => hd ? new( 29, -5.2f, 0.5f ) : new( 28.4f, -5.1f, 0 );
-	internal virtual float BeamDamage => Networking.MaxPlayers > 1 ? 20 : Ballistics.Damage;
+	internal float BeamDamage => Networking.MaxPlayers > 1 ? 20 : Ballistics.Damage;
 	internal virtual string ObserverEffectSprite => null;
 	public override Ray AimRay => Owner.IsValid() ? Owner.EyeTransform.ForwardRay : base.AimRay;
 
