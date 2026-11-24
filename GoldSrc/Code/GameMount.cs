@@ -131,7 +131,7 @@ public abstract partial class GameMount : BaseGameMount
 					var modelPath = relativePath.Replace( '\\', '/' );
 					var npc = registry.FindModel( modelPath );
 					var animated = npc is not null || viewModels.Contains( modelPath )
-						|| (this is HalfLifeMModMount && modelPath.Equals( "models/w_grenade.mdl", StringComparison.OrdinalIgnoreCase ));
+						|| (this is HalfLifeMModMount && modelPath.ToLowerInvariant() is ("models/w_grenade.mdl" or "models/w_satchel.mdl"));
 					context.Add( ResourceType.Model, path, new ModelLoader( fullPath, animated, npc ) );
 					gameplayModels?.TryAdd( modelPath, path );
 					if ( this is HalfLifeMount && dir == "valve" ) originalModels[modelPath] = path;

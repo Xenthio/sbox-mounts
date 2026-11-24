@@ -61,6 +61,11 @@ public partial class PlacedCharge : Component, Component.IDamageable, Component.
 		var body = GetComponent<Rigidbody>();
 		_satchelGravity = 1;
 		if ( body.GravityScale > 0 ) body.GravityScale = 1;
+		OnSatchelContact( body, collision );
+	}
+
+	internal virtual void OnSatchelContact( Rigidbody body, Collision collision )
+	{
 		if ( collision.Contact.Speed.WithZ( 0 ).Length <= 10 ) return;
 		var mount = EffectsMount ?? Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
 		mount?.NpcAudio.Emit( "weapons/g_bounce", collision.Contact.Point );
