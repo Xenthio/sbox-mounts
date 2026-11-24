@@ -14,32 +14,58 @@ public sealed partial class PlacedCharge
 	Transform _supportPose;
 	SoundHandle _chargeSound;
 
-	internal static void Attach( PlayerController player, SceneTraceResult hit )
+	[Property] public float MineArmTime { get; set; } = 2.5f;
+	[Property] public bool FindMineSupport { get; set; }
+
+	internal static bool Attach( PlayerController player, SceneTraceResult hit, GameMount mount )
 	{
-		var go = new GameObject( false, "Laser tripmine" );
-		go.WorldPosition = hit.EndPosition + hit.Normal * 8;
-		go.WorldRotation = Rotation.LookAt( hit.Normal );
+		var transform = new Transform( hit.EndPosition + hit.Normal * 8, Rotation.LookAt( hit.Normal ) );
+		var charge = CreateMine( transform, mount );
+		if ( !charge.IsValid() ) return false;
+		charge.Thrower = player.GameObject;
+		charge.SetMineSupport( hit.GameObject );
+		charge.GameObject.Enabled = true;
+		charge.GameObject.NetworkSpawn( true, null );
+		charge.PlayMineSound( false );
+		return true;
+	}
+
+	internal static PlacedCharge CreateMine( Transform transform, GameMount mount )
+	{
+		var path = mount is null ? "valve/models/v_tripmine.mdl" : mount.FindMountPath( "models/v_tripmine.mdl" );
+		if ( path is null ) return null;
+		var model = Model.Load( $"mount://{mount?.Ident ?? "hl1"}/{path}.vmdl" );
+		if ( !model.IsValid() || model.IsError ) return null;
+		var go = new GameObject( false, "Laser tripmine" ) { WorldTransform = transform };
 		var renderer = go.AddComponent<SkinnedModelRenderer>();
-		renderer.Model = Model.Load( "mount://hl1/valve/models/v_tripmine.mdl.vmdl" );
+		renderer.Model = model;
 		PoseMine( renderer, "world" );
 		var collider = go.AddComponent<BoxCollider>();
 		collider.Scale = Vector3.One * 16;
 		collider.IsTrigger = true;
 		var charge = go.AddComponent<PlacedCharge>();
-		charge.Thrower = player.GameObject;
 		charge.IsMine = true;
-		charge._arm = 2.5f;
-		charge._support = hit.GameObject;
-		if ( charge._support.IsValid() ) charge._supportPose = charge._support.WorldTransform;
-		go.Enabled = true;
-		go.NetworkSpawn( true, null );
-		charge.PlayMineSound( false );
+		charge.EffectsMountId = mount?.Ident;
+		return charge;
 	}
+
+	protected override void OnStart()
+	{
+		if ( IsMine && Networking.IsHost ) _arm = MineArmTime;
+	}
+
+	void SetMineSupport( GameObject support )
+	{
+		_support = support;
+		if ( support.IsValid() ) _supportPose = support.WorldTransform;
+	}
+
+	GameMount MineMount => EffectsMount ?? Sandbox.Mounting.Directory.Get( "hl1" ) as GameMount;
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
 	void PlayMineSound( bool armed )
 	{
-		if ( Application.IsDedicatedServer || Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( Application.IsDedicatedServer || MineMount is not { } mount ) return;
 		_chargeSound?.Stop();
 		var audio = mount.NpcAudio;
 		if ( armed ) NpcAudio.Play( audio.Find( "weapons/mine_activate.wav" ), WorldPosition, 0.5f, 0.75f );
@@ -79,12 +105,21 @@ public sealed partial class PlacedCharge
 		}
 		if ( _nextCheck > 0 ) return;
 		_nextCheck = 0.1f;
+		if ( FindMineSupport && _support is null )
+		{
+			var forward = WorldRotation.Forward;
+			var backing = Scene.Trace.Ray( WorldPosition + forward * 8, WorldPosition - forward * 32 )
+				.IgnoreGameObjectHierarchy( GameObject ).Run();
+			if ( backing.StartedSolid ) { _arm = (float)_arm + 0.1f; return; }
+			if ( !backing.Hit ) { GameObject.Destroy(); return; }
+			SetMineSupport( backing.GameObject );
+		}
 		if ( _support is not null && (!_support.IsValid() || _support.WorldTransform != _supportPose) )
 		{
 			if ( Armed ) TriggerMine();
 			else
 			{
-				var prefab = GameObject.GetPrefab( "mount://hl1/entities/items/weapon_tripmine.prefab" );
+				var prefab = GameObject.GetPrefab( $"mount://{EffectsMountId ?? "hl1"}/entities/items/weapon_tripmine.prefab" );
 				if ( prefab.IsValid() )
 					prefab.Clone( new Transform( WorldPosition + WorldRotation.Forward * 24, WorldRotation ) ).NetworkSpawn( true, null );
 				GameObject.Destroy();
@@ -114,7 +149,7 @@ public sealed partial class PlacedCharge
 		_beam.VectorPoints = [WorldPosition, WorldPosition + WorldRotation.Forward * (2048 * BeamFraction)];
 		_beam.Width = 1;
 		_beam.Color = new Color( 0, 214f / 255, 198f / 255, 64f / 255 );
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
+		if ( MineMount is { } mount )
 			_beam.Texturing = TrailTextureConfig.Default with { Material = mount.GetTrailMaterial( "laserbeam" ), Scroll = 255f / 128 };
 		_beam.Additive = true;
 		_beam.Opaque = _beam.CastShadows = false;

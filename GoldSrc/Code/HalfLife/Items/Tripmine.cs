@@ -2,7 +2,10 @@ namespace GoldSrc.HalfLife;
 
 [Title( "Laser Tripmine" ), Category( "Half-Life" )]
 [WeaponPickup( "tripmine", "tripmines", 5, PickupModel = "v_tripmine", PreviewModel = "p_tripmine" )]
-public sealed class Tripmine : ProjectileWeapon
+public sealed class Tripmine : ClassicTripmine;
+
+[Hide]
+public abstract class ClassicTripmine : ProjectileWeapon
 {
 	internal override string ShotSequence => "draw";
 	internal override (string Name, float? Delay) IdleAnimation => Game.Random.Float( 0, 1 ) switch
@@ -26,9 +29,8 @@ public sealed class Tripmine : ProjectileWeapon
 	internal override bool Release( Ray ray )
 	{
 		var hit = Scene.Trace.Ray( ray, 128 ).IgnoreGameObjectHierarchy( Owner.GameObject ).Run();
-		if ( !hit.Hit || hit.StartedSolid ) return false;
-		PlacedCharge.Attach( Owner, hit );
-		return true;
+		if ( !hit.Hit || hit.StartedSolid || hit.GameObject?.GetComponentInParent<GoldSrc.Maps.WallBrush>() is { Conveyor: true, VisualOnly: false } ) return false;
+		return PlacedCharge.Attach( Owner, hit, Definition.Mount == "hl1" ? null : ContentMount );
 	}
 
 	protected override void OnUpdate()

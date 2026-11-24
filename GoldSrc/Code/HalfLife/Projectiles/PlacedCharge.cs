@@ -5,7 +5,8 @@ public sealed partial class PlacedCharge : Component, Component.IDamageable, Com
 {
 	[Property] public GameObject Thrower { get; set; }
 	[Property] public bool IsMine { get; set; }
-	internal GameMount EffectsMount { get; private set; }
+	[Property] public string EffectsMountId { get; set; }
+	internal GameMount EffectsMount => EffectsMountId is null ? null : Sandbox.Mounting.Directory.Get( EffectsMountId ) as GameMount;
 	float? _damageOverride;
 	bool _spent;
 	float _satchelGravity = 0.5f;
@@ -41,7 +42,7 @@ public sealed partial class PlacedCharge : Component, Component.IDamageable, Com
 		body.RigidbodyFlags |= RigidbodyFlags.DisableCollisionSounds;
 		var charge = go.AddComponent<PlacedCharge>();
 		charge.Thrower = player.GameObject;
-		charge.EffectsMount = mount;
+		charge.EffectsMountId = mount?.Ident;
 		charge._damageOverride = damage;
 		if ( mount is not null && player.Body.IsValid() ) go.AddComponent<PhysicsFilter>().Body = player.Body.GameObject;
 		go.Enabled = true;

@@ -75,6 +75,8 @@ partial class MapBuilder
 
 	private bool TrySpawnNpc( BspFile bsp, Entity entity )
 	{
+		if ( entity.ClassName == "monster_tripmine" )
+			return TrySpawnTripmine( entity );
 		var path = $"mount://{Host.Ident}/entities/npcs/{entity.ClassName}.prefab";
 		if ( Host.GetByPath( path ) is not NpcPrefabLoader ) return false;
 
@@ -104,6 +106,25 @@ partial class MapBuilder
 			RegisterMonster( go, entity, npc.Renderer, npc );
 		}
 		else if ( !string.IsNullOrEmpty( entity.TargetName ) )
+		{
+			var marker = go.AddComponent<Relay>();
+			marker.TargetName = entity.TargetName;
+			RegisterTarget( entity, marker, null, null, null, nameof( MapEntity.Kill ) );
+		}
+		go.Enabled = true;
+		return true;
+	}
+
+	private bool TrySpawnTripmine( Entity entity )
+	{
+		if ( Host.GetByPath( $"mount://{Host.Ident}/entities/items/weapon_tripmine.prefab" ) is not WeaponPickupLoader ) return false;
+		var mine = PlacedCharge.CreateMine( new Transform( entity.Origin, entity.Rotation ), Host );
+		if ( !mine.IsValid() ) return false;
+		var go = mine.GameObject;
+		go.Name = EntityName( entity );
+		mine.MineArmTime = (entity.SpawnFlags & 1) != 0 ? 1 : 2.5f;
+		mine.FindMineSupport = true;
+		if ( !string.IsNullOrEmpty( entity.TargetName ) )
 		{
 			var marker = go.AddComponent<Relay>();
 			marker.TargetName = entity.TargetName;
