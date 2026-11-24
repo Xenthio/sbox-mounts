@@ -1,6 +1,6 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class PlacedCharge
+public partial class PlacedCharge
 {
 	TimeUntil _arm, _nextCheck;
 	TimeUntil? _detonateAt;
@@ -17,10 +17,13 @@ public sealed partial class PlacedCharge
 	[Property] public float MineArmTime { get; set; } = 2.5f;
 	[Property] public bool FindMineSupport { get; set; }
 
-	internal static bool Attach( PlayerController player, SceneTraceResult hit, GameMount mount )
+	internal static bool Attach( PlayerController player, SceneTraceResult hit, GameMount mount ) =>
+		Attach<PlacedCharge>( player, hit, mount );
+
+	internal static bool Attach<T>( PlayerController player, SceneTraceResult hit, GameMount mount ) where T : PlacedCharge, new()
 	{
 		var transform = new Transform( hit.EndPosition + hit.Normal * 8, Rotation.LookAt( hit.Normal ) );
-		var charge = CreateMine( transform, mount );
+		var charge = CreateMine<T>( transform, mount );
 		if ( !charge.IsValid() ) return false;
 		charge.Thrower = player.GameObject;
 		charge.SetMineSupport( hit.GameObject );
@@ -30,7 +33,9 @@ public sealed partial class PlacedCharge
 		return true;
 	}
 
-	internal static PlacedCharge CreateMine( Transform transform, GameMount mount )
+	internal static PlacedCharge CreateMine( Transform transform, GameMount mount ) => CreateMine<PlacedCharge>( transform, mount );
+
+	static T CreateMine<T>( Transform transform, GameMount mount ) where T : PlacedCharge, new()
 	{
 		var path = mount is null ? "valve/models/v_tripmine.mdl" : mount.FindMountPath( "models/v_tripmine.mdl" );
 		if ( path is null ) return null;
@@ -43,7 +48,7 @@ public sealed partial class PlacedCharge
 		var collider = go.AddComponent<BoxCollider>();
 		collider.Scale = Vector3.One * 16;
 		collider.IsTrigger = true;
-		var charge = go.AddComponent<PlacedCharge>();
+		var charge = go.AddComponent<T>();
 		charge.IsMine = true;
 		charge.EffectsMountId = mount?.Ident;
 		return charge;
@@ -61,6 +66,8 @@ public sealed partial class PlacedCharge
 	}
 
 	GameMount MineMount => EffectsMount ?? Sandbox.Mounting.Directory.Get( "hl1" ) as GameMount;
+	internal virtual bool HasTripBeam => true;
+	protected bool IsMineArmed => Armed;
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
 	void PlayMineSound( bool armed )
@@ -127,22 +134,27 @@ public sealed partial class PlacedCharge
 			return;
 		}
 		if ( _arm > 0 ) return;
-		var start = WorldPosition;
-		var hit = Scene.Trace.Ray( start, start + WorldRotation.Forward * 2048 ).IgnoreGameObjectHierarchy( GameObject ).Run();
-		if ( Armed )
+		if ( !Armed )
 		{
-			if ( System.MathF.Abs( BeamFraction - hit.Fraction ) > 0.001f ) TriggerMine();
+			BeamFraction = HasTripBeam ? TraceTripBeam().Fraction : 0;
+			GetComponent<BoxCollider>().IsTrigger = false;
+			PlayMineSound( true );
 			return;
 		}
+		CheckArmedMine();
+	}
 
-		BeamFraction = hit.Fraction;
-		GetComponent<BoxCollider>().IsTrigger = false;
-		PlayMineSound( true );
+	SceneTraceResult TraceTripBeam() => Scene.Trace.Ray( WorldPosition, WorldPosition + WorldRotation.Forward * 2048 )
+		.IgnoreGameObjectHierarchy( GameObject ).Run();
+
+	internal virtual void CheckArmedMine()
+	{
+		if ( System.MathF.Abs( BeamFraction - TraceTripBeam().Fraction ) > 0.001f ) TriggerMine();
 	}
 
 	protected override void OnUpdate()
 	{
-		if ( !IsMine || !Armed || _beam.IsValid() || Application.IsDedicatedServer ) return;
+		if ( !IsMine || !Armed || !HasTripBeam || _beam.IsValid() || Application.IsDedicatedServer ) return;
 		var visual = new GameObject( GameObject, false, "Tripmine beam" ) { NetworkMode = NetworkMode.Never };
 		_beam = visual.AddComponent<LineRenderer>();
 		_beam.UseVectorPoints = true;

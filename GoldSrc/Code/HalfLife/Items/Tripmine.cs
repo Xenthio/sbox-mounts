@@ -29,9 +29,11 @@ public abstract class ClassicTripmine : ProjectileWeapon
 	internal override bool Release( Ray ray )
 	{
 		var hit = Scene.Trace.Ray( ray, 128 ).IgnoreGameObjectHierarchy( Owner.GameObject ).Run();
-		if ( !hit.Hit || hit.StartedSolid || hit.GameObject?.GetComponentInParent<GoldSrc.Maps.WallBrush>() is { Conveyor: true, VisualOnly: false } ) return false;
-		return PlacedCharge.Attach( Owner, hit, Definition.Mount == "hl1" ? null : ContentMount );
+		return CanPlace( hit ) && PlacedCharge.Attach( Owner, hit, Definition.Mount == "hl1" ? null : ContentMount );
 	}
+
+	protected static bool CanPlace( SceneTraceResult hit ) => hit.Hit && !hit.StartedSolid &&
+		hit.GameObject?.GetComponentInParent<GoldSrc.Maps.WallBrush>() is not { Conveyor: true, VisualOnly: false };
 
 	protected override void OnUpdate()
 	{

@@ -1,7 +1,7 @@
 namespace GoldSrc.HalfLife;
 
 [Hide]
-public sealed partial class PlacedCharge : Component, Component.IDamageable, Component.IDamageable.IEvents, Component.ICollisionListener
+public partial class PlacedCharge : Component, Component.IDamageable, Component.IDamageable.IEvents, Component.ICollisionListener
 {
 	[Property] public GameObject Thrower { get; set; }
 	[Property] public bool IsMine { get; set; }
@@ -114,8 +114,10 @@ public sealed partial class PlacedCharge : Component, Component.IDamageable, Com
 		var normal = IsMine ? WorldRotation.Forward : Vector3.Up;
 		var contact = Scene.Trace.Ray( WorldPosition + normal * 8, WorldPosition - normal * (IsMine ? 64 : 40) )
 			.IgnoreGameObjectHierarchy( GameObject ).Run();
-		var damage = _damageOverride ?? (!IsMine && Networking.MaxPlayers > 1 ? 120 : 150);
-		Blast.Detonate( GameObject, Thrower, contact.Hit ? contact.EndPosition : WorldPosition, contact.Hit ? contact.Normal : normal, damage, contact.Hit, EffectsMount );
+		Blast.Detonate( GameObject, Thrower, contact.Hit ? contact.EndPosition : WorldPosition, contact.Hit ? contact.Normal : normal,
+			_damageOverride ?? BlastDamage, contact.Hit, EffectsMount );
 		GameObject.Destroy();
 	}
+
+	internal virtual float BlastDamage => !IsMine && Networking.MaxPlayers > 1 ? 120 : 150;
 }
