@@ -6,6 +6,7 @@ namespace GoldSrc.Maps;
 public sealed partial class MapState : Component, Component.IDamageable.IEvents
 {
 	[Property] public List<MapEntity> Entities { get; set; } = [];
+	[Property, Hide] public string SequenceSource { get; set; }
 	[Property, Sync( SyncFlags.FromHost )] public NetDictionary<string, int> Globals { get; set; } = new();
 	private readonly List<(MapEntity Entity, float Time)> _removals = [];
 	private System.Threading.Tasks.Task<bool> _navigation;

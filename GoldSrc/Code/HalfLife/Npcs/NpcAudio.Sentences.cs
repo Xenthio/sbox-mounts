@@ -34,12 +34,29 @@ internal sealed partial class NpcAudio
 			var name = prefix + line[..split];
 			var phrase = ParseSentence( line[(split + 1)..].Trim() );
 			if ( phrase is null || phrase.Length == 0 ) continue;
-			_sentences[name] = phrase;
+			var entry = name;
+			if ( prefix.Length > 0 && _sentences.ContainsKey( name ) )
+			{
+				// Some shipped sequence files repeat a group name without numbering its entries.
+				var duplicates = SpeechGroup( name );
+				if ( duplicates.Count == 0 ) duplicates.Add( name );
+				entry = $"{name}~{duplicates.Count}";
+				duplicates.Add( entry );
+			}
+			_sentences[entry] = phrase;
 			var group = name.AsSpan().TrimEnd( "0123456789" ).ToString();
-			if ( group == name ) continue;
-			if ( !_speechGroups.TryGetValue( group, out var variants ) ) _speechGroups.Add( group, variants = [] );
-			if ( !variants.Contains( name, StringComparer.OrdinalIgnoreCase ) ) variants.Add( name );
+			if ( group != name )
+			{
+				var variants = SpeechGroup( group );
+				if ( !variants.Contains( entry, StringComparer.OrdinalIgnoreCase ) ) variants.Add( entry );
+			}
 		}
+	}
+
+	SentenceGroup SpeechGroup( string name )
+	{
+		if ( !_speechGroups.TryGetValue( name, out var group ) ) _speechGroups.Add( name, group = [] );
+		return group;
 	}
 
 	Word[] ParseSentence( string text )
@@ -79,13 +96,13 @@ internal sealed partial class NpcAudio
 
 	internal void IndexSequenceSpeech( string file, string text ) => IndexSpeechGroups( text, $"seq:{file}:" );
 
-	internal bool EmitSequenceSpeech( string file, string name, Vector3 position, VoicedNpc speaker )
+	internal bool EmitSequenceSpeech( string file, string name, Vector3 position, VoicedNpc speaker, float volume = 1 )
 	{
 		var attenuation = speaker.IsValid() ? GoldSrcSoundEvents.Normal : 0;
-		return EmitSentence( $"seq:{file}:{name}", position, 1, 1, speaker, attenuation )
-			|| EmitSentence( $"seq:global:{name}", position, 1, 1, speaker, attenuation )
-			|| EmitSentence( name, position, 1, 1, speaker, attenuation )
-			|| Emit( name, position, speaker: speaker, attenuation: attenuation );
+		return EmitSentence( $"seq:{file}:{name}", position, volume, 1, speaker, attenuation )
+			|| EmitSentence( $"seq:global:{name}", position, volume, 1, speaker, attenuation )
+			|| EmitSentence( name, position, volume, 1, speaker, attenuation )
+			|| Emit( name, position, volume, speaker: speaker, attenuation: attenuation );
 	}
 
 	internal bool HasSentence( string name ) => _sentences.ContainsKey( name ) || _speechGroups.ContainsKey( name );

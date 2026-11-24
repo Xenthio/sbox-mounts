@@ -74,14 +74,14 @@ public sealed class CampaignHostage : TalkingNpc, Component.IPressable
 		{
 			Leader = null;
 			Movement?.Stop();
-			Speak( "waithere", "waithere", "npc" );
+			Speak( "NPC_WAIT", "waithere", "waithere", 0.75f, "npc" );
 			return;
 		}
 
 		Leader = player.GameObject;
 		HasFollowed = true;
 		_nextFollow = 0;
-		Speak( "getmeout", "help" );
+		Speak( "H_HELP", "getmeout", "help", 0.75f );
 	}
 
 	protected override void Think()
@@ -126,7 +126,7 @@ public sealed class CampaignHostage : TalkingNpc, Component.IPressable
 		Animation.ClearLookTarget();
 
 		if ( !string.IsNullOrEmpty( RescueTarget ) ) actor?.FireAnimationTarget( RescueTarget );
-		else Speak( "thanksave", "thankf" );
+		else Speak( "H_THANK", "thanksave", "thankf" );
 		if ( !IsValid || NoAutoRemove ) return;
 		if ( !PlayAnimation( RescueClip ) ) GameObject.Destroy();
 	}
@@ -140,22 +140,27 @@ public sealed class CampaignHostage : TalkingNpc, Component.IPressable
 	{
 		if ( _nextPain > 0 ) return;
 		_nextPain = 1;
-		var sample = $"pain{Game.Random.Int( 1, 3 )}";
-		Speak( sample, sample );
+		Speak( "H_PAIN", $"pain{Game.Random.Int( 1, 3 )}" );
 	}
 
-	internal override void DeathSound()
-	{
-		var sample = $"death{Game.Random.Int( 1, 3 )}";
-		Speak( sample, sample );
-	}
+	internal override void DeathSound() => Speak( "H_DEATH", $"death{Game.Random.Int( 1, 3 )}" );
 
-	void Speak( string male, string female, string group = "h" )
+	void Speak( string sentence, string maleFallback, string femaleFallback = null, float volume = 1, string group = "h" )
 	{
 		var file = ModelPath?.Split( '/' ).LastOrDefault();
-		var woman = file is "us_gal.mdl.vmdl" or "schoolgirl.mdl.vmdl";
-		var voice = woman ? $"f_{female}" : $"m_{male}";
-		EmitSound( $"{group}/{group}_{voice}_{Language}.wav", WorldPosition, speaker: this );
+		var female = file is "us_gal.mdl.vmdl" or "schoolgirl.mdl.vmdl";
+		if ( Sandbox.Mounting.Directory.Get( "czeror" ) is ConditionZeroDeletedScenesMount mount )
+		{
+			var source = GetComponent<Monster>()?.Map?.SequenceSource;
+			mount.Sequences.EnsureSpeech( source );
+			mount.Sequences.EnsureSpeech( "global" );
+			var localized = $"{sentence}_{Language}{(female ? "F" : "")}";
+			if ( mount.NpcAudio.EmitSequenceSpeech( source, localized, WorldPosition, this, volume )
+				|| mount.NpcAudio.EmitSequenceSpeech( source, sentence, WorldPosition, this, volume ) ) return;
+		}
+
+		var voice = female ? $"f_{femaleFallback ?? maleFallback}" : $"m_{maleFallback}";
+		EmitSound( $"{group}/{group}_{voice}_{Language}.wav", WorldPosition, volume, speaker: this );
 	}
 
 	internal sealed record SavedEscort( bool Followed, bool FollowingPlayer, bool Rescued );

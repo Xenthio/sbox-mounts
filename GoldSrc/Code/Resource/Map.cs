@@ -57,6 +57,7 @@ internal sealed partial class MapBuilder( GameMount host, string filePath, strin
 		var world = new GameObject( true, "worldspawn" ) { IsStatic = true };
 		_lightStyles = world.AddComponent<LightStyles>();
 		_mapState = world.AddComponent<MapState>();
+		if ( Host is ConditionZeroDeletedScenesMount ) _mapState.SequenceSource = System.IO.Path.GetFileNameWithoutExtension( FilePath );
 		AddRenderers( world, geometry, Color.White );
 		AddCollider( world, geometry.Physics, true );
 		_decalReceivers.Add( (bsp.Models[0], world, Vector3.Zero) );
