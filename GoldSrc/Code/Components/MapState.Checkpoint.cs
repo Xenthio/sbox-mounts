@@ -31,6 +31,7 @@ public sealed partial class MapState
 		public float? Health { get; set; }
 		public HalfLife.Npc.SavedScript Script { get; set; }
 		public HalfLife.Npc.SavedMagazine Magazine { get; set; }
+		public ConditionZeroDeletedScenes.CampaignHostage.SavedEscort Escort { get; set; }
 		public int? Count { get; set; }
 		public float? GameCounterCount { get; set; }
 		public bool Running { get; set; }
@@ -116,6 +117,7 @@ public sealed partial class MapState
 		{
 			if ( !entity.IsValid() || entity.GameObject.IsDestroyed ) continue;
 			if ( entity is Monster dead && dead.Npc.IsValid() && (dead.Npc.Health <= 0 || dead.Npc.IsAwaitingRevival) ) continue;
+			if ( entity is Monster { Npc: ConditionZeroDeletedScenes.CampaignHostage { Rescued: true, NoAutoRemove: false } } ) continue;
 			if ( entity is Monster { FromPreviousMap: true } incoming && incoming.Npc.IsValid() )
 				data.IncomingActors.Add( new( incoming.GameObject.Serialize(), incoming.Npc.Health,
 					incoming.Npc.CaptureScript(), incoming.Npc.CaptureMagazine() ) );
@@ -132,6 +134,7 @@ public sealed partial class MapState
 					entry.Health = actor.Npc.Health;
 					entry.Script = actor.Npc.CaptureScript();
 					entry.Magazine = actor.Npc.CaptureMagazine();
+					if ( actor.Npc is ConditionZeroDeletedScenes.CampaignHostage hostage ) entry.Escort = hostage.CaptureEscort( player );
 					break;
 				case MonsterMaker maker: entry.Maker = maker.CaptureMaker(); break;
 				case CryOfFear.RandomSpawn { IsCoordinator: true } coordinator: entry.RandomSpawn = coordinator.CaptureGroup(); break;
@@ -188,6 +191,7 @@ public sealed partial class MapState
 				case Monster actor when actor.Npc.IsValid() && entry.Health.HasValue:
 					actor.Npc.Health = entry.Health.Value;
 					actor.Npc.RestoreMagazine( entry.Magazine );
+					if ( actor.Npc is ConditionZeroDeletedScenes.CampaignHostage hostage ) hostage.RestoreEscort( entry.Escort, player );
 					actor.WorldTransform = entry.Transform;
 					if ( entry.Script is {} script ) actor.Npc.RestoreScript( script, this, player );
 					break;

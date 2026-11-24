@@ -133,7 +133,8 @@ partial class MapBuilder
 			or "scripted_sequence" or "env_global" or "multisource" or "trigger_counter"
 			or "info_landmark" or "trigger_changetarget" or "info_target" or "info_teleport_destination"
 			or "game_counter" or "game_counter_set" or "game_player_equip" or "env_render"
-			|| (className == "squadmaker" && Host is SvenCoopMount);
+			|| (className == "squadmaker" && Host is SvenCoopMount)
+			|| (className == "info_hostage_rescue" && Host is ConditionZeroDeletedScenesMount);
 
 		if ( !handled && string.IsNullOrEmpty( entity.TargetName ) && string.IsNullOrEmpty( entity.Target ) )
 		{
@@ -265,6 +266,12 @@ partial class MapBuilder
 				setter.FireOnce = (entity.SpawnFlags & 1) != 0;
 				RegisterTarget( entity, setter );
 				WireTrigger( entity, setter, UseType.Set, delayed: false );
+				return;
+
+			case "info_hostage_rescue" when Host is ConditionZeroDeletedScenesMount:
+				var rescue = go.AddComponent<ConditionZeroDeletedScenes.HostageRescuePoint>();
+				rescue.TargetName = entity.TargetName;
+				RegisterTarget( entity, rescue, null, null, null, nameof( MapEntity.Kill ) );
 				return;
 
 			case "info_landmark":
