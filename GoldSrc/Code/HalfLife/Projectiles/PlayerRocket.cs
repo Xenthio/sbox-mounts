@@ -45,7 +45,7 @@ public class PlayerRocket : RocketProjectile
 			Velocity = Velocity * 0.2f + desired * (Velocity.Length * 0.798f);
 			if ( !underwater && Velocity.Length < 1500 )
 			{
-				Blast.Detonate( GameObject, Shooter, WorldPosition, Vector3.Up, Damage, false );
+				Blast.Detonate( GameObject, Shooter, WorldPosition, Vector3.Up, Damage, false, BlastMount );
 				GameObject.Destroy();
 				return;
 			}
@@ -90,5 +90,7 @@ public class PlayerRocket : RocketProjectile
 	static void ShowBubbles( Vector3 start, Vector3 end ) => Blast.BubbleTrail( Game.ActiveScene, start, end, 4, "Rocket bubbles" );
 
 	internal override void OnImpact( IDamageable victim, Vector3 position, Vector3 normal )
-		=> Blast.Detonate( GameObject, Shooter, position, normal, Damage, true );
+		=> Blast.Detonate( GameObject, Shooter, position, normal, Damage, true, BlastMount );
+
+	internal virtual GameMount BlastMount => null;
 }

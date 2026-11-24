@@ -17,7 +17,8 @@ public sealed class RocketLauncher : GuidedRocketLauncher
 [Hide]
 public abstract partial class GuidedRocketLauncher : ProjectileWeapon
 {
-	internal override string DeploySequence => Clip1 > 0 ? "draw1" : "draw2";
+	bool HasLoadedRocket => !UsesPrimaryClip || Clip1 > 0;
+	internal override string DeploySequence => HasLoadedRocket ? "draw1" : "draw2";
 	internal override string ShotSequence => "fire";
 	internal override float? IdleAfterShot => 1.5f;
 	internal override float IdleAfterReloadStart => Game.Random.Float( 10, 15 );
@@ -25,9 +26,9 @@ public abstract partial class GuidedRocketLauncher : ProjectileWeapon
 	internal override void PlayIdle( StudioWeaponView view )
 	{
 		if ( !LaserEnabled && Game.Random.Float( 0, 1 ) > 0.75f &&
-			view.Play( Clip1 > 0 ? "fidget" : "fidget2", idleAfter: 3 ) ) return;
+			view.Play( HasLoadedRocket ? "fidget" : "fidget2", idleAfter: 3 ) ) return;
 		// The HD model has no empty-launcher fidget.
-		view.Play( Clip1 > 0 ? "idle" : "idle2", idleAfter: 6 );
+		view.Play( HasLoadedRocket ? "idle" : "idle2", idleAfter: 6 );
 	}
 	internal override void PlayLaunchSound()
 	{
@@ -49,6 +50,7 @@ public abstract partial class GuidedRocketLauncher : ProjectileWeapon
 	internal override bool Release( Ray ray )
 	{
 		var rocket = LaunchRocket( ray );
+		if ( !rocket.IsValid() ) return false;
 		rocket.Launcher = this;
 		ActiveRockets++;
 		return true;

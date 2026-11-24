@@ -2,9 +2,13 @@ namespace GoldSrc.HalfLife;
 
 [Title( ".357 Magnum" ), Category( "Half-Life" )]
 [WeaponPickup( "357", "357", 36, Bucket = 1, Weight = 15 )]
-public sealed class Revolver : BulletWeapon
+public sealed class Revolver : ClassicRevolver;
+
+[Hide]
+public abstract class ClassicRevolver : BulletWeapon
 {
 	internal override int PlayerMuzzleFlash => 31;
+	internal virtual float ShotDamage => Deathmatch ? 50 : 40;
 
 	internal override float ZoomFieldOfView => 40;
 	internal override (string Name, float? Delay) IdleAnimation => Game.Random.Float( 0, 1 ) switch
@@ -46,7 +50,7 @@ public sealed class Revolver : BulletWeapon
 			Click();
 			return;
 		}
-		Ballistics = Ballistics with { Damage = Deathmatch ? 50 : 40 };
+		Ballistics = Ballistics with { Damage = ShotDamage };
 		base.PrimaryAttack();
 	}
 
