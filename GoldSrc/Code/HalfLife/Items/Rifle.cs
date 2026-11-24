@@ -105,10 +105,12 @@ public abstract class ClassicRifle : BulletWeapon
 		if ( GrenadeModel is not { } model ) return;
 		if ( !TakeSecondaryAmmo() ) return;
 		_nextLaunch = SecondaryDelay;
-		var grenade = NpcProjectile.Fire<ContactGrenade>( Owner.GameObject, model, 100, null, aim.Position, aim.Forward, 800 );
-		grenade.EffectsMount = GrenadeEffectsMount;
+		SpawnGrenade( aim, model ).EffectsMount = GrenadeEffectsMount;
 		LaunchEffects();
 	}
+
+	internal virtual ContactGrenade SpawnGrenade( Ray aim, string model ) =>
+		NpcProjectile.Fire<ContactGrenade>( Owner.GameObject, model, 100, null, aim.Position, aim.Forward, 800 );
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
 	void LaunchEffects()

@@ -163,7 +163,10 @@ public abstract partial class GameMount : BaseGameMount
 		else if ( this is CrackLifeMount or CrackLifeCampaignMount )
 			context.Add( ResourceType.GameResource, Rifle.GrenadeAmmoPath, new AmmoLoader( "AR grenades", 999 ) );
 		else if ( this is ScientistSlaughterhouseMount )
+		{
+			context.Add( ResourceType.GameResource, Rifle.GrenadeAmmoPath, new AmmoLoader( "AR grenades", 50 ) );
 			context.Add( ResourceType.GameResource, ScientistSlaughterhouse.Flamethrower.AcidAmmoPath, new AmmoLoader( "acid", 250 ) );
+		}
 		if ( weapons.Length > 0 )
 			MountWeapons( context, gameplayModels, weapons );
 

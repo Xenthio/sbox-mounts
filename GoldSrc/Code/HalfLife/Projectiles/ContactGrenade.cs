@@ -1,12 +1,13 @@
 namespace GoldSrc.HalfLife;
 
 [Hide]
-public sealed class ContactGrenade : NpcProjectile
+public class ContactGrenade : NpcProjectile
 {
 	TimeUntil _nextWarning;
 
 	internal GameMount EffectsMount { get; set; }
 	internal override float Lifetime => 12;
+	internal float PitchSpeed { get; set; } = -300;
 
 	internal override void Guide()
 	{
@@ -16,7 +17,7 @@ public sealed class ContactGrenade : NpcProjectile
 			Scene.GetSystem<Sandbox.Npcs.NpcSystem>().EmitStimulus( TimedGrenade.DangerStimulus, WorldPosition + Velocity * 0.5f, GameObject, Velocity.Length, 0.2f );
 		}
 		Velocity += Scene.PhysicsWorld.Gravity * (0.5f * Time.Delta);
-		WorldRotation *= Rotation.FromPitch( -300 * Time.Delta );
+		WorldRotation *= Rotation.FromPitch( PitchSpeed * Time.Delta );
 	}
 
 	internal override void OnImpact( IDamageable victim, Vector3 position, Vector3 normal )
