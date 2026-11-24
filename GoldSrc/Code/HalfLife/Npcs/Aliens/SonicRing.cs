@@ -7,9 +7,11 @@ public sealed class SonicRing : Component
 	LineRenderer _line;
 	Vector3 _origin;
 	float _radius;
+	float _lifetime;
 	TimeSince _age;
 
-	internal static void Spawn( Vector3 origin, Color tint, float radius, GameMount mount = null, float width = 16 )
+	internal static void Spawn( Vector3 origin, Color tint, float radius, GameMount mount = null, float width = 16,
+		string texture = "shockwave", float lifetime = 0.2f )
 	{
 		var go = new GameObject( false, "Sonic blast" );
 		go.NetworkMode = NetworkMode.Never;
@@ -24,18 +26,19 @@ public sealed class SonicRing : Component
 		line.CastShadows = false;
 		mount ??= Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
 		if ( mount is not null )
-			line.Texturing = TrailTextureConfig.Default with { Material = mount.GetTrailMaterial( "shockwave" ), WorldSpace = false };
+			line.Texturing = TrailTextureConfig.Default with { Material = mount.GetTrailMaterial( texture ), WorldSpace = false };
 		var ring = go.AddComponent<SonicRing>();
 		ring._line = line;
 		ring._origin = origin;
 		ring._radius = radius;
+		ring._lifetime = lifetime;
 		ring._age = 0;
 		go.Enabled = true;
 	}
 
 	protected override void OnUpdate()
 	{
-		var progress = _age / 0.2f;
+		var progress = _age / _lifetime;
 		if ( progress >= 1 )
 		{
 			GameObject.Destroy();

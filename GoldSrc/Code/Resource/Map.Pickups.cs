@@ -18,6 +18,8 @@ partial class MapBuilder
 			(CryOfFearMount, "ammo_p345") => ("ammo/p345_clip", "p345", 8),
 			(CryOfFearMount, "ammo_vp70") => ("ammo/vp70_clip", "vp70", 18),
 			(ScientistSlaughterhouseMount, "ammo_sniperclip") => ("w_m40a1clip", "m40", 5),
+			(ScientistSlaughterhouseMount, "ammo_egonclip") => ("w_isotopebox", "uranium", 250),
+			(ScientistSlaughterhouseMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 100),
 			(CrackLifeCampaignMount, "ammo_snipars") => ("w_357ammobox", "snipars", 10),
 			(CrackLifeCampaignMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 999),
 			(CrackLifeCampaignMount, "ammo_crossbow") => ("w_crossbow_clip", "bolts", 50),
