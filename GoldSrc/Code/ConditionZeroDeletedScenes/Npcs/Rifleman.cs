@@ -7,8 +7,12 @@ public abstract class Rifleman : CampaignSoldier
 {
 	[Sync( SyncFlags.FromHost )] int Ammo { get; set; } = -1;
 
+	const int Unarmed = 64;
+
+	[Property, Hide] public int WeaponFlags { get; set; }
+
 	Firearm? _firearm;
-	Firearm Weapon => _firearm ??= SelectFirearm( ClassName, IsCounterTerrorist );
+	Firearm Weapon => _firearm ??= SelectFirearm();
 
 	internal override float AttackRange => WeaponRange > 0 ? WeaponRange : Weapon.Range;
 	internal override float StrikeRange => AttackRange;
@@ -16,6 +20,19 @@ public abstract class Rifleman : CampaignSoldier
 	internal override int WeaponBodyGroup => Weapon.BodyGroup;
 	internal override Vector3 AttackOrigin => WorldPosition + Vector3.Up * 60;
 	internal override string[] ExtraActions => [Weapon.FireSequence, Weapon.ReloadSequence];
+
+	internal override void ApplyMapProperties( Bsp.Entity entity )
+	{
+		base.ApplyMapProperties( entity );
+		WeaponFlags = entity.GetInt( "weapons" );
+		_firearm = null;
+	}
+
+	internal override void Engage( GameObject target )
+	{
+		if ( Weapon.Capacity > 0 ) base.Engage( target );
+		else Animation.SetLookTarget( target );
+	}
 
 	internal override void ApplyEquipment()
 	{
@@ -25,6 +42,8 @@ public abstract class Rifleman : CampaignSoldier
 
 	internal override void BeginAttack( GameObject target )
 	{
+		if ( Weapon.Capacity == 0 ) return;
+
 		if ( Ammo == 0 )
 		{
 			if ( Find( Weapon.ReloadSequence ) is { } reload ) PlayAction( reload );
@@ -42,7 +61,10 @@ public abstract class Rifleman : CampaignSoldier
 	}
 
 	internal override SavedMagazine CaptureMagazine() => new( Ammo, 0 );
-	internal override void RestoreMagazine( SavedMagazine magazine ) => Ammo = magazine.Rounds;
+	internal override void RestoreMagazine( SavedMagazine magazine )
+	{
+		if ( magazine is not null ) Ammo = magazine.Rounds;
+	}
 
 	internal override void FireBullet( GameObject target, Vector3 origin, Vector3 end )
 	{
@@ -65,9 +87,15 @@ public abstract class Rifleman : CampaignSoldier
 	readonly record struct Firearm( int BodyGroup, int Capacity, string FireSequence, string ReloadSequence, string ReloadSample,
 		string Report, string SecondReport, int Pellets, float Damage, float Range, float Spread, int Tracers, bool Glock = false );
 
-	static Firearm SelectFirearm( string className, bool counterTerrorist )
+	Firearm SelectFirearm()
 	{
-		var suffix = className?[(className.LastIndexOf( '_' ) + 1)..];
+		var counterTerrorist = IsCounterTerrorist;
+		var suffix = ClassName?[(ClassName.LastIndexOf( '_' ) + 1)..];
+		var legacy = suffix is "urban" or "arctic" or "asian" or "desert" or "jungle" or "russian" or "gsg9" or "sas" or "gign" or "swat" or "spetsnaz";
+		if ( (counterTerrorist || legacy) && (WeaponFlags & Unarmed) != 0 )
+			return default( Firearm ) with { BodyGroup = counterTerrorist ? 8 : 9 };
+		if ( legacy )
+			suffix = (WeaponFlags & 16) != 0 ? "sniperrifle" : (WeaponFlags & 8) != 0 ? "shotgun" : "mp5";
 		return suffix switch
 		{
 			"pistol" or "grenader" => new( 5, 16, "pistol_standing", "pistol_reload", "pistol_reload",

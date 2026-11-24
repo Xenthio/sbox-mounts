@@ -106,6 +106,13 @@ public sealed class MonsterMaker : MapEntity
 			if ( ChildProperties is not null )
 			{
 				var entity = new Bsp.Entity( ChildProperties );
+				actor.ApplyTriggerProperties( entity );
+				if ( npc is ConditionZeroDeletedScenes.CampaignSoldier )
+				{
+					npc.Body = entity.GetInt( "body" );
+					npc.Skin = entity.GetInt( "skin" );
+					npc.FadeCorpse |= entity.GetInt( "deathfade" ) != 0;
+				}
 				if ( entity.GetFloat( "health" ) > 0 ) npc.Health = entity.GetFloat( "health" );
 				npc.ApplyMapProperties( entity );
 				npc.ApplyMapModel( entity );

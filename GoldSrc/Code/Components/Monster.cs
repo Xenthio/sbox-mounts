@@ -45,6 +45,16 @@ public sealed class Monster : MapEntity
 	[Property] public string DamageTarget { get; set; }
 	[Property] public string DeathTarget { get; set; }
 
+	internal void ApplyTriggerProperties( Bsp.Entity entity )
+	{
+		var target = entity.GetString( "TriggerTarget" );
+		switch ( entity.GetInt( "TriggerCondition" ) )
+		{
+			case 2: DamageTarget = target; break;
+			case 4: DeathTarget = target; break;
+		}
+	}
+
 	internal void FireDamageTarget()
 	{
 		if ( string.IsNullOrEmpty( DamageTarget ) ) return;
@@ -61,9 +71,9 @@ public sealed class Monster : MapEntity
 		FireAnimationTarget( target );
 	}
 
-	internal void FireAnimationTarget( string name )
+	internal void FireAnimationTarget( string name, GameObject activator = null )
 	{
-		if ( Map.IsValid() ) Fire( Map.BuildOutput( name ), GameObject );
+		if ( Map.IsValid() ) Fire( Map.BuildOutput( name ), activator ?? GameObject );
 	}
 
 	protected override void OnStart()
