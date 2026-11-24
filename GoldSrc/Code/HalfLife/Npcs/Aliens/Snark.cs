@@ -4,7 +4,10 @@ namespace GoldSrc.HalfLife;
 [Alias( "GoldSrc.HalfLifeSnark" )]
 [NpcDefinition( "monster_snark", "w_squeak", MonsterClass.AlienWeapon, 2, 4, 8, 300,
 	Movement = NpcMovement.Bouncing, Damage = 10, IdleSequence = "run", Blood = BloodColor.Yellow )]
-public sealed class Snark : Npc, Component.ICollisionListener
+public sealed class Snark : ClassicSnark;
+
+[Hide]
+public abstract class ClassicSnark : Npc, Component.ICollisionListener
 {
 	internal override float ViewDot => 0;
 	internal override float SightRange => 512;
@@ -17,10 +20,11 @@ public sealed class Snark : Npc, Component.ICollisionListener
 	[Sync( SyncFlags.FromHost )] TimeUntil Detonation { get; set; }
 	[Sync( SyncFlags.FromHost )] float BlastDamage { get; set; } = PopDamage;
 
-	internal override MonsterClass Classification => _enemy.IsValid() && _enemy.GetComponent<Snark>() is null && ClassOf( _enemy ) is MonsterClass.Player or MonsterClass.HumanPassive or MonsterClass.HumanMilitary
+	internal override MonsterClass Classification => _enemy.IsValid() && _enemy.GetComponent<ClassicSnark>() is null && ClassOf( _enemy ) is MonsterClass.Player or MonsterClass.HumanPassive or MonsterClass.HumanMilitary
 		? MonsterClass.AlienMilitary : MonsterClass.AlienWeapon;
 
 	Rigidbody _body;
+	Vector3? _launchVelocity;
 	[Property] internal GameObject Thrower { get; set; }
 	GameObject DamageAttacker => Thrower.IsValid() ? Thrower : GameObject;
 	GameObject _enemy;
@@ -29,6 +33,12 @@ public sealed class Snark : Npc, Component.ICollisionListener
 	bool _touched, _warned;
 	[Sync( SyncFlags.FromHost )] Vector2 TumbleRate { get; set; }
 	[Sync( SyncFlags.FromHost )] TimeSince TumbleStart { get; set; }
+
+	internal void Launch( Vector3 velocity )
+	{
+		if ( _body.IsValid() ) _body.Velocity = velocity;
+		else _launchVelocity = velocity;
+	}
 
 	protected override void OnStart()
 	{
@@ -48,6 +58,11 @@ public sealed class Snark : Npc, Component.ICollisionListener
 		_body.MotionEnabled = true;
 		// GoldSrc bounces an axis-aligned box. Only the visual model tumbles.
 		_body.Locking = new PhysicsLock { Pitch = true, Roll = true, Yaw = true };
+		if ( _launchVelocity is { } velocity )
+		{
+			_body.Velocity = velocity;
+			_launchVelocity = null;
+		}
 		_previousPosition = WorldPosition;
 	}
 
@@ -117,7 +132,7 @@ public sealed class Snark : Npc, Component.ICollisionListener
 		_nextTouch = 0.1f;
 		_nextHunt = 0;
 		var pitch = (155 - 60 * (float)Detonation / Fuse) * 0.01f;
-		if ( _nextBite <= 0 && other?.GetComponentInParent<IDamageable>() is { } victim && victim is not Snark )
+		if ( _nextBite <= 0 && other?.GetComponentInParent<IDamageable>() is { } victim && victim is not ClassicSnark )
 		{
 			_nextBite = 0.5f;
 			BlastDamage += PopDamage;
@@ -135,7 +150,7 @@ public sealed class Snark : Npc, Component.ICollisionListener
 
 	protected override void OnDeath( Component.IDamageable.DeathEvent death )
 	{
-		BloodEffects.Spray( Definition.Blood, WorldPosition, 80 );
+		BloodEffects.Spray( Definition.Blood, WorldPosition, 80, Definition.Mount );
 		EmitSound( "common/bodysplat.wav", WorldPosition, 0.75f, 2 );
 		Blast.DamageInRadius( GameObject, DamageAttacker, WorldPosition, BlastDamage, BlastDamage * 2.5f, "blast" );
 		base.OnDeath( death );

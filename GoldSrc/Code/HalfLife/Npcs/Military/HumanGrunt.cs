@@ -26,7 +26,7 @@ public sealed partial class HumanGrunt : Npc, Component.IDamageable.IEvents
 	{
 		var offset = target.WorldPosition - WorldPosition;
 		if ( offset.Length <= 64 && Vector3.Dot( WorldRotation.Forward, offset.Normal ) >= 0.7f
-			&& target.GetComponent<Snark>() is null && Find( "frontkick" ) is { } kick )
+			&& target.GetComponent<ClassicSnark>() is null && Find( "frontkick" ) is { } kick )
 		{
 			PlayAction( kick );
 			return;

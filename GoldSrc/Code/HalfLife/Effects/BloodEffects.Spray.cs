@@ -5,9 +5,9 @@ internal static partial class BloodEffects
 	static readonly TagSet SpatterIgnore = new( ["npc", "player", "playercontroller", "ragdoll", "debris", "trigger"] );
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	internal static void Spray( Npc.BloodColor color, Vector3 point, int damage )
+	internal static void Spray( Npc.BloodColor color, Vector3 point, int damage, string mountId = "hl1" )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( Sandbox.Mounting.Directory.Get( mountId ) is not GameMount mount ) return;
 		var size = System.Math.Clamp( damage * (Connection.All.Count > 1 ? 2 : 1) / 10, 3, 16 );
 		var shade = (int)color + Game.Random.Int( 1, 3 );
 		if ( mount.GetIndexedSprite( "bloodspray" ) is { } mist )
