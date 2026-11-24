@@ -24,6 +24,7 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 	internal virtual string ImpactSprite => "xspark1";
 	internal virtual bool HasBeamNoise => true;
 	internal virtual string ObserverEffectSprite => null;
+	internal virtual (float Volume, float Pitch) BeamSoundTuning => (0.98f, 1.25f);
 	protected bool BeamActive => _burstExpires > 0;
 	protected virtual TagSet BeamDamageTags => AttackDamageTags;
 	protected virtual bool HasSplashDamage => Networking.MaxPlayers > 1;
@@ -105,7 +106,7 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 		SetNextFire( 0.25f );
 	}
 
-	void EndAttack( float delay )
+	protected void EndAttack( float delay )
 	{
 		_burstExpires = 0;
 		SetNextFire( delay );
@@ -124,7 +125,8 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 		_firing = true;
 		_windupEnds = 2;
 		_beamSound?.Stop();
-		_beamSound = PlaySample( "weapons/egon_windup2.wav", 0.98f, 1.25f );
+		var (volume, pitch) = BeamSoundTuning;
+		_beamSound = PlaySample( "weapons/egon_windup2.wav", volume, pitch );
 	}
 
 	protected override void OnUpdate()
@@ -136,8 +138,9 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 		{
 			_beamSound?.Stop();
 			_running = true;
-			_beamSound = PlaySample( "weapons/egon_run3.wav", 0.98f, 1.25f );
-			ViewModel?.GetComponent<StudioWeaponView>()?.Play( ShotSequence );
+			var (volume, pitch) = BeamSoundTuning;
+			_beamSound = PlaySample( "weapons/egon_run3.wav", volume, pitch );
+			ViewModel?.GetComponent<StudioWeaponView>()?.Play( ShotSequence, idleAfter: IdleAfterShot );
 		}
 		if ( _beamSound.IsValid() ) _beamSound.Position = GetMuzzleTransform().Position;
 	}
@@ -168,6 +171,7 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 		if ( !_firing ) return;
 		_firing = _running = false;
 		_idleAfterShutdown = 2;
+		FinishBeamAnimation();
 		_beamSound?.Stop();
 		if ( GameObject.IsDestroyed || Scene.IsDestroyed ) return;
 		var shutdown = _beamSound = PlaySample( "weapons/egon_off1.wav", 0.98f );
@@ -180,6 +184,8 @@ public abstract partial class ClassicGluonGun : StudioWeapon
 		shutdown.Stop();
 		_beamSound = null;
 	}
+
+	internal virtual void FinishBeamAnimation() { }
 
 	protected virtual void StopBeamVisual()
 	{
