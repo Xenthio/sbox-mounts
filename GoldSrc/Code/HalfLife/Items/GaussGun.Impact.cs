@@ -1,18 +1,18 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class GaussGun
+public abstract partial class ClassicGaussGun
 {
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static void ShowReflection( Vector3 point, Vector3 normal, float energy )
+	void ShowReflection( Vector3 point, Vector3 normal, float energy )
 	{
 		Glow( point + normal, 0.2f, energy / 255, energy * 0.05f );
 		Sparks( point, normal, 3, 0.1f, 100, 100 );
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static void ShowWallHit( Vector3 point, Vector3 normal, float energy, bool primary )
+	void ShowWallHit( Vector3 point, Vector3 normal, float energy, bool primary )
 	{
-		ImpactDecal.Place( point, normal, $"shot{Game.Random.Int( 1, 5 )}", 10 );
+		ImpactDecal.Place( point, normal, $"shot{Game.Random.Int( 1, 5 )}", 10, ContentMount );
 		Glow( point + normal, 1, energy / 255, 6 );
 		if ( !primary ) return;
 		Glow( point + normal, 0.2f, 200f / 255, 0.3f );
@@ -20,17 +20,17 @@ public sealed partial class GaussGun
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static void ShowPenetration( Vector3 entry, Vector3 exit, Vector3 normal, Vector3 direction, float energy )
+	void ShowPenetration( Vector3 entry, Vector3 exit, Vector3 normal, Vector3 direction, float energy )
 	{
-		ImpactDecal.Place( exit, normal, $"shot{Game.Random.Int( 1, 5 )}", 10 );
+		ImpactDecal.Place( exit, normal, $"shot{Game.Random.Int( 1, 5 )}", 10, ContentMount );
 		Sparks( entry, -direction, 3, 0.1f, 100, 100 );
 		Glow( exit + direction, 0.1f, energy / 255, 6 );
 		Sparks( exit, -direction, (int)(energy * 0.3f), 0.1f, 40, 200 );
 	}
 
-	static ParticleEffect CreateGlowParticles( string name, Vector3 position, float scale )
+	ParticleEffect CreateGlowParticles( string name, Vector3 position, float scale )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount || mount.GetIndexedSprite( "hotglow" ) is not { } sprite ) return null;
+		if ( ContentMount?.GetIndexedSprite( "hotglow" ) is not { } sprite ) return null;
 		var go = new GameObject( false, name ) { NetworkMode = NetworkMode.Never, WorldPosition = position };
 		var effect = go.AddComponent<ParticleEffect>();
 		effect.ApplyShape = true;
@@ -50,7 +50,7 @@ public sealed partial class GaussGun
 			new Curve.Frame( 1, 0 ) { Mode = Curve.HandleMode.Linear } )
 	};
 
-	static void Glow( Vector3 point, float scale, float brightness, float life )
+	void Glow( Vector3 point, float scale, float brightness, float life )
 	{
 		if ( brightness <= 0 || CreateGlowParticles( "Gauss impact", point, scale ) is not { } glow ) return;
 		glow.Lifetime = life + 1;
@@ -59,7 +59,7 @@ public sealed partial class GaussGun
 		glow.Emit( point, 0 );
 	}
 
-	static void Sparks( Vector3 origin, Vector3 direction, int count, float life, float speed, float spread )
+	void Sparks( Vector3 origin, Vector3 direction, int count, float life, float speed, float spread )
 	{
 		if ( count <= 0 || CreateGlowParticles( "Gauss sparks", origin, Game.Random.Float( 0.1f, 0.2f ) ) is not { } sparks ) return;
 		sparks.Lifetime = new ParticleFloat( life + 1, life + 5 );

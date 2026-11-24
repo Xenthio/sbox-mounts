@@ -1,6 +1,6 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class GaussGun
+public abstract partial class ClassicGaussGun
 {
 	void FireBeam( float damage, bool charged )
 	{
@@ -70,7 +70,7 @@ public sealed partial class GaussGun
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static void ShowSegment( Vector3 start, Vector3 end, bool charged, float damage ) =>
-		EnergyBeam.Show( start, end, charged ? Color.White.WithAlpha( damage / 255 ) : new Color( 1, 0.5f, 0, 0.5f ), "smoke", "Gauss beam", charged ? 2.5f : 1, 0.1f );
+	void ShowSegment( Vector3 start, Vector3 end, bool charged, float damage ) =>
+		EnergyBeam.Show( start, end, charged ? Color.White.WithAlpha( damage / 255 ) : new Color( 1, 0.5f, 0, 0.5f ), "smoke", "Gauss beam", charged ? 2.5f : 1, 0.1f, ContentMount );
 
 }

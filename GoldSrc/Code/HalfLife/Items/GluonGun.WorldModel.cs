@@ -1,6 +1,6 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class GluonGun
+public abstract partial class ClassicGluonGun
 {
 	SkinnedModelRenderer _held;
 	BoneCollection.Bone _barrel;

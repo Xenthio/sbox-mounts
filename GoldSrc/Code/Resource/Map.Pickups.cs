@@ -19,6 +19,7 @@ partial class MapBuilder
 			(CryOfFearMount, "ammo_vp70") => ("ammo/vp70_clip", "vp70", 18),
 			(ScientistSlaughterhouseMount, "ammo_sniperclip") => ("w_m40a1clip", "m40", 5),
 			(CrackLifeCampaignMount, "ammo_snipars") => ("w_357ammobox", "snipars", 10),
+			(CrackLifeCampaignMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 999),
 			_ => default
 		};
 		if ( !weapon && !halfLifeItems && customAmmo.Model is null ) return false;

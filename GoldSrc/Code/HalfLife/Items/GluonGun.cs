@@ -2,7 +2,10 @@ namespace GoldSrc.HalfLife;
 
 [Title( "Gluon Gun" ), Category( "Half-Life" )]
 [WeaponPickup( "egon", "uranium", 100, Bucket = 3, Weight = 20 )]
-public sealed partial class GluonGun : StudioWeapon
+public sealed class GluonGun : ClassicGluonGun;
+
+[Hide]
+public abstract partial class ClassicGluonGun : StudioWeapon
 {
 	internal override string ShotSequence => $"fire{Game.Random.Int( 1, 4 )}";
 	internal override bool CanIdle => !_firing && _idleAfterShutdown <= 0;
@@ -15,6 +18,9 @@ public sealed partial class GluonGun : StudioWeapon
 	TimeUntil _nextPulseDeadline, _windupEnds, _idleAfterShutdown;
 	TimeUntil _burstExpires, _nextCell, _nextShake;
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => hd ? new( 29, -5.2f, 0.5f ) : new( 28.4f, -5.1f, 0 );
+	internal virtual float BeamDamage => Networking.MaxPlayers > 1 ? 20 : Ballistics.Damage;
+	internal virtual string ObserverEffectSprite => null;
+	public override Ray AimRay => Owner.IsValid() ? Owner.EyeTransform.ForwardRay : base.AimRay;
 
 	protected override void Think()
 	{
@@ -42,10 +48,9 @@ public sealed partial class GluonGun : StudioWeapon
 		}
 		else if ( !hit.StartedSolid )
 		{
-			var damage = multiplayer ? 20 : 14;
 			if ( hit.Hit )
 			{
-				ShootBullet( hit, damage, 0 );
+				ShootBullet( hit, BeamDamage, 0 );
 				// Keep the blast's visibility traces outside the surface, including sloped ceilings.
 				ImpactPulse( hit.EndPosition + hit.Normal * 2, _firstImpact );
 				_firstImpact = false;
@@ -65,7 +70,7 @@ public sealed partial class GluonGun : StudioWeapon
 	{
 		if ( !Owner.IsValid() || !IsActive ) return;
 		if ( Networking.MaxPlayers > 1 )
-			Blast.DamageInRadius( GameObject, Owner.GameObject, point, 5, 128, "energybeam", "blast", "alwaysgib" );
+			Blast.DamageInRadius( GameObject, Owner.GameObject, point, BeamDamage * 0.25f, 128, "energybeam", "blast", "alwaysgib" );
 		if ( !firstImpact && _nextShake > 0 ) return;
 		GroundShake.Emit( Scene, point, 5, 150, 0.75f, 250 );
 		_nextShake = 1.5f;

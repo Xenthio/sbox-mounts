@@ -3,7 +3,7 @@ namespace GoldSrc.HalfLife;
 [Hide]
 public sealed class GluonBeam : Component
 {
-	GluonGun _gun;
+	ClassicGluonGun _gun;
 	LineRenderer _core, _noise;
 	SpriteRenderer _flare;
 	Vector2 _flareSize;
@@ -11,18 +11,20 @@ public sealed class GluonBeam : Component
 	TimeSince _fadeAge, _pulseAge;
 	bool _stopping;
 
-	internal static GluonBeam Start( GluonGun gun, Vector3 end )
+	internal static GluonBeam Start( ClassicGluonGun gun, Vector3 end )
 	{
+		if ( gun.ContentMount is not { } mount ) return null;
 		var go = new GameObject( false, "Gluon beam" ) { NetworkMode = NetworkMode.Never };
 		var beam = go.AddComponent<GluonBeam>();
 		beam._gun = gun;
 		beam._end = end;
-		var mount = (HalfLifeMount)Sandbox.Mounting.Directory.Get( "hl1" );
-		var material = mount.GetTrailMaterial( "xbeam1" );
+		var observerSprite = gun.IsProxy ? gun.ObserverEffectSprite : null;
+		var material = (observerSprite is not null ? mount.GetTrailMaterial( observerSprite ) : null) ?? mount.GetTrailMaterial( "xbeam1" );
 		beam._core = beam.CreateLine( material, 3.5f );
 		beam._noise = beam.CreateLine( material, gun.IsProxy ? 5.5f : 5 );
 		if ( gun.IsProxy ) beam._noise.Color = new Color( 50f / 255, 50f / 255, 1, 100f / 255 );
-		if ( mount.GetIndexedSprite( "xspark1" ) is { } sprite )
+		var sprite = (observerSprite is not null ? mount.GetIndexedSprite( observerSprite ) : null) ?? mount.GetIndexedSprite( "xspark1" );
+		if ( sprite is not null )
 		{
 			var flare = new GameObject( go, true, "Gluon impact" ).AddComponent<SpriteRenderer>();
 			var animation = sprite.Animations[0];

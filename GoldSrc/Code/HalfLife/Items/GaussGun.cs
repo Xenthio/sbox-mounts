@@ -2,7 +2,10 @@ namespace GoldSrc.HalfLife;
 
 [Title( "Tau Cannon" ), Category( "Half-Life" )]
 [WeaponPickup( "gauss", "uranium", 100, Bucket = 3, Weight = 20 )]
-public sealed partial class GaussGun : StudioWeapon
+public sealed class GaussGun : ClassicGaussGun;
+
+[Hide]
+public abstract partial class ClassicGaussGun : StudioWeapon
 {
 	static float FullChargeTime => Networking.MaxPlayers > 1 ? 1.5f : 4;
 	bool _charging, _released, _triggerHeld, _spinning;
@@ -16,6 +19,7 @@ public sealed partial class GaussGun : StudioWeapon
 	internal override bool SwitchWhenSpent => !_triggerHeld && !_charging && !_spinning;
 	internal override (string Name, float? Delay) IdleAnimation => (_spinning ? "spin" : "idle", null);
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => new( 28.4f, 2.8f, hd ? 4.6f : 4.1f );
+	public override Ray AimRay => Owner.IsValid() ? Owner.EyeTransform.ForwardRay : base.AimRay;
 
 	internal override void Configure()
 	{
@@ -43,7 +47,7 @@ public sealed partial class GaussGun : StudioWeapon
 	}
 
 	internal override void DrawShotTrail( Vector3 start, Vector3 end ) =>
-		EnergyBeam.Show( start, end, new Color( 1, 0.5f, 0, 0.5f ), "smoke", "Gauss beam", 1, 0.1f );
+		EnergyBeam.Show( start, end, new Color( 1, 0.5f, 0, 0.5f ), "smoke", "Gauss beam", 1, 0.1f, ContentMount );
 
 	internal override void PlayShotSound() => PlaySample( "weapons/gauss2.wav", 0.55f, Game.Random.Float( 0.85f, 1.16f ) );
 
