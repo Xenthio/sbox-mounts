@@ -2,7 +2,7 @@ using Sandbox.Npcs.Layers;
 
 namespace GoldSrc.HalfLife;
 
-public sealed partial class HumanGrunt
+public partial class HumanGrunt
 {
 	GameObject _danger;
 	bool _movingToCover, _reloadAtCover;
@@ -15,7 +15,7 @@ public sealed partial class HumanGrunt
 			&& warning.Source.IsValid() && warning.Source != _danger )
 		{
 			_danger = warning.Source;
-			Radio( "!HG_GREN" );
+			Radio( "GREN" );
 			TakeCover( warning.Position + Vector3.Up * 4, warning.Source, allowOpenGround: true );
 		}
 
@@ -39,7 +39,7 @@ public sealed partial class HumanGrunt
 		base.OnDamaged( damage );
 		if ( Health <= 0 || _movingToCover || RopeAnchor.HasValue || damage.AcceptedDamage <= 0 ) return;
 		if ( FindVisibleEnemy() is not { } enemy || Game.Random.Int( 0, 99 ) > 90 ) return;
-		if ( TakeCover( TargetEyePosition( enemy ), enemy ) ) Radio( "!HG_COVER" );
+		if ( TakeCover( TargetEyePosition( enemy ), enemy ) ) Radio( "COVER" );
 	}
 
 	void ReloadWeapon() => PlayAction( Find( HasShotgun ? "reload_shotgun" : "reload_mp5" ) );

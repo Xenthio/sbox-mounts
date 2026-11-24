@@ -1,6 +1,6 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class HumanGrunt
+public partial class HumanGrunt
 {
 	[Property, Sync( SyncFlags.FromHost )] public Vector3? RopeAnchor { get; private set; }
 	float _descentSpeed;
@@ -18,7 +18,11 @@ public sealed partial class HumanGrunt
 		var grunt = go.GetComponent<HumanGrunt>( true );
 		grunt.RopeAnchor = start + Vector3.Up * 112;
 		grunt._descentSpeed = Game.Random.Float( 128, 196 );
-		if ( source is GruntRepel ) go.SetParent( source.GameObject, true );
+		if ( source is GruntRepel rappel )
+		{
+			go.SetParent( source.GameObject, true );
+			rappel.ConfigureGrunt( grunt );
+		}
 		go.Enabled = true;
 		go.NetworkSpawn( true, null );
 		return grunt;
@@ -48,6 +52,11 @@ public sealed partial class HumanGrunt
 		{
 			_descending = false;
 			RopeAnchor = null;
+			// The ground probe takes control up to eight units before the descending hull contacts the floor.
+			var floor = Scene.Trace.Ray( WorldPosition, WorldPosition + Vector3.Down * 8 )
+				.IgnoreGameObjectHierarchy( GameObject ).WithCollisionRules( Tags )
+				.WithoutTags( "npc", "player", "playercontroller", "trigger" ).Run();
+			if ( floor.Hit && !floor.StartedSolid ) WorldPosition = floor.EndPosition;
 			if ( Find( "repel_land" ) is { } landing ) PlayAction( landing );
 			return;
 		}
@@ -72,7 +81,7 @@ public sealed partial class HumanGrunt
 		beam.BeamColor = Color.White;
 		beam.BeamLifetime = 2;
 		beam.Looped = true;
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount && mount.GetIndexedSprite( "rope" ) is { } sprite )
+		if ( Sandbox.Mounting.Directory.Get( Definition.Mount ) is GameMount mount && mount.GetIndexedSprite( "rope" ) is { } sprite )
 			beam.Texture = sprite.Animations[0].Frames[0].Texture;
 		_rope.Enabled = true;
 	}

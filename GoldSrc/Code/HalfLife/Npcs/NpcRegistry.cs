@@ -16,7 +16,11 @@ internal sealed class NpcRegistry
 		_models = new( System.StringComparer.OrdinalIgnoreCase );
 		// Corpses and deployment helpers share models with live NPCs. Use the live NPC's hitbox materials.
 		foreach ( var entry in _entries.OrderByDescending( x => x.Component.TargetType.IsAssignableTo( typeof( Npc ) ) ) )
+		{
 			_models.TryAdd( $"models/{entry.Definition.Model}.mdl", entry.Definition );
+			foreach ( var model in entry.Definition.ModelVariants )
+				_models.TryAdd( $"models/{model}.mdl", entry.Definition );
+		}
 	}
 
 	internal NpcDefinitionAttribute FindModel( string path ) => _models.GetValueOrDefault( path );

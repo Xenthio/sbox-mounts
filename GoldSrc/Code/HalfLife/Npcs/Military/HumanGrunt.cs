@@ -3,7 +3,7 @@ namespace GoldSrc.HalfLife;
 [Title( "Human Grunt" ), Category( "Half-Life" )]
 [Alias( "GoldSrc.HalfLifeHumanGrunt" )]
 [NpcDefinition( "monster_human_grunt", "hgrunt", MonsterClass.HumanMilitary, 50, 16, 72, 160, ArmorGroup = 11, Attack = NpcAttack.Bullet, Damage = 5, Range = 2048, ProjectileModel = "grenade", StrikeEvents = new[] { 4, 5, 6 }, Gibs = GibSet.Human, Blood = BloodColor.Red )]
-public sealed partial class HumanGrunt : Npc, Component.IDamageable.IEvents
+public partial class HumanGrunt : Npc, Component.IDamageable.IEvents
 {
 	internal override float ViewDot => 0.2f;
 
@@ -21,6 +21,8 @@ public sealed partial class HumanGrunt : Npc, Component.IDamageable.IEvents
 	int _burstsRemaining;
 	GameObject _burstTarget;
 	internal override Vector3 AimOrigin => WorldPosition + Vector3.Up * (_standing ? 60 : 48);
+	internal virtual string BurstWeapon => HasShotgun ? "shotgun" : "mp5";
+	internal virtual float KickDamage => 10;
 
 	internal override void BeginAttack( GameObject target )
 	{
@@ -64,7 +66,7 @@ public sealed partial class HumanGrunt : Npc, Component.IDamageable.IEvents
 	void FireBurst( GameObject target )
 	{
 		var stance = _standing ? "standing" : "crouching";
-		AttackWith( target, Find( $"{stance}_{(HasShotgun ? "shotgun" : "mp5")}" ) );
+		AttackWith( target, Find( $"{stance}_{BurstWeapon}" ) );
 	}
 
 	internal override void HandleActionEvent( int id )
@@ -76,7 +78,7 @@ public sealed partial class HumanGrunt : Npc, Component.IDamageable.IEvents
 		}
 		if ( id == 3 )
 		{
-			var victim = TraceMelee( 70, 10, "club", out _ );
+			var victim = TraceMelee( 70, KickDamage, "club", out _ );
 			PushVictim( victim, WorldRotation.Forward * 100 + Vector3.Up * 50 );
 			return;
 		}

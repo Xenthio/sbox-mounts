@@ -129,7 +129,8 @@ partial class MapBuilder
 			or "player_loadsaved" or "env_fade" or "speaker" or "monstermaker" or "env_shake" or "scripted_sentence" or "ambient_generic" or "env_message" or "trigger_auto" or "trigger_relay"
 			or "scripted_sequence" or "env_global" or "multisource" or "trigger_counter"
 			or "info_landmark" or "trigger_changetarget" or "info_target" or "info_teleport_destination"
-			or "game_counter" or "game_counter_set" or "game_player_equip" or "env_render";
+			or "game_counter" or "game_counter_set" or "game_player_equip" or "env_render"
+			|| (className == "squadmaker" && Host is SvenCoopMount);
 
 		if ( !handled && string.IsNullOrEmpty( entity.TargetName ) && string.IsNullOrEmpty( entity.Target ) )
 		{
@@ -150,14 +151,22 @@ partial class MapBuilder
 		switch ( className )
 		{
 			case "monstermaker":
+			case "squadmaker" when Host is SvenCoopMount:
+				var squad = className == "squadmaker";
 				var maker = go.AddComponent<MonsterMaker>();
 				maker.TargetName = entity.TargetName;
 				maker.ChildClass = entity.GetString( "monstertype" );
 				maker.ChildName = entity.GetString( "netname" );
 				maker.PrefabPath = $"mount://{Host.Ident}/entities/npcs/{maker.ChildClass}.prefab";
-				maker.Count = entity.GetInt( "monstercount" );
-				maker.MaxLive = entity.GetInt( "m_imaxlivechildren" );
-				maker.Interval = entity.GetFloat( "delay" );
+				maker.Count = entity.GetInt( "monstercount", squad ? -1 : 0 );
+				maker.MaxLive = entity.GetInt( "m_imaxlivechildren", squad ? 5 : 0 );
+				maker.Interval = entity.GetFloat( "delay", squad ? 5 : 0 );
+				if ( squad )
+				{
+					maker.ChildProperties = new( entity.KeyValues );
+					maker.WaitForChildren = maker.Interval < 0;
+					if ( maker.WaitForChildren ) maker.Interval = 0.1f;
+				}
 				maker.StartActive = string.IsNullOrEmpty( maker.TargetName ) || (entity.SpawnFlags & 1) != 0;
 				maker.HitMonsterClip = (entity.SpawnFlags & 8) != 0;
 				maker.Cyclic = !string.IsNullOrEmpty( maker.TargetName ) && (entity.SpawnFlags & 4) != 0;

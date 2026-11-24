@@ -135,6 +135,16 @@ public partial class Npc : BaseNpc
 	internal virtual void ApplyMapProperties( Bsp.Entity entity ) { }
 	internal virtual string MapModel( Bsp.Entity entity ) =>
 		entity.ClassName is "monster_generic" or "monster_furniture" ? entity.GetString( "model" ) : null;
+	internal void ApplyMapModel( Bsp.Entity entity )
+	{
+		var relative = MapModel( entity );
+		if ( string.IsNullOrWhiteSpace( relative ) || Sandbox.Mounting.Directory.Get( Definition.Mount ) is not GameMount mount ||
+			mount.FindMountPath( relative ) is not { } path ) return;
+		var model = Model.Load( $"mount://{mount.Ident}/{path}.vmdl" );
+		if ( !model.IsValid() || model.IsError ) return;
+		ModelPath = model.ResourcePath;
+		Renderer.Model = model;
+	}
 	internal virtual int EffectiveBody => Body;
 	internal virtual int EffectiveSkin => Skin;
 	internal virtual string[] ExtraActions => [];

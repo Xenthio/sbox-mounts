@@ -1,6 +1,6 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class HumanGrunt
+public partial class HumanGrunt
 {
 	[Sync( SyncFlags.FromHost )] HumanGrunt SquadLeader { get; set; }
 	GameObject _squadEnemy;
@@ -12,7 +12,8 @@ public sealed partial class HumanGrunt
 		if ( !Networking.IsHost || SquadLeader.IsValid() ) return;
 		foreach ( var grunt in Scene.GetAllComponents<HumanGrunt>() )
 		{
-			if ( grunt == this || grunt.Health <= 0 || WorldPosition.DistanceSquared( grunt.WorldPosition ) > 1024 * 1024 ) continue;
+			if ( grunt == this || grunt.GetType() != GetType() || grunt.Classification != Classification
+				|| grunt.Health <= 0 || WorldPosition.DistanceSquared( grunt.WorldPosition ) > 1024 * 1024 ) continue;
 			if ( grunt.SquadLeader.IsValid() && (grunt.SquadLeader != grunt || grunt.Squadmates().Count() >= 4) ) continue;
 			var sight = Scene.Trace.Ray( EyePosition, grunt.EyePosition ).IgnoreGameObjectHierarchy( GameObject )
 				.WithoutTags( "npc", "player", "playercontroller", "trigger" ).Run();
@@ -43,8 +44,8 @@ public sealed partial class HumanGrunt
 			else
 			{
 				var enemyClass = ClassOf( target );
-				if ( enemyClass == MonsterClass.Player ) Radio( "!HG_ALERT" );
-				else if ( enemyClass is not (MonsterClass.PlayerAlly or MonsterClass.HumanPassive or MonsterClass.Machine) ) Radio( "!HG_MONST" );
+				if ( enemyClass == MonsterClass.Player ) Radio( "ALERT" );
+				else if ( enemyClass is not (MonsterClass.PlayerAlly or MonsterClass.HumanPassive or MonsterClass.Machine) ) Radio( "MONST" );
 
 				var aim = AimAt( target );
 				if ( Ammo > 0 && !GunDropped && InAttackRange( target, aim ) && CanHit( target, aim ) && !FriendlyInLine( target ) )
@@ -88,7 +89,7 @@ public sealed partial class HumanGrunt
 
 	bool SquadBusyFiring( GameObject target ) => Squadmates().Where( grunt => grunt.IsAttacking( target ) ).Take( 2 ).Count() == 2;
 
-	bool FriendlyInLine( GameObject target )
+	protected bool FriendlyInLine( GameObject target )
 	{
 		var aim = Rotation.LookAt( TargetHullCenter( target ) - WorldPosition );
 		foreach ( var ally in Squadmates() )

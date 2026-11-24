@@ -329,11 +329,11 @@ public partial class Npc
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	internal static void EjectShell( Vector3 origin, Rotation facing, bool shotgun = false )
+	internal static void EjectShell( Vector3 origin, Rotation facing, bool shotgun = false, string mountIdent = "hl1" )
 	{
 		var velocity = facing.Right * Game.Random.Float( 40, 90 ) + facing.Up * Game.Random.Float( 75, 200 )
 			+ facing.Forward * Game.Random.Float( -40, 40 );
-		ShellCasing.Eject( origin, facing, shotgun, velocity );
+		ShellCasing.Eject( origin, facing, shotgun, velocity, Sandbox.Mounting.Directory.Get( mountIdent ) as GameMount );
 	}
 
 	internal virtual void FireBullet( GameObject target, Vector3 origin, Vector3 end )

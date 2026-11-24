@@ -13,6 +13,8 @@ public sealed class MonsterMaker : MapEntity
 	[Property] public bool StartActive { get; set; }
 	[Property] public bool HitMonsterClip { get; set; }
 	[Property] public bool Cyclic { get; set; }
+	[Property, Hide] public bool WaitForChildren { get; set; }
+	[Property, Hide] public Dictionary<string, string> ChildProperties { get; set; }
 
 	readonly List<GameObject> _children = [];
 	bool _active, _exhausted, _fadeChildren;
@@ -71,6 +73,7 @@ public sealed class MonsterMaker : MapEntity
 	private void SpawnChild()
 	{
 		_children.RemoveAll( go => !go.IsValid() || go.IsDestroyed || go.GetComponent<Npc>() is { Health: <= 0 } );
+		if ( WaitForChildren && _children.Count > 0 ) return;
 		if ( MaxLive > 0 && _children.Count >= MaxLive ) return;
 		var pos = WorldPosition;
 		_ground ??= Scene.Trace.Ray( pos, pos + Vector3.Down * 2048 ).WithoutTags( "npc", "player", "trigger" ).Run().EndPosition.z;
@@ -99,6 +102,13 @@ public sealed class MonsterMaker : MapEntity
 		if ( npc.IsValid() )
 		{
 			npc.FadeCorpse = _fadeChildren;
+			if ( ChildProperties is not null )
+			{
+				var entity = new Bsp.Entity( ChildProperties );
+				npc.ApplyMapProperties( entity );
+				npc.ApplyMapModel( entity );
+				if ( entity.GetFloat( "health" ) > 0 ) npc.Health = entity.GetFloat( "health" );
+			}
 			if ( saved is not null )
 			{
 				npc.Health = saved.Health;

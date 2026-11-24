@@ -8,9 +8,9 @@ public sealed class ArmorRicochet : Component
 	TimeSince _age;
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	internal static void Show( Vector3 point, float scale )
+	internal static void Show( Vector3 point, float scale, string mountIdent = "hl1" )
 	{
-		if ( Application.IsDedicatedServer || Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ) return;
+		if ( Application.IsDedicatedServer || Sandbox.Mounting.Directory.Get( mountIdent ) is not GameMount mount ) return;
 		NpcAudio.Play( mount.NpcAudio.Find( "weapons/ric" ), point );
 		if ( mount.GetIndexedSprite( "richo1" ) is not { } sprite ) return;
 

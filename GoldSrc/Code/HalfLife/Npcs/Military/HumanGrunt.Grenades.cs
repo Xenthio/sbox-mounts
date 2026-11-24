@@ -1,6 +1,6 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class HumanGrunt
+public partial class HumanGrunt
 {
 	[Property] public bool HandGrenades { get; set; } = true;
 	TimeUntil _nextGrenade;
@@ -25,7 +25,7 @@ public sealed partial class HumanGrunt
 		if ( Squadmates().Any( grunt => (grunt.WorldPosition - end).WithZ( 0 ).LengthSquared <= 256 * 256 ) )
 			return false;
 		if ( !TimedGrenade.TryAim( this, ThrowOrigin, target, end, out _toss, HasLauncher ? ThrowOrigin.Distance( end ) / 600 : 1, !HasLauncher ) ) return false;
-		if ( !HasLauncher ) Radio( "!HG_THROW" );
+		if ( !HasLauncher ) Radio( "THROW" );
 		Movement?.Stop();
 		_grenadeTarget = target;
 		PlayAction( clip );

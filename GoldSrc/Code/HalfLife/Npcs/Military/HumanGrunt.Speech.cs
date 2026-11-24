@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace GoldSrc.HalfLife;
 
-public sealed partial class HumanGrunt
+public partial class HumanGrunt
 {
 	sealed class RadioChannel
 	{
@@ -15,12 +15,13 @@ public sealed partial class HumanGrunt
 	readonly float _radioPitch = Game.Random.Int( 0, 1 ) == 0 ? 1 : Game.Random.Int( 109, 116 ) / 100f;
 
 	[Property, Group( "Speech" )] public bool QuietOutsideCombat { get; set; }
+	internal virtual string RadioPrefix => "HG";
 
 	bool Radio( string sentence )
 	{
 		var channel = Channel;
 		if ( channel.NextLine > 0 ) return false;
-		EmitSound( sentence, WorldPosition, 0.35f, _radioPitch );
+		EmitSound( $"!{RadioPrefix}_{sentence}", WorldPosition, 0.35f, _radioPitch );
 		channel.NextLine = Game.Random.Float( 1.5f, 2 );
 		return true;
 	}
@@ -28,8 +29,8 @@ public sealed partial class HumanGrunt
 	internal override void OnEnemySpotted( GameObject target )
 	{
 		if ( SquadLeader.IsValid() ) return;
-		if ( target.GetComponentInParent<PlayerController>().IsValid() ) Radio( "!HG_ALERT" );
-		else if ( target.GetComponentInParent<Npc>() is { Faction: Sandbox.Npcs.Factions.Monster } ) Radio( "!HG_MONST" );
+		if ( target.GetComponentInParent<PlayerController>().IsValid() ) Radio( "ALERT" );
+		else if ( target.GetComponentInParent<Npc>() is { Faction: Sandbox.Npcs.Factions.Monster } ) Radio( "MONST" );
 	}
 
 	internal override void DeathSound() => EmitSound( Sounds.Death, WorldPosition, attenuation: GoldSrcSoundEvents.Idle );
@@ -46,9 +47,9 @@ public sealed partial class HumanGrunt
 		if ( Game.Random.Int( 0, 1 ) == 0 ) return;
 		switch ( Game.Random.Int( 0, 2 ) )
 		{
-			case 0: Radio( "!HG_CHECK" ); channel.Reply = "!HG_CLEAR"; break;
-			case 1: Radio( "!HG_QUEST" ); channel.Reply = "!HG_ANSWER"; break;
-			default: Radio( "!HG_IDLE" ); break;
+			case 0: Radio( "CHECK" ); channel.Reply = "CLEAR"; break;
+			case 1: Radio( "QUEST" ); channel.Reply = "ANSWER"; break;
+			default: Radio( "IDLE" ); break;
 		}
 	}
 }

@@ -35,7 +35,7 @@ internal sealed partial class NpcAudio
 				variants.Add( sound.Path );
 			}
 		}
-		var sentences = mount.GameDirs.Select( dir => $"{dir}/sound/sentences.txt" ).FirstOrDefault( mount.FileSystem.FileExists );
+		var sentences = mount.FindFile( "sound/sentences.txt" ) ?? mount.FindFile( "sound/default_sentences.txt" );
 		if ( sentences is not null ) IndexSpeechGroups( mount.FileSystem.ReadAllText( sentences ) );
 	}
 

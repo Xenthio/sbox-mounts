@@ -23,6 +23,7 @@ internal sealed class NpcDefinitionAttribute : System.Attribute
 	public string Mount { get; set; } = "hl1";
 	public bool ShowInSpawnMenu { get; set; } = true;
 	public string[] Aliases { get; set; } = [];
+	public string[] ModelVariants { get; set; } = [];
 	public string Model { get; }
 	public MonsterClass Classification { get; }
 	public float Health { get; }

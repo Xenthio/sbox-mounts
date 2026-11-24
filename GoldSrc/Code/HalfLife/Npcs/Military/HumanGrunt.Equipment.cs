@@ -1,18 +1,18 @@
 namespace GoldSrc.HalfLife;
 
-public sealed partial class HumanGrunt
+public partial class HumanGrunt
 {
 	public enum Loadout { FromModelBody, Rifle, Shotgun, RifleWithGrenadeLauncher }
 
 	public HumanGrunt() => Skin = -1;
 
 	[Property, Sync( SyncFlags.FromHost ), Change( nameof( LoadoutChanged ) )] public Loadout Weapon { get; set; }
-	[Sync( SyncFlags.FromHost )] public int Ammo { get; private set; } = -1;
+	[Sync( SyncFlags.FromHost )] public int Ammo { get; protected set; } = -1;
 	[Sync( SyncFlags.FromHost ), Change( nameof( GunDroppedChanged ) )] bool GunDropped { get; set; }
 
-	bool HasLauncher => Weapon == Loadout.RifleWithGrenadeLauncher;
-	bool HasShotgun => Renderer.GetBodyGroup( "weapons" ) == 1;
-	int Capacity => HasShotgun ? 8 : 36;
+	protected bool HasLauncher => Weapon == Loadout.RifleWithGrenadeLauncher;
+	protected bool HasShotgun => Renderer.GetBodyGroup( "weapons" ) == 1;
+	protected virtual int Capacity => HasShotgun ? 8 : 36;
 
 	internal override int EffectiveSkin
 	{

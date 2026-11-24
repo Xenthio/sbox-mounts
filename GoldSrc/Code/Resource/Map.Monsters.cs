@@ -98,18 +98,18 @@ partial class MapBuilder
 			npc.Skin = entity.GetInt( "skin" );
 			if ( entity.GetFloat( "health" ) > 0 ) npc.Health = entity.GetFloat( "health" );
 			npc.ApplyMapProperties( entity );
-			if ( LoadMountedModel( npc.MapModel( entity ) ) is { IsError: false } model )
-			{
-				npc.ModelPath = model.ResourcePath;
-				npc.Renderer.Model = model;
-			}
+			npc.ApplyMapModel( entity );
 			RegisterMonster( go, entity, npc.Renderer, npc );
 		}
-		else if ( !string.IsNullOrEmpty( entity.TargetName ) )
+		else
 		{
-			var marker = go.AddComponent<Relay>();
-			marker.TargetName = entity.TargetName;
-			RegisterTarget( entity, marker, null, null, null, nameof( MapEntity.Kill ) );
+			go.GetComponent<GruntRepel>( true )?.ApplyMapProperties( entity );
+			if ( !string.IsNullOrEmpty( entity.TargetName ) )
+			{
+				var marker = go.AddComponent<Relay>();
+				marker.TargetName = entity.TargetName;
+				RegisterTarget( entity, marker, null, null, null, nameof( MapEntity.Kill ) );
+			}
 		}
 		go.Enabled = true;
 		return true;
