@@ -24,7 +24,7 @@ public sealed class RepulsorPulse : NpcProjectile
 			glow.Color = new Color( 0, 1, 0 );
 			glow.Additive = true;
 		}
-		ProjectileTrail.Attach( GameObject, mount, "Repulsor trail", "xenobeam", 5, 0.5f, new Color( 0, 1, 0 ) );
+		ProjectileTrail.Attach( GameObject, mount, "Repulsor trail", "xenobeam", 0.5f, 2.5f, new Color( 0, 1, 0 ) );
 	}
 
 	internal override SceneTrace FlightTrace( Vector3 start, Vector3 end )
