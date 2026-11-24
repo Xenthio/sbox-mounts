@@ -42,6 +42,9 @@ partial class MapBuilder
 		{
 			case null or "worldspawn" or "info_null":
 				return;
+			case "info_node_air":
+				_mapState.AirNodes.Add( entity.Origin );
+				return;
 
 			case "infodecal":
 				_authoredDecals.Add( entity );

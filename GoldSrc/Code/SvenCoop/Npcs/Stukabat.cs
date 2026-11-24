@@ -7,7 +7,7 @@ namespace GoldSrc.SvenCoop;
 [NpcDefinition( "monster_stukabat", "stukabat", MonsterClass.AlienPredator, 123, 12, 24, 400,
 	Mount = "svencoop", Attack = NpcAttack.Melee, Damage = 12, Range = 56,
 	Movement = NpcMovement.Flying, IdleSequence = "Hover", Blood = BloodColor.Yellow )]
-public sealed class Stukabat : Npc
+public sealed partial class Stukabat : Npc
 {
 	const string CeilingLanding = "Land_ceiling";
 	const string GroundLanding = "Land_ground";
@@ -57,6 +57,7 @@ public sealed class Stukabat : Npc
 
 	internal override void IdleMovement()
 	{
+		if ( SearchForEnemy() ) return;
 		Diving = false;
 		if ( Perched != Roost.None ) return;
 		if ( _landing is { } destination )
@@ -113,18 +114,19 @@ public sealed class Stukabat : Npc
 		}
 
 		var aim = TargetBodyPosition( target );
+		RememberEnemy( target, aim - Vector3.Up * (Definition.Height * 0.5f) );
 		var offset = aim - AttackOrigin;
 		if ( offset.Length <= AttackRange && WorldRotation.Forward.Dot( offset.Normal ) >= 0.5f &&
 			CanHit( target, aim ) && Find( Bite ) is { } bite )
 		{
 			Diving = false;
+			ClearAirRoute();
 			Movement?.Stop();
 			PlayAction( bite );
 			return;
 		}
 
-		Diving = offset.z < -64;
-		Movement?.MoveTo( aim - Vector3.Up * (Definition.Height * 0.5f), 19, Diving ? Definition.Speed : 180, target );
+		FlyAfterEnemy( target );
 	}
 
 	internal override void FinishAction( string name )
