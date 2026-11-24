@@ -69,6 +69,12 @@ partial class MapBuilder
 			var pickup = go.GetComponent<HalfLife.AmmoPickup>();
 			if ( Host is HalfLifeModMount or CryOfFearMount )
 				pickup.SoundMount = Host.Ident;
+			if ( Host is HalfLifeMModMount && name is ("ammo_gaussclip" or "ammo_egonclip") )
+			{
+				go.GetComponent<ModelRenderer>().SetBodyGroup( "studio", name == "ammo_gaussclip" ? 13 : 14 );
+				pickup.SoundMount = Host.Ident;
+				pickup.PickupSound = "weapons/weapon_pickupammo_uranium.wav";
+			}
 			if ( Host is CryOfFearMount )
 				pickup.PickupSound = "weapons/item_get.wav";
 		}
@@ -103,6 +109,8 @@ partial class MapBuilder
 			(CryOfFearMount, "ammo_shells") => ("ammo/ammo_shotshells", "buckshot", 9),
 			(CryOfFearMount, "ammo_p345") => ("ammo/p345_clip", "p345", 8),
 			(CryOfFearMount, "ammo_vp70") => ("ammo/vp70_clip", "vp70", 18),
+			(HalfLifeMModMount, "ammo_gaussclip") => ("w_ammo_stack", "uranium", 20),
+			(HalfLifeMModMount, "ammo_egonclip") => ("w_ammo_stack", "uranium", 60),
 			(ScientistSlaughterhouseMount, "ammo_glockclip" or "ammo_9mmclip") => ("w_9mmclip", "9mm", 18),
 			(ScientistSlaughterhouseMount, "ammo_crossbow") => ("w_crossbow_clip", "bolts", 10),
 			(ScientistSlaughterhouseMount, "ammo_357") => ("w_357ammobox", "357", 12),

@@ -16,8 +16,10 @@ public abstract partial class ClassicGaussGun : StudioWeapon
 	SoundHandle _spinSound;
 
 	internal override string ShotSequence => "fire";
+	internal virtual string OverloadSound => "weapons/electro4.wav";
 	internal override bool SwitchWhenSpent => !_triggerHeld && !_charging && !_spinning;
-	internal override (string Name, float? Delay) IdleAnimation => (_spinning ? "spin" : "idle", null);
+	internal override (string Name, float? Delay) IdleAnimation => _spinning ? ("spin", null) : RestingAnimation;
+	internal virtual (string Name, float? Delay) RestingAnimation => ("idle", null);
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => new( 28.4f, 2.8f, hd ? 4.6f : 4.1f );
 	public override Ray AimRay => Owner.IsValid() ? Owner.EyeTransform.ForwardRay : base.AimRay;
 
@@ -119,12 +121,7 @@ public abstract partial class ClassicGaussGun : StudioWeapon
 			_charging = false;
 			_ready = overload ? 1 : 0.5f;
 			Discharge( overload );
-			if ( overload && Owner.GameObject.GetComponentInParent<IDamageable>() is { } victim )
-			{
-				var damage = new DamageInfo { Damage = 50, Position = Owner.EyePosition, Weapon = GameObject };
-				damage.Tags.Add( "shock" );
-				victim.OnDamage( damage );
-			}
+			if ( overload ) ApplyOverloadDamage();
 			return;
 		}
 		if ( _chargeAge < 0.5f ) return;
@@ -138,6 +135,14 @@ public abstract partial class ClassicGaussGun : StudioWeapon
 		_charging = false;
 		_ready = Ammo1 > 0 ? PrimaryDelay : 1;
 		FireBeam( 200 * System.MathF.Min( 1, _chargeAge / FullChargeTime ), true );
+	}
+
+	internal virtual void ApplyOverloadDamage()
+	{
+		if ( Owner.GameObject.GetComponentInParent<IDamageable>() is not { } victim ) return;
+		var damage = new DamageInfo { Damage = 50, Position = Owner.EyePosition, Weapon = GameObject };
+		damage.Tags.Add( "shock" );
+		victim.OnDamage( damage );
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
@@ -166,7 +171,7 @@ public abstract partial class ClassicGaussGun : StudioWeapon
 	void Discharge( bool overload )
 	{
 		StopSpin();
-		PlaySample( "weapons/electro4.wav", pitch: Game.Random.Float( 0.8f, 1.43f ) );
+		PlaySample( overload ? OverloadSound : "weapons/electro4.wav", pitch: Game.Random.Float( 0.8f, 1.43f ) );
 		if ( overload )
 		{
 			PlaySample( "weapons/electro6.wav", pitch: Game.Random.Float( 0.75f, 1.38f ) );

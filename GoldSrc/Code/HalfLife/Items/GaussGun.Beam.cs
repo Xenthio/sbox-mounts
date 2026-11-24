@@ -66,7 +66,7 @@ public abstract partial class ClassicGaussGun
 		StopSpin();
 		PlaySample( "weapons/gauss2.wav", 0.5f + damage / 400, Game.Random.Float( 0.85f, 1.16f ) );
 		PostWeaponEvent( WeaponEvents.Attack );
-		ViewModel?.GetComponent<StudioWeaponView>()?.Play( ShotSequence );
+		ViewModel?.GetComponent<StudioWeaponView>()?.Play( ShotSequence, idleAfter: IdleAfterShot );
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
