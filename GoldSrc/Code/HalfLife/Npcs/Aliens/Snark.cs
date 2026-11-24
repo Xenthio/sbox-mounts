@@ -24,6 +24,7 @@ public abstract class ClassicSnark : Npc, Component.ICollisionListener
 		? MonsterClass.AlienMilitary : MonsterClass.AlienWeapon;
 
 	Rigidbody _body;
+	PhysicsFilter _launchFilter;
 	Vector3? _launchVelocity;
 	[Property] internal GameObject Thrower { get; set; }
 	GameObject DamageAttacker => Thrower.IsValid() ? Thrower : GameObject;
@@ -36,6 +37,12 @@ public abstract class ClassicSnark : Npc, Component.ICollisionListener
 
 	internal void Launch( Vector3 velocity )
 	{
+		var ownerBody = Thrower?.GetComponent<PlayerController>()?.Body;
+		if ( !_touched && ownerBody.IsValid() )
+		{
+			_launchFilter ??= GameObject.AddComponent<PhysicsFilter>();
+			_launchFilter.Body = ownerBody.GameObject;
+		}
 		if ( _body.IsValid() ) _body.Velocity = velocity;
 		else _launchVelocity = velocity;
 	}
@@ -121,12 +128,17 @@ public abstract class ClassicSnark : Npc, Component.ICollisionListener
 
 	void Touch( Collision collision )
 	{
-		if ( !Networking.IsHost || Health <= 0 || !_body.IsValid() ) return;
+		if ( !Networking.IsHost || Health <= 0 || !_body.IsValid() || collision.Other.IsTrigger ) return;
 		var other = collision.Other.GameObject;
 		if ( !_touched && other.IsValid() && Thrower.IsValid() && other.Root == Thrower.Root ) return;
 
-		if ( !_touched ) WorldRotation = Rotation.FromYaw( WorldRotation.Yaw() );
-		_touched = true;
+		if ( !_touched )
+		{
+			_touched = true;
+			_launchFilter?.Destroy();
+			_launchFilter = null;
+			WorldRotation = Rotation.FromYaw( WorldRotation.Yaw() );
+		}
 		if ( TumbleRate != Vector2.Zero ) TumbleStart = 0;
 		if ( _nextTouch > 0 ) return;
 		_nextTouch = 0.1f;
