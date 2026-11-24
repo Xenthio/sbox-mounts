@@ -14,12 +14,16 @@ public sealed class Rocket : PlayerRocket
 	bool _released;
 
 	[Sync( SyncFlags.FromHost )] internal RocketGuidance Guidance { get; set; }
+	[Sync( SyncFlags.FromHost )] internal RocketWarhead Warhead { get; set; }
 	internal override float IgnitionDelay => 0;
 	internal override float BurnTime => float.PositiveInfinity;
-	internal override Color32 SmokeTint => Guidance switch
+	internal override Color32 SmokeTint => (Guidance, Warhead) switch
 	{
-		RocketGuidance.Heatseeking => new( 255, 224, 64, 255 ),
-		RocketGuidance.RemoteControlled => new( 70, 140, 255, 255 ),
+		(_, RocketWarhead.Emp) => new( 128, 192, 255, 255 ),
+		(RocketGuidance.Heatseeking, _) => new( 255, 224, 64, 255 ),
+		(RocketGuidance.RemoteControlled, _) => new( 70, 140, 255, 255 ),
+		(RocketGuidance.LaserGuided, RocketWarhead.Incendiary or RocketWarhead.PlasmaBomb) => new( 255, 128, 0, 255 ),
+		(_, RocketWarhead.Incendiary or RocketWarhead.PlasmaBomb) => new( 255, 64, 0, 255 ),
 		_ => base.SmokeTint
 	};
 	internal override GameMount EffectMount => ModelMount;
@@ -62,6 +66,13 @@ public sealed class Rocket : PlayerRocket
 				break;
 		}
 
+		if ( Guidance != RocketGuidance.RemoteControlled )
+			limit -= Warhead switch
+			{
+				RocketWarhead.Incendiary or RocketWarhead.PlasmaBomb => 200,
+				RocketWarhead.Emp => 400,
+				_ => 0
+			};
 		var underwater = WaterBody.Find( Scene, WorldPosition ).IsValid();
 		if ( underwater ) limit = 300;
 		if ( Velocity.Length > limit ) Velocity = Velocity.Normal * limit;
@@ -109,4 +120,21 @@ public sealed class Rocket : PlayerRocket
 	[Rpc.Broadcast( NetFlags.HostOnly )]
 	void ShowWaterTrail( Vector3 start, Vector3 end )
 		=> Blast.BubbleTrail( Scene, start, end, 4, "Rocket bubbles", ModelMount );
+
+	internal override void OnImpact( IDamageable victim, Vector3 position, Vector3 normal )
+	{
+		switch ( Warhead )
+		{
+			case RocketWarhead.Incendiary:
+			case RocketWarhead.PlasmaBomb:
+				IncendiaryBlast.Detonate( this, position, normal, Warhead == RocketWarhead.PlasmaBomb );
+				break;
+			case RocketWarhead.Emp:
+				LaserGrenadeField.Create( this, position + normal, emp: true );
+				break;
+			default:
+				base.OnImpact( victim, position, normal );
+				break;
+		}
+	}
 }
