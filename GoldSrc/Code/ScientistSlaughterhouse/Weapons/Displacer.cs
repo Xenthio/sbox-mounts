@@ -82,7 +82,7 @@ public sealed class Displacer : StudioWeapon
 		var muzzle = OffsetLaunchRay( _disk ? new Vector3( 32, 0, -12 ) : new Vector3( 8, 0, -8 ) );
 		if ( _disk )
 		{
-			var target = EnergyDisk.FindTarget( Scene, Owner.GameObject, muzzle );
+			var target = ProjectileTarget.Find( Scene, Owner.GameObject, muzzle );
 			NpcProjectile.Fire<EnergyDisk>( Owner.GameObject, "mount://ssh/ssh/models/disk.mdl.vmdl", 100, target, muzzle.Position, muzzle.Forward, 1 );
 		}
 		else

@@ -20,6 +20,7 @@ partial class MapBuilder
 			(ScientistSlaughterhouseMount, "ammo_sniperclip") => ("w_m40a1clip", "m40", 5),
 			(ScientistSlaughterhouseMount, "ammo_egonclip") => ("w_isotopebox", "uranium", 250),
 			(ScientistSlaughterhouseMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 100),
+			(ScientistSlaughterhouseMount, "ammo_vortexclip") => ("w_rpgammo", "vortex_m", 5),
 			(CrackLifeCampaignMount, "ammo_snipars") => ("w_357ammobox", "snipars", 10),
 			(CrackLifeCampaignMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 999),
 			(CrackLifeCampaignMount, "ammo_crossbow") => ("w_crossbow_clip", "bolts", 50),
