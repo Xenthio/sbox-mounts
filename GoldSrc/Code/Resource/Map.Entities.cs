@@ -164,9 +164,9 @@ partial class MapBuilder
 				maker.Count = entity.GetInt( "monstercount", squad ? -1 : 0 );
 				maker.MaxLive = entity.GetInt( "m_imaxlivechildren", squad ? 5 : 0 );
 				maker.Interval = entity.GetFloat( "delay", squad ? 5 : 0 );
+				if ( squad || Host is ConditionZeroDeletedScenesMount ) maker.ChildProperties = new( entity.KeyValues );
 				if ( squad )
 				{
-					maker.ChildProperties = new( entity.KeyValues );
 					maker.WaitForChildren = maker.Interval < 0;
 					if ( maker.WaitForChildren ) maker.Interval = 0.1f;
 				}

@@ -237,10 +237,20 @@ public class ConditionZeroMount : CounterStrikeGameMount
 
 public class ConditionZeroDeletedScenesMount : GameMount
 {
+	static readonly string[] SharedEffectSprites = ["sprites/smoke.spr", "sprites/steam1.spr", "sprites/WXplo1.spr", "sprites/bubble.spr"];
+
 	public override string Ident => "czeror";
 	public override string Title => "Counter-Strike: Condition Zero Deleted Scenes";
 	public override long AppId => 100;
 	public override IReadOnlyList<string> GameDirs => ["czeror"];
+
+	protected override string FindFallbackFile( string relativePath )
+	{
+		var sprite = SharedEffectSprites.FirstOrDefault( path => path.Equals( relativePath, StringComparison.OrdinalIgnoreCase ) );
+		if ( sprite is null ) return null;
+		var path = $"valve/{sprite}";
+		return FileSystem.FileExists( path ) ? path : null;
+	}
 }
 
 public class RicochetMount : GameMount

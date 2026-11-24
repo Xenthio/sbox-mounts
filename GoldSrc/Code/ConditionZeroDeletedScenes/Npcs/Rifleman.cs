@@ -1,4 +1,3 @@
-using System;
 using GoldSrc.HalfLife;
 
 namespace GoldSrc.ConditionZeroDeletedScenes;
@@ -6,8 +5,6 @@ namespace GoldSrc.ConditionZeroDeletedScenes;
 [Hide]
 public abstract class Rifleman : CampaignSoldier
 {
-	[Property, Hide] public float WeaponRange { get; set; }
-	[Property, Hide] public float WeaponAccuracy { get; set; }
 	[Sync( SyncFlags.FromHost )] int Ammo { get; set; } = -1;
 
 	Firearm? _firearm;
@@ -18,13 +15,6 @@ public abstract class Rifleman : CampaignSoldier
 	internal override int WeaponBodyGroup => Weapon.BodyGroup;
 	internal override Vector3 AttackOrigin => WorldPosition + Vector3.Up * 60;
 	internal override string[] ExtraActions => [Weapon.FireSequence, Weapon.ReloadSequence];
-
-	internal override void ApplyMapProperties( Bsp.Entity entity )
-	{
-		base.ApplyMapProperties( entity );
-		WeaponRange = entity.GetFloat( "weaponrange" );
-		WeaponAccuracy = entity.GetFloat( "weaponaccuracy" );
-	}
 
 	internal override void ApplyEquipment()
 	{
@@ -67,7 +57,7 @@ public abstract class Rifleman : CampaignSoldier
 		EjectShell( origin + (end - origin).Normal * 8, WorldRotation, shotgun: weapon.Pellets > 1 );
 
 		// The BSP stores a full cone angle in degrees.
-		var spread = WeaponAccuracy > 0 ? MathF.Sin( WeaponAccuracy * MathF.PI / 360 ) : weapon.Spread;
+		var spread = SpreadFor( weapon.Spread );
 		TraceBullets( origin, end, weapon.Pellets * rounds, weapon.Damage, spread, weapon.Range, weapon.Tracers );
 	}
 

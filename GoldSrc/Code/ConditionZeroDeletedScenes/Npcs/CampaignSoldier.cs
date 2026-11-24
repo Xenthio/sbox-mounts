@@ -1,3 +1,4 @@
+using System;
 using GoldSrc.HalfLife;
 
 namespace GoldSrc.ConditionZeroDeletedScenes;
@@ -8,6 +9,8 @@ public abstract class CampaignSoldier : Npc
 	[Property, Hide] public int Head { get; set; } = -1;
 	[Property, Hide] public bool HoldPosition { get; set; }
 	[Property, Hide] public bool Wander { get; set; }
+	[Property, Hide] public float WeaponRange { get; set; }
+	[Property, Hide] public float WeaponAccuracy { get; set; }
 
 	internal bool IsCounterTerrorist => Classification == MonsterClass.PlayerAlly;
 	internal abstract int WeaponBodyGroup { get; }
@@ -18,10 +21,16 @@ public abstract class CampaignSoldier : Npc
 	internal override void ApplyMapProperties( Bsp.Entity entity )
 	{
 		Head = entity.GetInt( "head", -1 );
+		var healthMultiplier = entity.GetFloat( "healthmult", 1 );
+		if ( healthMultiplier > 0 ) Health *= healthMultiplier;
+		WeaponRange = entity.GetFloat( "weaponrange" );
+		WeaponAccuracy = entity.GetFloat( "weaponaccuracy" );
 		Wander = entity.GetInt( "wander" ) != 0;
 		HoldPosition = entity.GetInt( "cantmove" ) != 0;
 		if ( HoldPosition ) HoldMapPosition();
 	}
+
+	protected float SpreadFor( float fallback ) => WeaponAccuracy > 0 ? MathF.Sin( WeaponAccuracy * MathF.PI / 360 ) : fallback;
 
 	internal override string MapModel( Bsp.Entity entity ) =>
 		entity.GetString( "monstermodel" ) is { Length: > 0 } model ? model : entity.GetString( "model" );

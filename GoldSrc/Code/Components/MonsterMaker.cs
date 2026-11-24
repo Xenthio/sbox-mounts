@@ -106,9 +106,9 @@ public sealed class MonsterMaker : MapEntity
 			if ( ChildProperties is not null )
 			{
 				var entity = new Bsp.Entity( ChildProperties );
+				if ( entity.GetFloat( "health" ) > 0 ) npc.Health = entity.GetFloat( "health" );
 				npc.ApplyMapProperties( entity );
 				npc.ApplyMapModel( entity );
-				if ( entity.GetFloat( "health" ) > 0 ) npc.Health = entity.GetFloat( "health" );
 				if ( child.GetComponent<SvenCoop.RevivableNpc>( true ) is { } revival )
 					revival.Allowed = entity.GetInt( "is_not_revivable" ) == 0;
 			}
