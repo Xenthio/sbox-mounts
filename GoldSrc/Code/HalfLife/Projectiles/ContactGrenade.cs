@@ -5,6 +5,7 @@ public sealed class ContactGrenade : NpcProjectile
 {
 	TimeUntil _nextWarning;
 
+	internal GameMount EffectsMount { get; set; }
 	internal override float Lifetime => 12;
 
 	internal override void Guide()
@@ -19,5 +20,5 @@ public sealed class ContactGrenade : NpcProjectile
 	}
 
 	internal override void OnImpact( IDamageable victim, Vector3 position, Vector3 normal )
-		=> Blast.Detonate( GameObject, Shooter, position, normal, 100, true );
+		=> Blast.Detonate( GameObject, Shooter, position, normal, 100, true, EffectsMount );
 }

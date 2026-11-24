@@ -3,7 +3,7 @@ using GoldSrc.HalfLife;
 namespace GoldSrc.CrackLife;
 
 [Title( "Sawn-off Shotgun" ), Category( "Crack-Life: Campaign Mode" )]
-[WeaponPickup( "sawnoff", "buckshot", 125, Bucket = 2, Weight = 15, Mount = "clcampaign" )]
+[WeaponPickup( "sawnoff", "buckshot", 200, Bucket = 2, Weight = 15, Mount = "clcampaign" )]
 public sealed class SawnOff : BulletWeapon
 {
 	internal override int PlayerMuzzleFlash => 51;
@@ -18,7 +18,7 @@ public sealed class SawnOff : BulletWeapon
 		PrimaryDelay = 0.5f;
 		ReloadTime = 1.3f;
 		AttackDamageTags = ["bullet"];
-		Ballistics = new() { Damage = 5, Pellets = 18, Range = 2048, Radius = 0 };
+		Ballistics = new() { Damage = CrackLifeShotgun.CampaignBuckshotDamage, Pellets = 18, Range = 2048, Radius = 0 };
 	}
 
 	public override bool CanSecondaryAttack() => false;

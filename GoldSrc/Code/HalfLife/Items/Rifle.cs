@@ -2,7 +2,10 @@ namespace GoldSrc.HalfLife;
 
 [Title( "9mm Assault Rifle" ), Category( "Half-Life" )]
 [WeaponPickup( "9mmar", "9mm", 250, Bucket = 2, Weight = 15 )]
-public sealed class Rifle : BulletWeapon
+public sealed class Rifle : ClassicRifle;
+
+[Hide]
+public abstract class ClassicRifle : BulletWeapon
 {
 	internal override int PlayerMuzzleFlash => 40;
 
@@ -19,7 +22,10 @@ public sealed class Rifle : BulletWeapon
 		2 => "shoot_2",
 		_ => "shoot"
 	};
-	int FreshRounds => Deathmatch ? 50 : 25;
+	internal virtual int FreshRounds => Deathmatch ? 50 : 25;
+	internal virtual float BulletDamage => Deathmatch ? 12 : 5;
+	internal virtual string GrenadeModel => "mount://hl1/valve/models/grenade.mdl.vmdl";
+	internal virtual GameMount GrenadeEffectsMount => null;
 
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => hd ? new( 30, 2.7f, 5.4f ) : new( 17.8f, 1.65f, 4.9f );
 
@@ -38,7 +44,7 @@ public sealed class Rifle : BulletWeapon
 	internal override void BindAmmoTypes()
 	{
 		base.BindAmmoTypes();
-		SecondaryAmmoType ??= GameResource.Load<BaseAmmoResource>( $"mount://hl1/{GrenadeAmmoPath}" );
+		SecondaryAmmoType ??= GameResource.Load<BaseAmmoResource>( $"mount://{Definition.Mount}/{GrenadeAmmoPath}" );
 	}
 
 	protected override bool OnAdding( BaseInventoryComponent inventory )
@@ -52,7 +58,7 @@ public sealed class Rifle : BulletWeapon
 	public override void PrimaryAttack()
 	{
 		if ( Underwater() ) return;
-		Ballistics = Ballistics with { Damage = Deathmatch ? 12 : 5 };
+		Ballistics = Ballistics with { Damage = BulletDamage };
 		base.PrimaryAttack();
 	}
 
@@ -96,10 +102,11 @@ public sealed class Rifle : BulletWeapon
 	void LaunchGrenade( Ray aim )
 	{
 		if ( !IsActive || !Owner.IsValid() || _nextLaunch > 0 || WaterBody.Find( Scene, Owner.EyePosition ).IsValid() ) return;
+		if ( GrenadeModel is not { } model ) return;
 		if ( !TakeSecondaryAmmo() ) return;
 		_nextLaunch = SecondaryDelay;
-		NpcProjectile.Fire<ContactGrenade>( Owner.GameObject, "mount://hl1/valve/models/grenade.mdl.vmdl", 100,
-			null, aim.Position, aim.Forward, 800 );
+		var grenade = NpcProjectile.Fire<ContactGrenade>( Owner.GameObject, model, 100, null, aim.Position, aim.Forward, 800 );
+		grenade.EffectsMount = GrenadeEffectsMount;
 		LaunchEffects();
 	}
 

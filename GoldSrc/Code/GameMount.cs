@@ -160,6 +160,8 @@ public abstract partial class GameMount : BaseGameMount
 			registry.Mount( context, gameplayModels, originalModels );
 		if ( this is HalfLifeMount or HalfLifeMModMount )
 			context.Add( ResourceType.GameResource, Rifle.GrenadeAmmoPath, new AmmoLoader( "AR grenades", 10 ) );
+		else if ( this is CrackLifeMount or CrackLifeCampaignMount )
+			context.Add( ResourceType.GameResource, Rifle.GrenadeAmmoPath, new AmmoLoader( "AR grenades", 999 ) );
 		if ( weapons.Length > 0 )
 			MountWeapons( context, gameplayModels, weapons );
 
