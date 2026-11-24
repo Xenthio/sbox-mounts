@@ -11,6 +11,7 @@ public class TimedGrenade : Component, Component.ICollisionListener
 	internal virtual float GravityScale => 0.5f;
 	internal virtual float Friction => 0.8f;
 	internal virtual bool DealsImpactDamage => true;
+	internal virtual bool Solid => true;
 	internal const string DangerStimulus = "grenade";
 
 	internal static bool TryAim( Npc owner, Vector3 origin, GameObject target, Vector3 end, out Vector3 velocity, float flightTime = 1, bool requireFloor = true )
@@ -52,6 +53,7 @@ public class TimedGrenade : Component, Component.ICollisionListener
 		configure?.Invoke( grenade );
 		var collider = go.AddComponent<ModelCollider>();
 		collider.Model = model;
+		collider.IsTrigger = !grenade.Solid;
 		collider.Elasticity = 0.45f;
 		collider.Friction = grenade.Friction;
 		var body = go.AddComponent<Rigidbody>();
@@ -141,10 +143,13 @@ public class TimedGrenade : Component, Component.ICollisionListener
 
 	internal virtual void Detonate() => Explode();
 
-	protected Vector3 Explode()
+	protected Vector3 Explode( float damage = 100 )
 	{
-		var floor = Scene.Trace.Ray( WorldPosition + Vector3.Up * 8, WorldPosition + Vector3.Down * 40 )
-			.IgnoreGameObjectHierarchy( GameObject ).Run();
-		return Blast.Detonate( GameObject, Thrower, floor.Hit ? floor.EndPosition : WorldPosition, floor.Normal, 100, floor.Hit, EffectsMount );
+		var floor = TraceExplosionSurface();
+		return Blast.Detonate( GameObject, Thrower, floor.Hit ? floor.EndPosition : WorldPosition, floor.Normal, damage, floor.Hit, EffectsMount );
 	}
+
+	protected SceneTraceResult TraceExplosionSurface() =>
+		Scene.Trace.Ray( WorldPosition + Vector3.Up * 8, WorldPosition + Vector3.Down * 40 )
+			.IgnoreGameObjectHierarchy( GameObject ).Run();
 }

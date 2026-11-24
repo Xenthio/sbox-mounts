@@ -13,20 +13,20 @@ public abstract class BurningRifleGrenade : ContactGrenade
 
 internal static class IncendiaryBlast
 {
-	internal static void Detonate( NpcProjectile projectile, Vector3 position, Vector3 normal, bool plasma )
+	internal static void Detonate( NpcProjectile projectile, Vector3 position, Vector3 normal, bool plasma ) =>
+		Detonate( projectile.GameObject, projectile.Shooter, position, normal, projectile.Damage, projectile.ModelMount, plasma );
+
+	internal static void Detonate( GameObject charge, GameObject attacker, Vector3 position, Vector3 normal, float damage, GameMount mount, bool plasma )
 	{
-		var scene = projectile.Scene;
-		var damage = projectile.Damage;
-		var mount = projectile.ModelMount;
-		if ( WaterBody.Find( scene, position ).IsValid() )
+		if ( WaterBody.Find( charge.Scene, position ).IsValid() )
 		{
-			Blast.Detonate( projectile.GameObject, projectile.Shooter, position, normal, damage * 0.5f, true, mount );
+			Blast.Detonate( charge, attacker, position, normal, damage * 0.5f, true, mount );
 			return;
 		}
 
 		var origin = position + normal * ((damage - 24) * 0.6f);
-		Blast.DamageInRadius( projectile.GameObject, projectile.Shooter, origin, damage, damage * 2.5f, "burn", "nevergib" );
-		ShowBlast( mount?.Ident, origin, position, normal, damage, plasma, plasma ? [] : FlamePositions( projectile, position + normal * 64 ) );
+		Blast.DamageInRadius( charge, attacker, origin, damage, damage * 2.5f, "burn", "nevergib" );
+		ShowBlast( mount?.Ident, origin, position, normal, damage, plasma, plasma ? [] : FlamePositions( charge, position + normal * 64 ) );
 	}
 
 	static readonly Vector2[] FlameOffsets =
@@ -38,14 +38,14 @@ internal static class IncendiaryBlast
 		new( -64, -128 ), new( 0, -128 ), new( 64, -128 )
 	];
 
-	static Vector3[] FlamePositions( NpcProjectile projectile, Vector3 origin )
+	static Vector3[] FlamePositions( GameObject charge, Vector3 origin )
 	{
-		var scene = projectile.Scene;
+		var scene = charge.Scene;
 		var positions = new List<Vector3>();
 		foreach ( var offset in FlameOffsets )
 		{
 			var point = origin + new Vector3( offset.x, offset.y, 0 );
-			var hit = scene.Trace.Ray( origin, point ).IgnoreGameObjectHierarchy( projectile.GameObject )
+			var hit = scene.Trace.Ray( origin, point ).IgnoreGameObjectHierarchy( charge )
 				.WithoutTags( "npc", "player", "playercontroller", "trigger" ).Run();
 			if ( !hit.Hit && !hit.StartedSolid && !WaterBody.Find( scene, point ).IsValid() )
 				positions.Add( point );
@@ -61,7 +61,8 @@ internal static class IncendiaryBlast
 		if ( plasma ) RifleGrenadeSphere.Show( contact, new Color32( 255, 64, 0, 255 ), damage * 2, damage * 2, 0, 0.5f, mount );
 
 		Blast.SpriteEffect( "Rifle grenade explosion", "fexplo", origin, ((damage - 50) * 0.06f).Clamp( 1, 25.5f ), 15, mount: mount );
-		ImpactDecal.Place( contact, normal, $"scorch{Game.Random.Int( 1, 2 )}", 48, mount );
+		if ( !normal.IsNearlyZero() )
+			ImpactDecal.Place( contact, normal, $"scorch{Game.Random.Int( 1, 2 )}", 48, mount );
 		NpcAudio.Play( mount.NpcAudio.Find( $"weapons/explode{Game.Random.Int( 3, 5 )}.wav" ), origin, attenuation: 0.3f );
 		NpcAudio.Play( mount.NpcAudio.Find( $"weapons/debris{Game.Random.Int( 1, 3 )}.wav" ), origin );
 		foreach ( var point in flames )
@@ -101,18 +102,22 @@ public sealed class LaserGrenadeField : Component
 	TimeUntil _nextTick = Tick;
 	float _radius = 1;
 
-	internal static void Create( NpcProjectile projectile, Vector3 origin, bool emp )
+	internal static void Create( NpcProjectile projectile, Vector3 origin, bool emp ) =>
+		Create( projectile.Shooter, origin, projectile.Damage, projectile.ModelMount, emp,
+			emp ? 2 : 1, emp ? "EMP rocket field" : "Laser grenade field" );
+
+	internal static void Create( GameObject attacker, Vector3 origin, float damage, GameMount mount, bool emp, float fullDamageTime, string name )
 	{
-		var field = new GameObject( false, emp ? "EMP rocket field" : "Laser grenade field" ) { WorldPosition = origin };
+		var field = new GameObject( false, name ) { WorldPosition = origin };
 		field.NetworkMode = NetworkMode.Never;
 		var effect = field.AddComponent<LaserGrenadeField>();
-		effect._attacker = projectile.Shooter;
-		effect._damage = projectile.Damage;
-		effect._fullDamageTime = emp ? 2 : 1;
+		effect._attacker = attacker;
+		effect._damage = damage;
+		effect._fullDamageTime = fullDamageTime;
 		effect._damageTags = emp ? ["shock", "nevergib"] : ["energybeam"];
 		field.Enabled = true;
 
-		ShowField( projectile.ModelMount?.Ident, origin, effect._damage, effect._fullDamageTime, emp );
+		ShowField( mount?.Ident, origin, damage, fullDamageTime, emp );
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
