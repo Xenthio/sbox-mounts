@@ -27,6 +27,7 @@ public sealed partial class MapState
 	{
 		public Transform Transform { get; set; }
 		public bool ColliderEnabled { get; set; } = true;
+		public bool EquipmentSpawnChecked { get; set; }
 		public float? Health { get; set; }
 		public HalfLife.Npc.SavedScript Script { get; set; }
 		public HalfLife.Npc.SavedMagazine Magazine { get; set; }
@@ -123,6 +124,7 @@ public sealed partial class MapState
 			data.Entities[entity.EntityIndex] = entry;
 			switch ( entity )
 			{
+				case PlayerEquip equip: entry.EquipmentSpawnChecked = equip.HasCheckedSpawn( player ); break;
 				case WallCharger charger: entry.Count = charger.Juice; break;
 				case Counter counter: entry.Count = counter.Remaining; break;
 				case GameCounter counter: entry.GameCounterCount = counter.Count; break;
@@ -179,6 +181,7 @@ public sealed partial class MapState
 			if ( entity.GetComponent<Collider>( true ) is {} collider ) collider.Enabled = entry.ColliderEnabled;
 			switch ( entity )
 			{
+				case PlayerEquip equip when entry.EquipmentSpawnChecked: equip.MarkSpawnChecked( player ); break;
 				case WallCharger charger when entry.Count.HasValue: charger.Juice = entry.Count.Value; break;
 				case Counter counter when entry.Count.HasValue: counter.Remaining = entry.Count.Value; break;
 				case GameCounter counter when entry.GameCounterCount.HasValue: counter.Count = entry.GameCounterCount.Value; break;
@@ -215,6 +218,7 @@ public sealed class CheckpointLoader : Component
 {
 	private string _pending;
 	private bool _checkedSave;
+	internal bool Ready => _checkedSave;
 
 	// Map entities are regenerated from the BSP. Save their live state on the persistent map instance.
 	[Property, Hide]

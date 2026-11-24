@@ -129,7 +129,7 @@ partial class MapBuilder
 			or "player_loadsaved" or "env_fade" or "speaker" or "monstermaker" or "env_shake" or "scripted_sentence" or "ambient_generic" or "env_message" or "trigger_auto" or "trigger_relay"
 			or "scripted_sequence" or "env_global" or "multisource" or "trigger_counter"
 			or "info_landmark" or "trigger_changetarget" or "info_target" or "info_teleport_destination"
-			or "game_counter" or "game_counter_set" or "env_render";
+			or "game_counter" or "game_counter_set" or "game_player_equip" or "env_render";
 
 		if ( !handled && string.IsNullOrEmpty( entity.TargetName ) && string.IsNullOrEmpty( entity.Target ) )
 		{
@@ -228,6 +228,10 @@ partial class MapBuilder
 				var color = entity.RenderColor;
 				render.RenderColor = new Color( color.x / 255f, color.y / 255f, color.z / 255f );
 				RegisterTarget( entity, render );
+				return;
+
+			case "game_player_equip":
+				SpawnPlayerEquip( go, entity );
 				return;
 
 			case "game_counter":

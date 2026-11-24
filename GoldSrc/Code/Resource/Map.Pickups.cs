@@ -8,27 +8,10 @@ partial class MapBuilder
 	private bool TrySpawnPickup( Entity entity )
 	{
 		var name = entity.ClassName.ToLowerInvariant();
-		var halfLifeItems = Host is HalfLifeMount or HalfLifeMModMount or HalfLifeModMount;
+		var halfLifeItems = HasHalfLifeItems;
 		var weapon = name.StartsWith( "weapon_", System.StringComparison.Ordinal ) ||
 			name.StartsWith( "tf_weapon_", System.StringComparison.Ordinal );
-		(string Model, string Pool, int Amount) customAmmo = (Host, name) switch
-		{
-			(CryOfFearMount, "ammo_glock") => ("ammo/clip", "glock", 15),
-			(CryOfFearMount, "ammo_shells") => ("ammo/ammo_shotshells", "buckshot", 9),
-			(CryOfFearMount, "ammo_p345") => ("ammo/p345_clip", "p345", 8),
-			(CryOfFearMount, "ammo_vp70") => ("ammo/vp70_clip", "vp70", 18),
-			(ScientistSlaughterhouseMount, "ammo_sniperclip") => ("w_m40a1clip", "m40", 5),
-			(ScientistSlaughterhouseMount, "ammo_egonclip") => ("w_isotopebox", "uranium", 250),
-			(ScientistSlaughterhouseMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 100),
-			(ScientistSlaughterhouseMount, "ammo_vortexclip") => ("w_rpgammo", "vortex_m", 5),
-			(ScientistSlaughterhouseMount, "ammo_fireballclip") => ("w_weaponbox", "ffuel", 20),
-			(ScientistSlaughterhouseMount, "ammo_acidtank") => ("w_weaponbox", "acid", 30),
-			(ScientistSlaughterhouseMount, "ammo_laserclip") => ("w_9mmclip", "uranium", 20),
-			(CrackLifeCampaignMount, "ammo_snipars") => ("w_357ammobox", "snipars", 10),
-			(CrackLifeCampaignMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 999),
-			(CrackLifeCampaignMount, "ammo_crossbow") => ("w_crossbow_clip", "bolts", 50),
-			_ => default
-		};
+		var customAmmo = GetCustomAmmo( name );
 		if ( !weapon && !halfLifeItems && customAmmo.Model is null ) return false;
 		GameObject go;
 		var transform = new Transform( entity.Origin, entity.Rotation );
@@ -67,26 +50,13 @@ partial class MapBuilder
 		}
 		if ( weapon )
 		{
-			var canonical = !halfLifeItems ? name : name switch { "weapon_glock" => "weapon_9mmhandgun", "weapon_mp5" => "weapon_9mmar", "weapon_python" => "weapon_357", _ => name };
-			var path = $"mount://{Host.Ident}/entities/items/{canonical}.prefab";
-			if ( Host.GetByPath( path ) is not WeaponPickupLoader ) return false;
+			var path = GetWeaponPickupPath( name );
+			if ( path is null ) return false;
 			go = GameObject.Clone( PrefabFile.Load( path ), transform, startEnabled: false );
 		}
 		else
 		{
-			var (model, pool, amount) = customAmmo.Model is not null ? customAmmo : name switch
-			{
-				"ammo_glockclip" or "ammo_9mmclip" => ("w_9mmclip", "9mm", 17),
-				"ammo_mp5clip" or "ammo_9mmar" => ("w_9mmARclip", "9mm", 50),
-				"ammo_9mmbox" => ("w_chainammo", "9mm", 200),
-				"ammo_mp5grenades" or "ammo_argrenades" => ("w_ARgrenade", "argrenades", 2),
-				"ammo_buckshot" => ("w_shotbox", "buckshot", 12),
-				"ammo_357" => ("w_357ammobox", "357", 6),
-				"ammo_gaussclip" => ("w_gaussammo", "uranium", 20),
-				"ammo_crossbow" => ("w_crossbow_clip", "bolts", 5),
-				"ammo_rpgclip" => ("w_rpgammo", "rockets", 1),
-				_ => (null, null, 0)
-			};
+			var (model, pool, amount) = GetAmmoPickup( name, customAmmo );
 			if ( model is null ) return false;
 			var ammoPath = $"mount://{Host.Ident}/ammo/{pool}.ammo";
 			var requiresAmmoResource = Host is HalfLifeMModMount or HalfLifeModMount or CryOfFearMount;
@@ -113,4 +83,51 @@ partial class MapBuilder
 		go.Enabled = true;
 		return true;
 	}
+
+	private bool HasHalfLifeItems => Host is HalfLifeMount or HalfLifeMModMount or HalfLifeModMount;
+
+	private string GetWeaponPickupPath( string name )
+	{
+		var canonical = !HasHalfLifeItems ? name : name switch
+		{
+			"weapon_glock" => "weapon_9mmhandgun", "weapon_mp5" => "weapon_9mmar", "weapon_python" => "weapon_357", _ => name
+		};
+		var path = $"mount://{Host.Ident}/entities/items/{canonical}.prefab";
+		return Host.GetByPath( path ) is WeaponPickupLoader ? path : null;
+	}
+
+	private (string Model, string Pool, int Amount) GetCustomAmmo( string name ) =>
+		(Host, name) switch
+		{
+			(CryOfFearMount, "ammo_glock") => ("ammo/clip", "glock", 15),
+			(CryOfFearMount, "ammo_shells") => ("ammo/ammo_shotshells", "buckshot", 9),
+			(CryOfFearMount, "ammo_p345") => ("ammo/p345_clip", "p345", 8),
+			(CryOfFearMount, "ammo_vp70") => ("ammo/vp70_clip", "vp70", 18),
+			(ScientistSlaughterhouseMount, "ammo_sniperclip") => ("w_m40a1clip", "m40", 5),
+			(ScientistSlaughterhouseMount, "ammo_egonclip") => ("w_isotopebox", "uranium", 250),
+			(ScientistSlaughterhouseMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 100),
+			(ScientistSlaughterhouseMount, "ammo_vortexclip") => ("w_rpgammo", "vortex_m", 5),
+			(ScientistSlaughterhouseMount, "ammo_fireballclip") => ("w_weaponbox", "ffuel", 20),
+			(ScientistSlaughterhouseMount, "ammo_acidtank") => ("w_weaponbox", "acid", 30),
+			(ScientistSlaughterhouseMount, "ammo_laserclip") => ("w_9mmclip", "uranium", 20),
+			(CrackLifeCampaignMount, "ammo_snipars") => ("w_357ammobox", "snipars", 10),
+			(CrackLifeCampaignMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 999),
+			(CrackLifeCampaignMount, "ammo_crossbow") => ("w_crossbow_clip", "bolts", 50),
+			_ => default
+		};
+
+	private static (string Model, string Pool, int Amount) GetAmmoPickup( string name, (string Model, string Pool, int Amount) customAmmo ) =>
+		customAmmo.Model is not null ? customAmmo : name switch
+		{
+			"ammo_glockclip" or "ammo_9mmclip" => ("w_9mmclip", "9mm", 17),
+			"ammo_mp5clip" or "ammo_9mmar" => ("w_9mmARclip", "9mm", 50),
+			"ammo_9mmbox" => ("w_chainammo", "9mm", 200),
+			"ammo_mp5grenades" or "ammo_argrenades" => ("w_ARgrenade", "argrenades", 2),
+			"ammo_buckshot" => ("w_shotbox", "buckshot", 12),
+			"ammo_357" => ("w_357ammobox", "357", 6),
+			"ammo_gaussclip" => ("w_gaussammo", "uranium", 20),
+			"ammo_crossbow" => ("w_crossbow_clip", "bolts", 5),
+			"ammo_rpgclip" => ("w_rpgammo", "rockets", 1),
+			_ => (null, null, 0)
+		};
 }

@@ -21,13 +21,20 @@ public sealed class SuitItem : MapEntity, Component.ITriggerListener
 	{
 		if ( !CanTrigger || !Networking.IsHost ) return;
 		var player = other.GetComponentInParent<PlayerController>();
-		if ( !player.IsValid() || MapState.PlayerVitals( player ) is not { Health: > 0 } vitals ) return;
+		if ( !Grant( player, Item, ShortLogon, Ammo ) ) return;
+		Fire( OnTrigger, player.GameObject, detached: true );
+		Kill();
+	}
+
+	internal static bool Grant( PlayerController player, string item, bool shortLogon = false, Dictionary<string, int> ammo = null )
+	{
+		if ( !player.IsValid() || MapState.PlayerVitals( player ) is not { Health: > 0 } vitals ) return false;
 		var suit = player.GetComponent<HevSuit>();
 		string sound = null;
-		switch ( Item )
+		switch ( item )
 		{
 			case "item_suit" when !suit.IsValid():
-				player.GameObject.AddComponent<HevSuit>().Speak( ShortLogon ? "!HEV_A0" : "!HEV_AAx" );
+				player.GameObject.AddComponent<HevSuit>().Speak( shortLogon ? "!HEV_A0" : "!HEV_AAx" );
 				break;
 			case "item_battery" when suit.IsValid() && vitals.Armour < 100:
 				vitals.Armour = System.Math.Min( 100, vitals.Armour + (Skill >= 3 ? 10 : 15) );
@@ -43,16 +50,15 @@ public sealed class SuitItem : MapEntity, Component.ITriggerListener
 				suit.Speak( "!HEV_A1" );
 				break;
 			case "weaponbox" when player.GetComponentInChildren<BaseInventoryComponent>() is {} inventory:
-				foreach ( var (path, count) in Ammo )
-					if ( GameResource.Load<BaseAmmoResource>( path ) is {} ammo ) inventory.GiveAmmo( ammo, count );
+				foreach ( var (path, count) in ammo ?? [] )
+					if ( GameResource.Load<BaseAmmoResource>( path ) is {} resource ) inventory.GiveAmmo( resource, count );
 				sound = "items/gunpickup2.wav";
 				break;
 			default:
-				return;
+				return false;
 		}
 		if ( sound is not null && Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
 			mount.NpcAudio.Emit( sound, player.WorldPosition );
-		Fire( OnTrigger, player.GameObject, detached: true );
-		Kill();
+		return true;
 	}
 }
