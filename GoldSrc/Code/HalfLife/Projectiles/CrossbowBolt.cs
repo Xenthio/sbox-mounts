@@ -5,6 +5,7 @@ public class CrossbowBolt : NpcProjectile
 {
 	internal const string ModelAsset = "mount://hl1/valve/models/crossbow_bolt.mdl.vmdl";
 	internal virtual bool Explosive => Networking.MaxPlayers > 1;
+	internal virtual float PlayerDamage => Explosive ? 20 : 10;
 	internal virtual string ImpactMount => ModelMount?.Ident ?? "hl1";
 	TimeUntil? _detonateAt;
 	float _nextBubble = 0.2f;
@@ -29,7 +30,7 @@ public class CrossbowBolt : NpcProjectile
 			var player = hit.GameObject.GetComponentInParent<PlayerController>().IsValid();
 			var tags = new TagSet { "nevergib" };
 			if ( !player ) tags.Add( "bullet" );
-			var damage = player ? (Explosive ? 20 : 10) : Damage;
+			var damage = player ? PlayerDamage : Damage;
 			BaseCombatWeapon.ShootBullet( hit, damage, 0, Shooter, GameObject, tags );
 		}
 		WorldPosition = hit.EndPosition + (victim is null ? -direction * 12 : hit.Normal * 2);
@@ -66,7 +67,7 @@ public class CrossbowBolt : NpcProjectile
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	void Explode( Vector3 position )
+	protected void Explode( Vector3 position )
 	{
 		bool water = WaterBody.Find( Scene, position ).IsValid();
 		var mount = ModelMount;

@@ -8,6 +8,7 @@ public sealed class Crossbow : ClassicCrossbow;
 public abstract class ClassicCrossbow : ProjectileWeapon
 {
 	internal override float ZoomFieldOfView => 20;
+	internal virtual bool UseScopedHitscan => Zoomed && Networking.MaxPlayers > 1;
 
 	internal override string DeploySequence => Clip1 == 0 ? "draw2" : "draw1";
 	internal override void PlayIdle( StudioWeaponView view )
@@ -48,7 +49,7 @@ public abstract class ClassicCrossbow : ProjectileWeapon
 
 	public override void PrimaryAttack()
 	{
-		if ( Zoomed && Networking.MaxPlayers > 1 ) FireScoped( AimRay );
+		if ( UseScopedHitscan ) FireScoped( AimRay );
 		else
 		{
 			SetNextSecondaryFire( PrimaryDelay );
