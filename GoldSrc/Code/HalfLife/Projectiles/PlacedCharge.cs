@@ -5,6 +5,8 @@ public sealed partial class PlacedCharge : Component, Component.IDamageable, Com
 {
 	[Property] public GameObject Thrower { get; set; }
 	[Property] public bool IsMine { get; set; }
+	internal GameMount EffectsMount { get; private set; }
+	float? _damageOverride;
 	bool _spent;
 	float _satchelGravity = 0.5f;
 	TimeUntil _nextWaterCheck;
@@ -12,16 +14,22 @@ public sealed partial class PlacedCharge : Component, Component.IDamageable, Com
 	void Component.IDamageable.IEvents.OnDied( Component.IDamageable.DeathEvent death )
 	{
 		if ( !Networking.IsHost || Networking.MaxPlayers <= 1 || IsMine || death.Victim != Thrower ) return;
-		if ( Thrower.GetComponentInChildren<Satchel>( true ).IsValid() ) GameObject.Destroy();
+		if ( Thrower.GetComponentInChildren<ClassicSatchel>( true ).IsValid() ) GameObject.Destroy();
 	}
 
-	internal static void Throw( PlayerController player, Ray ray )
+	internal static void Throw( PlayerController player, Ray ray ) => SpawnSatchel( player, ray );
+
+	internal static bool SpawnSatchel( PlayerController player, Ray ray, GameMount mount = null, float? damage = null )
 	{
+		var path = mount is null ? "valve/models/w_satchel.mdl" : mount.FindMountPath( "models/w_satchel.mdl" );
+		if ( path is null ) return false;
+		var model = Model.Load( $"mount://{mount?.Ident ?? "hl1"}/{path}.vmdl" );
+		if ( !model.IsValid() || model.IsError ) return false;
 		var go = new GameObject( false, "Satchel charge" );
 		go.WorldPosition = ray.Position;
 		go.WorldRotation = Rotation.LookAt( ray.Forward );
 		var renderer = go.AddComponent<SkinnedModelRenderer>();
-		renderer.Model = Model.Load( "mount://hl1/valve/models/w_satchel.mdl.vmdl" );
+		renderer.Model = model;
 		renderer.UseAnimGraph = false;
 		renderer.Sequence.Name = "onback";
 		var collider = go.AddComponent<BoxCollider>();
@@ -33,10 +41,14 @@ public sealed partial class PlacedCharge : Component, Component.IDamageable, Com
 		body.RigidbodyFlags |= RigidbodyFlags.DisableCollisionSounds;
 		var charge = go.AddComponent<PlacedCharge>();
 		charge.Thrower = player.GameObject;
+		charge.EffectsMount = mount;
+		charge._damageOverride = damage;
+		if ( mount is not null && player.Body.IsValid() ) go.AddComponent<PhysicsFilter>().Body = player.Body.GameObject;
 		go.Enabled = true;
 		body.Velocity = ray.Forward * 274 + player.Velocity;
 		body.AngularVelocity = Vector3.Up * 400f.DegreeToRadian();
 		go.NetworkSpawn( true, null );
+		return true;
 	}
 
 	void ICollisionListener.OnCollisionStart( Collision collision )
@@ -46,8 +58,8 @@ public sealed partial class PlacedCharge : Component, Component.IDamageable, Com
 		_satchelGravity = 1;
 		if ( body.GravityScale > 0 ) body.GravityScale = 1;
 		if ( collision.Contact.Speed.WithZ( 0 ).Length <= 10 ) return;
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is HalfLifeMount mount )
-			mount.NpcAudio.Emit( "weapons/g_bounce", collision.Contact.Point );
+		var mount = EffectsMount ?? Sandbox.Mounting.Directory.Get( "hl1" ) as HalfLifeMount;
+		mount?.NpcAudio.Emit( "weapons/g_bounce", collision.Contact.Point );
 	}
 
 	protected override void OnFixedUpdate()
@@ -101,8 +113,8 @@ public sealed partial class PlacedCharge : Component, Component.IDamageable, Com
 		var normal = IsMine ? WorldRotation.Forward : Vector3.Up;
 		var contact = Scene.Trace.Ray( WorldPosition + normal * 8, WorldPosition - normal * (IsMine ? 64 : 40) )
 			.IgnoreGameObjectHierarchy( GameObject ).Run();
-		var damage = !IsMine && Networking.MaxPlayers > 1 ? 120 : 150;
-		Blast.Detonate( GameObject, Thrower, contact.Hit ? contact.EndPosition : WorldPosition, contact.Hit ? contact.Normal : normal, damage, contact.Hit );
+		var damage = _damageOverride ?? (!IsMine && Networking.MaxPlayers > 1 ? 120 : 150);
+		Blast.Detonate( GameObject, Thrower, contact.Hit ? contact.EndPosition : WorldPosition, contact.Hit ? contact.Normal : normal, damage, contact.Hit, EffectsMount );
 		GameObject.Destroy();
 	}
 }
