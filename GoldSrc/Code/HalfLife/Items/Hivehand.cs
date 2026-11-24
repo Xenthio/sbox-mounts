@@ -59,10 +59,12 @@ public abstract class ClassicHivehand : ProjectileWeapon
 
 	internal override bool Release( Ray ray )
 	{
-		if ( !SpawnHornet<Hornet>( ray.Position, ray.Forward, 300 ) ) return false;
+		if ( !ReleaseTrackingHornet( ray ) ) return false;
 		_regenerate = RechargeDelay;
 		return true;
 	}
+
+	internal virtual bool ReleaseTrackingHornet( Ray ray ) => SpawnHornet<Hornet>( ray.Position, ray.Forward, 300 );
 
 	bool ReleaseDart( Ray ray )
 	{
@@ -76,10 +78,10 @@ public abstract class ClassicHivehand : ProjectileWeapon
 		return true;
 	}
 
-	bool SpawnHornet<T>( Vector3 origin, Vector3 direction, float speed ) where T : Hornet, new()
+	protected bool SpawnHornet<T>( Vector3 origin, Vector3 direction, float speed, System.Action<T> configure = null ) where T : Hornet, new()
 	{
 		if ( ContentMount is not { } mount || mount.FindMountPath( "models/hornet.mdl" ) is not { } path ) return false;
-		NpcProjectile.Fire<T>( Owner.GameObject, $"mount://{mount.Ident}/{path}.vmdl", HornetDamage, null, origin, direction, speed );
+		NpcProjectile.Fire<T>( Owner.GameObject, $"mount://{mount.Ident}/{path}.vmdl", HornetDamage, null, origin, direction, speed, configure );
 		return true;
 	}
 

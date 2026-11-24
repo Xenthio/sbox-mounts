@@ -5,7 +5,8 @@ public class Hornet : NpcProjectile, Component.IDamageable
 {
 	internal override float LaunchSpeed => 300;
 	internal override string HitTag => "bullet";
-	internal override float Lifetime => _dashEndsAt > 0 ? _dashEndsAt : Networking.MaxPlayers > 1 ? 3.5f : 5f;
+	internal override float Lifetime => _dashEndsAt > 0 ? _dashEndsAt : TrackingLifetime;
+	internal virtual float TrackingLifetime => Networking.MaxPlayers > 1 ? 3.5f : 5f;
 	float _dashEndsAt;
 	bool PlayerFired => Shooter.IsValid() && Shooter.GetComponent<PlayerController>().IsValid();
 	internal MonsterClass Classification => PlayerFired ? MonsterClass.PlayerWeapon : MonsterClass.AlienWeapon;
@@ -15,7 +16,9 @@ public class Hornet : NpcProjectile, Component.IDamageable
 	float _health = 1;
 	TimeUntil _nextTurn;
 	Vector3 _lastKnown;
-	float FlySpeed => Red ? 600 : 800;
+	internal virtual float FlySpeed => Red ? 600 : 800;
+	internal virtual Color TrailTint => Red ? new Color32( 179, 39, 14, 128 ) : new Color32( 255, 128, 0, 128 );
+	internal virtual Vector3 AimAt( GameObject target ) => Npc.TargetBodyPosition( target );
 
 	internal override void PrepareLaunch()
 	{
@@ -31,8 +34,7 @@ public class Hornet : NpcProjectile, Component.IDamageable
 		if ( _trailStarted || Age < 0.1f || Application.IsDedicatedServer ) return;
 		if ( ModelMount is not { } mount ) return;
 		_trailStarted = true;
-		Color tint = Red ? new Color32( 179, 39, 14, 128 ) : new Color32( 255, 128, 0, 128 );
-		ProjectileTrail.Attach( GameObject, mount, "Hornet trail", "laserbeam", 1, 2, tint );
+		ProjectileTrail.Attach( GameObject, mount, "Hornet trail", "laserbeam", 1, 2, TrailTint );
 	}
 
 	internal override void Guide()
@@ -42,13 +44,13 @@ public class Hornet : NpcProjectile, Component.IDamageable
 		if ( !Sandbox.Npcs.BaseNpc.IsLiveTarget( Target ) )
 			Target = FindPrey();
 
-		if ( Target.IsValid() && Visible( Target ) ) _lastKnown = Npc.TargetBodyPosition( Target );
+		if ( Target.IsValid() && Visible( Target ) ) _lastKnown = AimAt( Target );
 		else _lastKnown += Velocity * (FlySpeed * 0.1f);
 		var aim = (_lastKnown - WorldPosition).Normal;
 		var current = Velocity.Length < 0.1f ? aim : Velocity.Normal;
 		var alignment = Vector3.Dot( current, aim );
 		if ( alignment < 0.5f ) PlaySound( "hornet/ag_buzz", WorldPosition, 0.8f );
-		var speed = Red ? 600 * (alignment <= 0 ? 0.25f : alignment) : 800;
+		var speed = Red ? FlySpeed * (alignment <= 0 ? 0.25f : alignment) : FlySpeed;
 		var heading = (aim + current).Normal;
 		if ( Shooter.IsValid() && Shooter.GetComponent<Sandbox.Npcs.BaseNpc>().IsValid() )
 			heading += new Vector3( Game.Random.Float( -0.1f, 0.1f ), Game.Random.Float( -0.1f, 0.1f ), Game.Random.Float( -0.1f, 0.1f ) );
@@ -124,7 +126,7 @@ public class Hornet : NpcProjectile, Component.IDamageable
 		return true;
 	}
 
-	void PlaySound( string sample, Vector3 position, float volume = 1 )
+	protected void PlaySound( string sample, Vector3 position, float volume = 1 )
 	{
 		ModelMount?.NpcAudio.Emit( sample, position, volume );
 	}
