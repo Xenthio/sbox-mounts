@@ -2,7 +2,8 @@ using Sandbox.Npcs.Layers;
 
 namespace GoldSrc.HalfLife;
 
-internal sealed class NpcPrefabLoader( TypeDescription component, NpcDefinitionAttribute definition, string model, string projectile, string edition = null ) : ResourceLoader<GameMount>
+internal sealed class NpcPrefabLoader( TypeDescription component, NpcDefinitionAttribute definition, string model, string projectile,
+	string edition = null, string className = null ) : ResourceLoader<GameMount>
 {
 	PrefabFile _prefab;
 
@@ -90,7 +91,7 @@ internal sealed class NpcPrefabLoader( TypeDescription component, NpcDefinitionA
 		var animation = root.AddComponent<AnimationLayer>();
 		animation.EnableFootstepSounds = false;
 
-		npc.ClassName = definition.ClassName;
+		npc.ClassName = className ?? definition.ClassName;
 		if ( Host is SvenCoopMount ) root.AddComponent<SvenCoop.RevivableNpc>();
 		npc.ModelPath = modelPath;
 		npc.ProjectilePath = projectile is null ? null : $"mount://{Host.Ident}/{projectile}.vmdl";

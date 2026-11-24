@@ -40,6 +40,8 @@ internal sealed class NpcRegistry
 
 			foreach ( var alias in definition.Aliases )
 				context.Add( ResourceType.PrefabFile, $"entities/npcs/{alias}.prefab", new NpcPrefabLoader( component, definition, model, projectile ) );
+			foreach ( var variant in definition.ClassNameVariants )
+				context.Add( ResourceType.PrefabFile, $"entities/npcs/{variant}.prefab", new NpcPrefabLoader( component, definition, model, projectile, className: variant ) );
 
 			void Add( MountContext mount, string name, string modelPath, string projectileModel, string edition )
 			{
