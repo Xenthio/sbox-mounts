@@ -69,7 +69,7 @@ public abstract class Rifleman : CampaignSoldier
 		var suffix = className?[(className.LastIndexOf( '_' ) + 1)..];
 		return suffix switch
 		{
-			"pistol" => new( 5, 16, "pistol_standing", "pistol_reload", "pistol_reload",
+			"pistol" or "grenader" => new( 5, 16, "pistol_standing", "pistol_reload", "pistol_reload",
 				counterTerrorist ? "usp_unsil-1" : "glock18-2", null, 1, 5, 1024, 0.08716f, 0, Glock: !counterTerrorist ),
 			"shotgun" => new( 1, 8, "standing_shotgun", "reload_shotgun", "reload_shotgun",
 				counterTerrorist ? "xm1014-1" : "sbarrel1", null, counterTerrorist ? 8 : 5, 10, 2048, 0.13053f, 0 ),

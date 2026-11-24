@@ -8,20 +8,22 @@ public sealed class FlashbangProjectile : CounterStrikeTimedGrenade
 	internal static void Throw( GameObject owner, Vector3 origin, Vector3 velocity, GameMount mount ) =>
 		ThrowTimed<FlashbangProjectile>( owner, origin, velocity, mount, "Flashbang", "w_flashbang" );
 
-	internal override void Detonate()
+	internal override void Detonate() => Flash( GameObject, ContentMount, TraceFloor() );
+
+	internal static void Flash( GameObject grenade, GameMount mount, SceneTraceResult floor )
 	{
-		var floor = TraceFloor();
-		var origin = floor.Hit ? floor.EndPosition + floor.Normal * ((35 - 24) * 0.6f) : WorldPosition;
-		var underwater = WaterBody.Find( Scene, origin ).IsValid();
-		FlashPlayers( origin + Vector3.Up, underwater );
-		ContentMount?.NpcAudio.Emit( "weapons/flashbang-", origin, volume: 0.55f );
-		ShowEffects( MountId, origin, floor.EndPosition, floor.Normal, floor.Hit, underwater );
+		var origin = floor.Hit ? floor.EndPosition + floor.Normal * ((35 - 24) * 0.6f) : grenade.WorldPosition;
+		var underwater = WaterBody.Find( grenade.Scene, origin ).IsValid();
+		FlashPlayers( grenade, origin + Vector3.Up, underwater );
+		mount?.NpcAudio.Emit( "weapons/flashbang-", origin, volume: 0.55f );
+		if ( mount is not null ) ShowEffects( mount.Ident, origin, floor.EndPosition, floor.Normal, floor.Hit, underwater );
 	}
 
-	void FlashPlayers( Vector3 origin, bool underwater )
+	static void FlashPlayers( GameObject grenade, Vector3 origin, bool underwater )
 	{
 		const float radius = 1500;
-		foreach ( var player in Scene.GetAllComponents<PlayerController>() )
+		var scene = grenade.Scene;
+		foreach ( var player in scene.GetAllComponents<PlayerController>() )
 		{
 			var eye = player.EyePosition;
 			var distance = origin.Distance( eye );
@@ -35,11 +37,11 @@ public sealed class FlashbangProjectile : CounterStrikeTimedGrenade
 			var hold = strength / (facingFlash ? 1.5f : 3.5f);
 			using ( Rpc.FilterInclude( player.Network.Owner ?? Connection.Local ) ) ShowBlindness( player, fade, hold, facingFlash );
 		}
-	}
 
-	bool Blocked( Vector3 start, Vector3 end, PlayerController target ) =>
-		Scene.Trace.Ray( start, end ).IgnoreGameObjectHierarchy( GameObject ).IgnoreGameObjectHierarchy( target.GameObject )
-			.WithoutTags( "trigger", "debris" ).Run().Hit;
+		bool Blocked( Vector3 start, Vector3 end, PlayerController target ) =>
+			scene.Trace.Ray( start, end ).IgnoreGameObjectHierarchy( grenade ).IgnoreGameObjectHierarchy( target.GameObject )
+				.WithoutTags( "trigger", "debris" ).Run().Hit;
+	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
 	static void ShowBlindness( PlayerController player, float fade, float hold, bool facingFlash )
