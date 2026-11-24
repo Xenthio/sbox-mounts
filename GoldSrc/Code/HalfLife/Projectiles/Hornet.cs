@@ -10,6 +10,8 @@ public class Hornet : NpcProjectile, Component.IDamageable
 	float _dashEndsAt;
 	bool PlayerFired => Shooter.IsValid() && Shooter.GetComponent<PlayerController>().IsValid();
 	internal MonsterClass Classification => PlayerFired ? MonsterClass.PlayerWeapon : MonsterClass.AlienWeapon;
+	internal virtual float SeekDot => 0.9f;
+	internal virtual bool CanDash => Networking.MaxPlayers <= 1;
 
 	[Property] public bool Red { get; set; }
 	bool _trailStarted;
@@ -57,7 +59,7 @@ public class Hornet : NpcProjectile, Component.IDamageable
 		Velocity = heading * speed;
 		WorldRotation = Rotation.LookAt( Velocity );
 
-		if ( Networking.MaxPlayers <= 1 && Target.IsValid() && alignment >= 0.4f && WorldPosition.DistanceSquared( _lastKnown ) <= 300 * 300 )
+		if ( CanDash && Target.IsValid() && alignment >= 0.4f && WorldPosition.DistanceSquared( _lastKnown ) <= 300 * 300 )
 		{
 			Velocity *= 2;
 			_dashEndsAt = (float)Age + 1;
@@ -82,7 +84,7 @@ public class Hornet : NpcProjectile, Component.IDamageable
 			if ( obj.GetComponentInParent<IDamageable>() is not Component victim ) continue;
 			var candidate = victim.GameObject;
 			var delta = candidate.WorldPosition - WorldPosition;
-			if ( candidate.Tags.Has( "hornet" ) || candidate == Shooter || delta.LengthSquared > distance || WorldRotation.Forward.Dot( delta.WithZ( 0 ).Normal ) <= 0.9f ) continue;
+			if ( candidate.Tags.Has( "hornet" ) || candidate == Shooter || delta.LengthSquared > distance || WorldRotation.Forward.Dot( delta.WithZ( 0 ).Normal ) <= SeekDot ) continue;
 			if ( Npc.ClassRelationship( Classification, Npc.ClassOf( candidate ) ).Disposition != Sandbox.Npcs.Disposition.Hostile || !Visible( candidate ) ) continue;
 			nearest = candidate;
 			distance = delta.LengthSquared;

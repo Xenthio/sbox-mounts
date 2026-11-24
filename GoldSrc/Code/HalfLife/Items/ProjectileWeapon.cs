@@ -6,6 +6,12 @@ public abstract class ProjectileWeapon : StudioWeapon
 	TimeUntil _nextLaunch, _nextSecondary;
 	protected bool IsPrimaryLaunchReady => _nextLaunch <= 0;
 
+	protected void BlockProjectileLaunch( float delay )
+	{
+		_nextLaunch = delay;
+		_nextSecondary = delay;
+	}
+
 	public override void PrimaryAttack() => Launch( AimRay );
 
 	[Rpc.Host( NetFlags.OwnerOnly )]

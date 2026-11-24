@@ -21,7 +21,7 @@ public abstract class ClassicHivehand : ProjectileWeapon
 	internal virtual float RechargeDelay => RechargeInterval;
 	internal virtual float EmptyPrimaryDelay => RechargeInterval;
 	internal virtual float EmptySecondaryDelay => 0.5f;
-	static float HornetDamage => Networking.MaxPlayers > 1 ? 10 : 7;
+	internal virtual float HornetDamage => Networking.MaxPlayers > 1 ? 10 : 7;
 	int _phase;
 	TimeUntil _regenerate;
 	internal override Vector3 WorldMuzzleOffset( bool hd ) => hd ? new( 19.1f, 0.7f, -2.2f ) : new( 19.3f, 0.9f, -0.6f );
@@ -60,7 +60,7 @@ public abstract class ClassicHivehand : ProjectileWeapon
 	internal override bool Release( Ray ray )
 	{
 		if ( !ReleaseTrackingHornet( ray ) ) return false;
-		_regenerate = RechargeDelay;
+		ScheduleRecharge( RechargeDelay );
 		return true;
 	}
 
@@ -68,15 +68,20 @@ public abstract class ClassicHivehand : ProjectileWeapon
 
 	bool ReleaseDart( Ray ray )
 	{
-		var up = _phase is 7 or 0 or 1 ? 8 : _phase is 3 or 4 or 5 ? -8 : 0;
-		var right = _phase is 1 or 2 or 3 ? 8 : _phase is 5 or 6 or 7 ? -8 : 0;
+		var offset = DartOffset( _phase );
 		var basis = Rotation.LookAt( ray.Forward );
-		var origin = ray.Position + basis.Up * up + basis.Right * right;
+		var origin = ray.Position + basis.Up * offset.y + basis.Right * offset.x;
 		if ( !SpawnHornet<HornetDart>( origin, ray.Forward, 1200 ) ) return false;
 		_phase = (_phase + 1) % 8;
-		_regenerate = Ammo1 == 1 && EmptySecondaryDelay > 0 ? EmptySecondaryDelay : RechargeDelay;
+		ScheduleRecharge( Ammo1 == 1 && EmptySecondaryDelay > 0 ? EmptySecondaryDelay : RechargeDelay );
 		return true;
 	}
+
+	internal virtual Vector2 DartOffset( int phase ) => new(
+		phase is 1 or 2 or 3 ? 8 : phase is 5 or 6 or 7 ? -8 : 0,
+		phase is 7 or 0 or 1 ? 8 : phase is 3 or 4 or 5 ? -8 : 0 );
+
+	protected void ScheduleRecharge( float delay ) => _regenerate = delay;
 
 	protected bool SpawnHornet<T>( Vector3 origin, Vector3 direction, float speed, System.Action<T> configure = null ) where T : Hornet, new()
 	{
