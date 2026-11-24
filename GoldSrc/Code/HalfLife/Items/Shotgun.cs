@@ -71,6 +71,7 @@ public abstract class PumpShotgun : BulletWeapon
 			SetNextFire( 0.15f );
 			return;
 		}
+		if ( TryFireSpecialShells( both ) ) return;
 		if ( both && IsHeld && (Clip1 < 2 || !TakePrimaryAmmo()) ) return;
 		DoubleShot = both;
 		OnShellsFiring( both );
@@ -82,7 +83,9 @@ public abstract class PumpShotgun : BulletWeapon
 	}
 
 	[Rpc.Broadcast( NetFlags.OwnerOnly )]
-	void ReportShot( bool both )
+	void ReportShot( bool both ) => PlayShotReport( both );
+
+	protected void PlayShotReport( bool both )
 	{
 		if ( !IsProxy && Owner is { ThirdPerson: false } )
 			MeleeViewPunch.Apply( Scene.Camera, new Angles( both ? -10 : -5, 0, 0 ) );
@@ -119,6 +122,8 @@ public abstract class PumpShotgun : BulletWeapon
 		ViewModel?.GetComponent<StudioWeaponView>()?.Play( "pump", idleAfter: 1.5f );
 		PlayPump();
 	}
+
+	internal virtual bool TryFireSpecialShells( bool both ) => false;
 
 	internal virtual void OnShellsFiring( bool both ) { }
 

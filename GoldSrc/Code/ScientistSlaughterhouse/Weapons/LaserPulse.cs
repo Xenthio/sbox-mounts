@@ -6,6 +6,8 @@ namespace GoldSrc.ScientistSlaughterhouse;
 public class LaserPulse : NpcProjectile
 {
 	protected static readonly Color PulseColor = Color.Red;
+	protected virtual Color Tint => PulseColor;
+	protected virtual float GlowScale => 0.25f;
 	protected SpriteRenderer Glow { get; private set; }
 	internal override string HitTag => "energybeam";
 
@@ -17,11 +19,11 @@ public class LaserPulse : NpcProjectile
 			var image = sprite.Animations[0].Frames[0].Texture;
 			Glow = GameObject.AddComponent<SpriteRenderer>();
 			Glow.Sprite = sprite;
-			Glow.Size = new Vector2( image.Width, image.Height ) * 0.25f;
+			Glow.Size = new Vector2( image.Width, image.Height ) * GlowScale;
 			Glow.Additive = true;
-			Glow.Color = PulseColor;
+			Glow.Color = Tint;
 		}
-		ProjectileTrail.Attach( GameObject, mount, "Pulse laser trail", "lred", 2, 1, PulseColor );
+		ProjectileTrail.Attach( GameObject, mount, "Pulse laser trail", "lred", 2, 1, Tint );
 	}
 
 	internal override SceneTrace FlightTrace( Vector3 start, Vector3 end ) => base.FlightTrace( start, end ).WithoutTags( "trigger" );
