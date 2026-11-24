@@ -8,18 +8,20 @@ partial class MapBuilder
 	private bool TrySpawnPickup( Entity entity )
 	{
 		var name = entity.ClassName.ToLowerInvariant();
-		var halfLifeItems = Host is HalfLifeMount or HalfLifeMModMount;
+		var halfLifeItems = Host is HalfLifeMount or HalfLifeMModMount or HalfLifeModMount;
 		var weapon = name.StartsWith( "weapon_", System.StringComparison.Ordinal ) ||
 			name.StartsWith( "tf_weapon_", System.StringComparison.Ordinal );
-		(string Model, string Pool, int Amount) cryOfFearAmmo = Host is CryOfFearMount ? name switch
+		(string Model, string Pool, int Amount) customAmmo = (Host, name) switch
 		{
-			"ammo_glock" => ("ammo/clip", "glock", 15),
-			"ammo_shells" => ("ammo/ammo_shotshells", "buckshot", 9),
-			"ammo_p345" => ("ammo/p345_clip", "p345", 8),
-			"ammo_vp70" => ("ammo/vp70_clip", "vp70", 18),
+			(CryOfFearMount, "ammo_glock") => ("ammo/clip", "glock", 15),
+			(CryOfFearMount, "ammo_shells") => ("ammo/ammo_shotshells", "buckshot", 9),
+			(CryOfFearMount, "ammo_p345") => ("ammo/p345_clip", "p345", 8),
+			(CryOfFearMount, "ammo_vp70") => ("ammo/vp70_clip", "vp70", 18),
+			(ScientistSlaughterhouseMount, "ammo_sniperclip") => ("w_m40a1clip", "m40", 5),
+			(CrackLifeCampaignMount, "ammo_snipars") => ("w_357ammobox", "snipars", 10),
 			_ => default
-		} : default;
-		if ( !weapon && !halfLifeItems && cryOfFearAmmo.Model is null ) return false;
+		};
+		if ( !weapon && !halfLifeItems && customAmmo.Model is null ) return false;
 		GameObject go;
 		var transform = new Transform( entity.Origin, entity.Rotation );
 		if ( name == "world_items" && entity.GetInt( "type" ) == 45 ) name = "item_suit";
@@ -64,7 +66,7 @@ partial class MapBuilder
 		}
 		else
 		{
-			var (model, pool, amount) = cryOfFearAmmo.Model is not null ? cryOfFearAmmo : name switch
+			var (model, pool, amount) = customAmmo.Model is not null ? customAmmo : name switch
 			{
 				"ammo_glockclip" or "ammo_9mmclip" => ("w_9mmclip", "9mm", 17),
 				"ammo_mp5clip" or "ammo_9mmar" => ("w_9mmARclip", "9mm", 50),
@@ -78,17 +80,19 @@ partial class MapBuilder
 				_ => (null, null, 0)
 			};
 			if ( model is null ) return false;
+			var ammoPath = $"mount://{Host.Ident}/ammo/{pool}.ammo";
+			var requiresAmmoResource = Host is HalfLifeMModMount or HalfLifeModMount or CryOfFearMount;
+			if ( requiresAmmoResource && Host.GetByPath( ammoPath ) is null ) return false;
 			var resource = LoadMountedModel( $"models/{model}.mdl" );
 			if ( resource is not { IsError: false } ) return false;
-			var ammo = GameResource.Load<BaseAmmoResource>( $"mount://{Host.Ident}/ammo/{pool}.ammo" );
-			if ( Host is (HalfLifeMModMount or CryOfFearMount) && ammo is null ) return false;
+			var ammo = GameResource.Load<BaseAmmoResource>( ammoPath );
+			if ( requiresAmmoResource && ammo is null ) return false;
 			go = HalfLife.AmmoPickup.Create( transform, resource, ammo, amount, pool );
-			if ( cryOfFearAmmo.Model is not null )
-			{
-				var pickup = go.GetComponent<HalfLife.AmmoPickup>();
+			var pickup = go.GetComponent<HalfLife.AmmoPickup>();
+			if ( Host is HalfLifeModMount or CryOfFearMount )
 				pickup.SoundMount = Host.Ident;
+			if ( Host is CryOfFearMount )
 				pickup.PickupSound = "weapons/item_get.wav";
-			}
 		}
 
 		go.Name = EntityName( entity );
