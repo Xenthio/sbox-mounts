@@ -45,6 +45,24 @@ public sealed class Monster : MapEntity
 	[Property] public string DamageTarget { get; set; }
 	[Property] public string DeathTarget { get; set; }
 
+	public override void Trigger( GameObject activator = null )
+	{
+		if ( Npc is ConditionZeroDeletedScenes.CampaignMiniTurret turret ) turret.UsePower( null );
+		else base.Trigger( activator );
+	}
+
+	public override void TurnOn( GameObject activator = null )
+	{
+		if ( Npc is ConditionZeroDeletedScenes.CampaignMiniTurret turret ) turret.UsePower( true );
+		else base.TurnOn( activator );
+	}
+
+	public override void TurnOff( GameObject activator = null )
+	{
+		if ( Npc is ConditionZeroDeletedScenes.CampaignMiniTurret turret ) turret.UsePower( false );
+		else base.TurnOff( activator );
+	}
+
 	internal void ApplyTriggerProperties( Bsp.Entity entity )
 	{
 		var target = entity.GetString( "TriggerTarget" );

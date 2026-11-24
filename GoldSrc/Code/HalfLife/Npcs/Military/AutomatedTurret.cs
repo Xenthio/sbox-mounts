@@ -16,6 +16,7 @@ public abstract partial class AutomatedTurret : Npc
 		sequence.Name.Equals( "spin", System.StringComparison.OrdinalIgnoreCase ) ? SpinRate : base.MovementPlaybackRate( sequence, speed );
 	internal virtual bool HasRotaryBarrel => false;
 	internal virtual float SearchDuration => 15;
+	internal virtual bool AutoDeploy => true;
 	internal virtual float RetractedHeight => 16;
 	internal virtual float DeployedHeight => 32;
 	internal virtual float GunHeight => 12.75f;
@@ -23,6 +24,8 @@ public abstract partial class AutomatedTurret : Npc
 	internal virtual bool CanBerserk => true;
 	internal virtual float MinimumElevation => -15;
 	internal virtual float ShotAttenuation => GoldSrcSoundEvents.Normal;
+	internal virtual float ShotDamage => Definition.Damage;
+	internal virtual float ShotSpread => 0;
 	internal virtual string ShotSound => $"weapons/hks{Game.Random.Int( 1, 3 )}.wav";
 	internal override NpcCorpse AddCorpseComponent( GameObject go )
 	{
@@ -34,7 +37,7 @@ public abstract partial class AutomatedTurret : Npc
 	internal override NpcSounds Sounds { get; } = new( Death: "turret/tu_die" );
 	static readonly string[] Clips = ["deploy", "retire", "spin", "fire"];
 	internal override string[] ExtraActions => Clips;
-	internal override StudioSequence RestSequence => State == Mode.Firing ? Find( "fire" ) : State == Mode.Searching ? Find( "spin" ) : base.RestSequence;
+	internal override StudioSequence RestSequence => State == Mode.Firing ? Find( "fire" ) : State is Mode.Searching or Mode.Retiring ? Find( "spin" ) : base.RestSequence;
 
 	BoxCollider _hull;
 	bool _berserk;
@@ -45,6 +48,8 @@ public abstract partial class AutomatedTurret : Npc
 	GameObject _enemy;
 	Vector3 _lastSight;
 	bool _loaded;
+	bool? _powerRequest;
+	protected bool IsDeployed => State != Mode.Retracted;
 	internal override void OnModelLoaded( ModelLoader loader )
 	{
 		_gun.Bind( loader, Renderer );
@@ -81,8 +86,26 @@ public abstract partial class AutomatedTurret : Npc
 
 	protected override void Think()
 	{
-		if ( !_loaded || AdvanceAction() || _nextThink > 0 ) return;
+		if ( !_loaded ) return;
+		if ( _powerRequest is { } enabled && State != Mode.Retiring )
+		{
+			_powerRequest = null;
+			if ( enabled ) Deploy();
+			else if ( State != Mode.Retracted )
+			{
+				InterruptAction();
+				_enemy = null;
+				State = Mode.Retiring;
+			}
+		}
+		if ( AdvanceAction() || _nextThink > 0 || State == Mode.Retracted && !AutoDeploy ) return;
 		_nextThink = State == Mode.Retracted ? 0.3f : 0.1f;
+		if ( State == Mode.Retiring )
+		{
+			AimToRest();
+			return;
+		}
+
 		var enemy = IsLiveTarget( _enemy ) ? _enemy : FindVisibleEnemy();
 		var eye = WorldPosition + WorldRotation.Up * EyeHeight;
 		var origin = State == Mode.Retracted ? eye : Renderer.GetAttachment( "attachment1" )?.Position ?? eye;
@@ -119,7 +142,7 @@ public abstract partial class AutomatedTurret : Npc
 				return;
 			}
 			State = Mode.Firing;
-			TraceBullets( origin, origin + WorldRotation * Aim.Forward * Definition.Range, 1, Definition.Damage, 0, Definition.Range, tracerFrequency: 1 );
+			TraceBullets( origin, origin + WorldRotation * Aim.Forward * Definition.Range, 1, ShotDamage, ShotSpread, Definition.Range, tracerFrequency: 1 );
 			PlayGunshot( ShotSound, origin, attenuation: ShotAttenuation );
 			return;
 		}
@@ -135,13 +158,7 @@ public abstract partial class AutomatedTurret : Npc
 		if ( HasRotaryBarrel && _sinceEnemy > 5 ) SpinDown( origin );
 		if ( _sinceEnemy >= SearchDuration )
 		{
-			TurnTo( Angles.Zero );
-			if ( System.MathF.Abs( Aim.yaw ) + System.MathF.Abs( Aim.pitch ) < 1 )
-			{
-				State = Mode.Retiring;
-				EmitSound( "turret/tu_deploy.wav", WorldPosition, 0.5f, 1.2f );
-				PlaySequence( Find( "retire" ), true );
-			}
+			AimToRest();
 			return;
 		}
 		_scanYaw = Angles.NormalizeAngle( _scanYaw + 3 );
@@ -162,6 +179,22 @@ public abstract partial class AutomatedTurret : Npc
 		_sinceEnemy = 0;
 		EmitSound( "turret/tu_deploy.wav", WorldPosition, 0.5f );
 		PlayAction( Find( "deploy" ) );
+	}
+
+	protected bool SetPower( bool? enabled )
+	{
+		var active = _powerRequest ?? (State is not (Mode.Retracted or Mode.Retiring));
+		_powerRequest = enabled ?? !active;
+		return _powerRequest.Value;
+	}
+
+	void AimToRest()
+	{
+		TurnTo( Angles.Zero );
+		if ( System.MathF.Abs( Aim.yaw ) + System.MathF.Abs( Aim.pitch ) >= 1 ) return;
+		State = Mode.Retiring;
+		EmitSound( "turret/tu_deploy.wav", WorldPosition, 0.5f, 1.2f );
+		PlaySequence( Find( "retire" ), true );
 	}
 
 	void TurnTo( Angles desired )

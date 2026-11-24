@@ -46,6 +46,7 @@ public abstract partial class GameMount : BaseGameMount
 	}
 
 	protected virtual string FindFallbackFile( string relativePath ) => null;
+	protected virtual IReadOnlyList<string> SharedNpcModels => [];
 
 	/// <summary>
 	/// Resolve the game-relative path for building "mount://" resource paths.
@@ -159,7 +160,17 @@ public abstract partial class GameMount : BaseGameMount
 		MountSurfaces( context );
 		MountDecals( context );
 		if ( registry.HasEntries )
+		{
+			foreach ( var relativePath in SharedNpcModels )
+			{
+				if ( gameplayModels.ContainsKey( relativePath ) || registry.FindModel( relativePath ) is not { } npc ||
+					FindFallbackFile( relativePath ) is not { } path ) continue;
+
+				context.Add( ResourceType.Model, path, new ModelLoader( path, true, npc ) );
+				gameplayModels.Add( relativePath, path );
+			}
 			registry.Mount( context, gameplayModels, originalModels );
+		}
 		if ( this is HalfLifeMount or HalfLifeMModMount )
 			context.Add( ResourceType.GameResource, Rifle.GrenadeAmmoPath, new AmmoLoader( "AR grenades", 10 ) );
 		else if ( this is CrackLifeMount or CrackLifeCampaignMount )
@@ -252,12 +263,14 @@ public class ConditionZeroDeletedScenesMount : GameMount
 	public override string Title => "Counter-Strike: Condition Zero Deleted Scenes";
 	public override long AppId => 100;
 	public override IReadOnlyList<string> GameDirs => ["czeror"];
+	protected override IReadOnlyList<string> SharedNpcModels => [ConditionZeroDeletedScenes.CampaignMiniTurret.Model];
 
 	protected override string FindFallbackFile( string relativePath )
 	{
-		var sprite = SharedEffectSprites.FirstOrDefault( path => path.Equals( relativePath, StringComparison.OrdinalIgnoreCase ) );
-		if ( sprite is null ) return null;
-		var path = $"valve/{sprite}";
+		var shared = SharedEffectSprites.Concat( SharedNpcModels )
+			.FirstOrDefault( path => path.Equals( relativePath, StringComparison.OrdinalIgnoreCase ) );
+		if ( shared is null ) return null;
+		var path = $"valve/{shared}";
 		return FileSystem.FileExists( path ) ? path : null;
 	}
 }
