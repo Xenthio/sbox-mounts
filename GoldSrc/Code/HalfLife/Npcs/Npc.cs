@@ -159,6 +159,16 @@ public partial class Npc : BaseNpc
 
 	internal StudioSequence Find( string name ) => name is null ? null : _sequences?.GetValueOrDefault( name );
 
+	internal (StudioSequence Sequence, float Time) DisplayedPose
+	{
+		get
+		{
+			if ( _shownSequence is null || !Renderer.IsValid() ) return default;
+			Renderer.Animation.Parameters.TryGetFloat( _shownSequence.TimeParameter, out var time );
+			return (_shownSequence, time);
+		}
+	}
+
 	internal StudioSequence Activity( int activity ) => _sequences.Values
 		.Where( x => x.Description.Activity == activity )
 		.OrderByDescending( x => x.Description.ActWeight )

@@ -9,6 +9,7 @@ public class NpcCorpse : Component
 	[Property, Hide] public string MountIdent { get; set; } = "hl1";
 	[Property] public string ModelPath { get; set; }
 	[Property] public float ModelOriginHeight { get; set; }
+	[Property, Hide] public float FrozenPose { get; set; } = -1;
 	[Property] public string DeathSequence { get; set; }
 	[Property] public SkinnedModelRenderer Renderer { get; set; }
 	[Property] public ulong BodyGroups { get; set; }
@@ -31,7 +32,7 @@ public class NpcCorpse : Component
 	TimeUntil _checkSupport;
 	[Sync( SyncFlags.FromHost )] protected bool Landed { get; private set; }
 
-	internal static GameObject Spawn( Npc npc, StudioSequence sequence, bool anchored = false, Vector3? velocity = null )
+	internal static GameObject Spawn( Npc npc, StudioSequence sequence, bool anchored = false, Vector3? velocity = null, float? frozenPose = null )
 	{
 		var source = npc.Renderer;
 		var go = new GameObject( false, $"{npc.GameObject.Name} Corpse" );
@@ -47,14 +48,15 @@ public class NpcCorpse : Component
 		corpse.MountIdent = npc.Definition.Mount;
 		corpse.ModelPath = npc.ModelPath;
 		corpse.ModelOriginHeight = npc.ModelOriginHeight;
+		corpse.FrozenPose = frozenPose ?? -1;
 		corpse.FadeOnDeath = npc.FadeCorpse;
 		corpse.DeathSequence = sequence.Name;
 		corpse.Renderer = renderer;
 		corpse.BodyGroups = source.BodyGroups;
 		corpse.MaterialGroup = source.MaterialGroup;
-		corpse.Tint = source.Tint;
+		corpse.Tint = frozenPose.HasValue ? ScientistBase.FrostColor.WithAlpha( source.Tint.a ) : source.Tint;
 		corpse.Age = 0;
-		if ( npc.Definition.Gibs != GibSet.None )
+		if ( !frozenPose.HasValue && npc.Definition.Gibs != GibSet.None )
 		{
 			CorpseDamage.Attach( go, renderer, npc.MaxHealth * 0.5f, npc.Definition.Gibs, npc.Definition.Blood );
 			var hitboxes = go.AddComponent<ModelHitboxes>();
@@ -104,10 +106,11 @@ public class NpcCorpse : Component
 		var time = Math.Clamp( (float)Age, 0, _sequence.Duration );
 		Renderer.Animation.Graph = loader.AnimationGraphs.GetGraph( _sequence, _final );
 		Renderer.Animation.Parameters.Set( StudioAnimationGraphs.StateParameter, _sequence.Name, persist: true );
-		Renderer.Animation.Parameters.Set( _sequence.TimeParameter, PoseName is null ? time / _sequence.Duration : PoseTime, persist: true );
+		var poseTime = FrozenPose >= 0 ? FrozenPose : PoseName is null ? time / _sequence.Duration : PoseTime;
+		Renderer.Animation.Parameters.Set( _sequence.TimeParameter, poseTime, persist: true );
 		_poseStarted = true;
 
-		if ( PoseName is not null ) _sequence = null;
+		if ( PoseName is not null || FrozenPose >= 0 ) _sequence = null;
 		else _sequenceEvents.Reset( _sequence, time, time <= 0.1f );
 	}
 
@@ -118,6 +121,11 @@ public class NpcCorpse : Component
 			float alpha = Math.Max( 0, 1 - (int)((float)fade * 10) * (7f / 255) );
 			Renderer.Attributes.Set( "StudioOpacity", alpha );
 			if ( Networking.IsHost && (float)fade >= 3.9f ) GameObject.Destroy();
+			return;
+		}
+		if ( FrozenPose >= 0 )
+		{
+			if ( Renderer.IsValid() && Age >= 10 ) BeginFade();
 			return;
 		}
 		if ( _sequence is null || !Renderer.IsValid() || !Renderer.Animation.IsValid )
@@ -147,14 +155,19 @@ public class NpcCorpse : Component
 		{
 			if ( FadeOnDeath )
 			{
-				Gib.EnableFade( Renderer );
-				if ( GetComponent<ModelHitboxes>() is {} hitboxes ) hitboxes.Enabled = false;
-				_fadeAge = 0;
+				BeginFade();
 			}
 			else if ( Networking.IsHost && GetComponent<CorpseDamage>().IsValid() )
 				Scene.GetSystem<Sandbox.Npcs.NpcSystem>().EmitStimulus( "carcass", WorldPosition, GameObject, 384, 30 );
 			_sequence = null;
 		}
+	}
+
+	void BeginFade()
+	{
+		Gib.EnableFade( Renderer );
+		if ( GetComponent<ModelHitboxes>() is {} hitboxes ) hitboxes.Enabled = false;
+		_fadeAge = 0;
 	}
 
 	protected override void OnFixedUpdate()
