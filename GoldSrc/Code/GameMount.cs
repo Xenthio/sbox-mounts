@@ -239,6 +239,15 @@ public class ConditionZeroDeletedScenesMount : GameMount
 {
 	static readonly string[] SharedEffectSprites = ["sprites/smoke.spr", "sprites/steam1.spr", "sprites/WXplo1.spr", "sprites/bubble.spr", "sprites/rope.spr"];
 
+	ConditionZeroDeletedScenes.CampaignSequences _sequences;
+	internal ConditionZeroDeletedScenes.CampaignSequences Sequences => _sequences ??= new( this );
+
+	protected override void Shutdown()
+	{
+		_sequences = null;
+		base.Shutdown();
+	}
+
 	public override string Ident => "czeror";
 	public override string Title => "Counter-Strike: Condition Zero Deleted Scenes";
 	public override long AppId => 100;

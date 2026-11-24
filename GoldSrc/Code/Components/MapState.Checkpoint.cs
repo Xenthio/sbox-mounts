@@ -31,6 +31,7 @@ public sealed partial class MapState
 		public float? Health { get; set; }
 		public HalfLife.Npc.SavedScript Script { get; set; }
 		public HalfLife.Npc.SavedMagazine Magazine { get; set; }
+		public ConditionZeroDeletedScenes.TriggerSequence.SavedSequence Sequence { get; set; }
 		public ConditionZeroDeletedScenes.CampaignHostage.SavedEscort Escort { get; set; }
 		public int? Count { get; set; }
 		public float? GameCounterCount { get; set; }
@@ -141,6 +142,7 @@ public sealed partial class MapState
 				case CryOfFear.TimedSpawn spawner: entry.TimedSpawn = spawner.Capture(); break;
 				case BrushMover mover: entry.Move = mover.CaptureMove(); break;
 				case TrackTrain train: entry.Train = train.CaptureTrain(); break;
+				case ConditionZeroDeletedScenes.TriggerSequence sequence: entry.Sequence = sequence.CaptureSequence( player ); break;
 				case MultiSource source: entry.Inputs = source.InputStates; break;
 				case MultiManager manager:
 					entry.Running = manager.Running;
@@ -201,6 +203,7 @@ public sealed partial class MapState
 				case MonsterMaker maker when entry.Count.HasValue: maker.Count = entry.Count.Value; break;
 				case BrushMover mover when entry.Move is not null: mover.RestoreMove( entry.Move ); break;
 				case TrackTrain train when entry.Train is not null: train.RestoreTrain( entry.Transform, entry.Train ); break;
+				case ConditionZeroDeletedScenes.TriggerSequence sequence: sequence.RestoreSequence( entry.Sequence, player ); break;
 				case MultiSource source when entry.Inputs is not null: source.InputStates = entry.Inputs; source.Initialized = true; break;
 				case MultiManager manager:
 					manager.Running = entry.Running;

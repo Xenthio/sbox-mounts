@@ -24,21 +24,21 @@ internal sealed partial class NpcAudio
 	readonly Dictionary<string, SentenceGroup> _speechGroups = new( StringComparer.OrdinalIgnoreCase );
 	static readonly Regex SentenceToken = new( @"(?:(?<word>[^\s(),.]+|[,.])(?:\((?<settings>[^)]*)\))?|\((?<settings>[^)]*)\))" );
 
-	void IndexSpeechGroups( string text )
+	void IndexSpeechGroups( string text, string prefix = "" )
 	{
 		foreach ( var raw in text.Split( '\n' ) )
 		{
 			var line = raw.Split( "//" )[0].Trim();
 			var split = line.IndexOfAny( [' ', '\t'] );
 			if ( split < 1 ) continue;
-			var name = line[..split];
+			var name = prefix + line[..split];
 			var phrase = ParseSentence( line[(split + 1)..].Trim() );
 			if ( phrase is null || phrase.Length == 0 ) continue;
 			_sentences[name] = phrase;
 			var group = name.AsSpan().TrimEnd( "0123456789" ).ToString();
 			if ( group == name ) continue;
 			if ( !_speechGroups.TryGetValue( group, out var variants ) ) _speechGroups.Add( group, variants = [] );
-			variants.Add( name );
+			if ( !variants.Contains( name, StringComparer.OrdinalIgnoreCase ) ) variants.Add( name );
 		}
 	}
 
@@ -77,6 +77,17 @@ internal sealed partial class NpcAudio
 		return words.ToArray();
 	}
 
+	internal void IndexSequenceSpeech( string file, string text ) => IndexSpeechGroups( text, $"seq:{file}:" );
+
+	internal bool EmitSequenceSpeech( string file, string name, Vector3 position, VoicedNpc speaker )
+	{
+		var attenuation = speaker.IsValid() ? GoldSrcSoundEvents.Normal : 0;
+		return EmitSentence( $"seq:{file}:{name}", position, 1, 1, speaker, attenuation )
+			|| EmitSentence( $"seq:global:{name}", position, 1, 1, speaker, attenuation )
+			|| EmitSentence( name, position, 1, 1, speaker, attenuation )
+			|| Emit( name, position, speaker: speaker, attenuation: attenuation );
+	}
+
 	internal bool HasSentence( string name ) => _sentences.ContainsKey( name ) || _speechGroups.ContainsKey( name );
 
 	bool EmitSentence( string name, Vector3 position, float volume, float pitch, VoicedNpc speaker, float attenuation )
@@ -85,15 +96,17 @@ internal sealed partial class NpcAudio
 		if ( !_sentences.TryGetValue( name, out var words ) ) return false;
 		if ( words is [{ Settings: { Start: 0, End: 100, Compression: 0 } } word] )
 			Broadcast( word.Path, position, volume * word.Settings.Volume / 100, pitch * word.Settings.Pitch / 100, speaker, attenuation );
-		else PlaySentence( name, position, volume, pitch, speaker, attenuation );
+		else PlaySentence( Mount.Ident, name, position, volume, pitch, speaker, attenuation );
 		return true;
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	static async void PlaySentence( string name, Vector3 position, float volume, float pitch, VoicedNpc speaker, float attenuation )
+	static async void PlaySentence( string mountId, string name, Vector3 position, float volume, float pitch, VoicedNpc speaker, float attenuation )
 	{
-		if ( Sandbox.Mounting.Directory.Get( "hl1" ) is not HalfLifeMount mount ||
-			!mount.NpcAudio._sentences.TryGetValue( name, out var words ) ) return;
+		if ( Sandbox.Mounting.Directory.Get( mountId ) is not GameMount mount ) return;
+		if ( mount is ConditionZeroDeletedScenesMount campaign && name.StartsWith( "seq:", StringComparison.Ordinal ) && name.IndexOf( ':', 4 ) is var separator && separator > 4 )
+			campaign.Sequences.EnsureSpeech( name[4..separator] );
+		if ( !mount.NpcAudio._sentences.TryGetValue( name, out var words ) ) return;
 
 		var scene = Game.ActiveScene;
 		var voice = speaker.IsValid() ? speaker.BeginVoice() : (int?)null;

@@ -5,7 +5,7 @@ using GoldSrc.Maps;
 namespace GoldSrc.ConditionZeroDeletedScenes;
 
 [Hide]
-public abstract class CampaignSoldier : Npc, Component.IPressable
+public abstract class CampaignSoldier : TalkingNpc, Component.IPressable
 {
 	[Property, Hide] public int Head { get; set; } = -1;
 	[Property, Hide] public bool HoldPosition { get; set; }
@@ -24,7 +24,11 @@ public abstract class CampaignSoldier : Npc, Component.IPressable
 	internal override StudioSequence RestSequence => Find( IdleClip ) ?? base.RestSequence;
 	internal override float SightRange => 4096;
 	internal override float ViewDot => IsCounterTerrorist ? 0.1f : -0.7f;
-	internal override void OnModelLoaded( ModelLoader loader ) => EyeHeight = 55;
+	internal override void OnModelLoaded( ModelLoader loader )
+	{
+		base.OnModelLoaded( loader );
+		EyeHeight = 55;
+	}
 
 	internal override void ApplyMapProperties( Bsp.Entity entity )
 	{
