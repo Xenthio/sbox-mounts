@@ -13,15 +13,8 @@ public sealed class CampaignSnarkWeapon : CrackLifeSnarkWeapon;
 [Hide]
 public abstract class CrackLifeSnarkWeapon : ClassicSnarkWeapon
 {
-	internal override bool TryAimThrow( Ray ray, out Vector3 position, out Vector3 forward )
-	{
-		forward = ray.Forward;
-		var origin = Owner.WorldPosition + Vector3.Up * (Owner.IsDucking ? 54 : 36);
-		var hit = Scene.Trace.Ray( origin + forward * 20, origin + forward * 64 )
-			.IgnoreGameObjectHierarchy( Owner.GameObject ).Run();
-		position = hit.EndPosition;
-		return !hit.StartedSolid && hit.Fraction > 0.25f;
-	}
+	internal override bool TryAimThrow( Ray ray, out Vector3 position, out Vector3 forward ) =>
+		TryAimLegacyThrow( ray, out position, out forward );
 }
 
 [Title( "Snark" ), Category( "Crack-Life" )]
