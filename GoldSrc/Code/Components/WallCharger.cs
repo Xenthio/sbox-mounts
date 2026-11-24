@@ -3,6 +3,7 @@ namespace GoldSrc.Maps;
 public sealed class WallCharger : MapEntity, Component.IPressable
 {
 	[Property] public bool Armour { get; set; }
+	[Property] public bool RechargesMedkit { get; set; }
 	[Property] public SoundEvent StartSound { get; set; }
 	[Property] public SoundEvent LoopSound { get; set; }
 	[Property] public SoundEvent DenySound { get; set; }
@@ -40,7 +41,7 @@ public sealed class WallCharger : MapEntity, Component.IPressable
 
 		_off = 0.25f;
 		if ( _nextCharge > 0 ) return true;
-		_nextCharge = 0.1f;
+		_nextCharge = RechargesMedkit ? 1f / 15 : 0.1f;
 		if ( _stage == 0 )
 		{
 			if ( StartSound is not null ) Sound.Play( StartSound, WorldPosition );
@@ -53,7 +54,13 @@ public sealed class WallCharger : MapEntity, Component.IPressable
 			_stage = 2;
 		}
 
-		if ( Armour ? vitals.Armour >= 100 : vitals.Health <= 0 || vitals.Health >= vitals.MaxHealth ) return true;
+		if ( !Armour && vitals.Health >= vitals.MaxHealth )
+		{
+			if ( RechargesMedkit && vitals.Health > 0 )
+				player.GetComponent<SvenCoop.MedkitRecharge>()?.SupplyCharge( 1 );
+			return true;
+		}
+		if ( Armour ? vitals.Armour >= 100 : vitals.Health <= 0 ) return true;
 		if ( Armour ) vitals.Armour = System.Math.Min( 100, vitals.Armour + 1 );
 		else vitals.Health = System.Math.Min( vitals.MaxHealth, vitals.Health + 1 );
 		if ( --Juice == 0 ) GetComponent<BrushAppearance>().Frame = 1;

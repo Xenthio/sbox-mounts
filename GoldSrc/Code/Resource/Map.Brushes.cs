@@ -140,6 +140,9 @@ partial class MapBuilder
 				var charger = go.AddComponent<WallCharger>();
 				charger.TargetName = entity.TargetName;
 				charger.Armour = className == "func_recharge";
+				charger.RechargesMedkit = !charger.Armour && Host is SvenCoopMount;
+				if ( charger.RechargesMedkit )
+					charger.Juice = entity.GetInt( "customjuice" ) is > 0 and var juice ? juice : 80;
 				float volume = charger.Armour ? 0.85f : 1f;
 				charger.StartSound = BuildSoundEvent( charger.Armour ? "items/suitchargeok1.wav" : "items/medshot4.wav", volume );
 				charger.LoopSound = BuildSoundEvent( charger.Armour ? "items/suitcharge1.wav" : "items/medcharge4.wav", volume );
