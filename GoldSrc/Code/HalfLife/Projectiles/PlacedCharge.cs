@@ -20,7 +20,10 @@ public partial class PlacedCharge : Component, Component.IDamageable, Component.
 
 	internal static void Throw( PlayerController player, Ray ray ) => SpawnSatchel( player, ray );
 
-	internal static bool SpawnSatchel( PlayerController player, Ray ray, GameMount mount = null, float? damage = null )
+	internal static bool SpawnSatchel( PlayerController player, Ray ray, GameMount mount = null, float? damage = null ) =>
+		SpawnSatchel<PlacedCharge>( player, ray, mount, damage );
+
+	internal static bool SpawnSatchel<T>( PlayerController player, Ray ray, GameMount mount, float? damage = null ) where T : PlacedCharge, new()
 	{
 		var path = mount is null ? "valve/models/w_satchel.mdl" : mount.FindMountPath( "models/w_satchel.mdl" );
 		if ( path is null ) return false;
@@ -40,7 +43,7 @@ public partial class PlacedCharge : Component, Component.IDamageable, Component.
 		body.GravityScale = 0.5f;
 		body.EnableImpactDamage = false;
 		body.RigidbodyFlags |= RigidbodyFlags.DisableCollisionSounds;
-		var charge = go.AddComponent<PlacedCharge>();
+		var charge = go.AddComponent<T>();
 		charge.Thrower = player.GameObject;
 		charge.EffectsMountId = mount?.Ident;
 		charge._damageOverride = damage;

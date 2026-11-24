@@ -35,8 +35,8 @@ public abstract partial class GameMount
 
 	private void MountSurfaces( MountContext context )
 	{
-		if ( this is DayOfDefeatMount )
-			context.Add( ResourceType.GameResource, "surfaces/dod_goldsrc_sky.surface", new GoldSrcSkySurfaceLoader() );
+		if ( HasSkySurface )
+			context.Add( ResourceType.GameResource, $"surfaces/{Ident}_goldsrc_sky.surface", new GoldSrcSkySurfaceLoader() );
 
 		_surfaceWaves.Clear();
 		_surfaceSounds.Clear();
@@ -100,7 +100,9 @@ public abstract partial class GameMount
 	internal Surface GetSurface( char type )
 		=> GameResource.Load<Surface>( SurfacePath( GoldSrcSurfaces.Get( type ).Name ) );
 
-	internal Surface GetSkySurface() => this is DayOfDefeatMount
+	bool HasSkySurface => this is DayOfDefeatMount or ScientistSlaughterhouseMount;
+
+	internal Surface GetSkySurface() => HasSkySurface
 		? GameResource.Load<Surface>( SurfacePath( "sky" ) )
 		: null;
 

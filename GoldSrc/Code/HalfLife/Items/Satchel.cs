@@ -13,6 +13,9 @@ public abstract class ClassicSatchel : ProjectileWeapon
 
 	internal virtual bool DetonateWithPrimary => false;
 	internal virtual GameMount ChargeMount => null;
+	internal virtual float RadioRange => 4096;
+	internal virtual bool UsesRadioForThrow => true;
+	protected bool IsRadioOut => State != Charge;
 
 	internal override string HeldModelName => State == Charge ? Definition.Model : Definition.AlternateModel;
 	internal override string ShotSequence => "draw";
@@ -59,13 +62,12 @@ public abstract class ClassicSatchel : ProjectileWeapon
 	internal override bool Release( Ray ray )
 	{
 		if ( State == Detonating || _redraw > 0 || _throwReady > 0 ) return false;
-		if ( ChargeMount is { } mount )
+		if ( !SpawnCharge( ray ) ) return false;
+		if ( UsesRadioForThrow )
 		{
-			if ( !PlacedCharge.SpawnSatchel( Owner, ray, mount, damage: 150 ) ) return false;
+			State = Radio;
+			_radioReady = DetonateWithPrimary ? PrimaryDelay : SecondaryDelay;
 		}
-		else PlacedCharge.Throw( Owner, ray );
-		State = Radio;
-		_radioReady = DetonateWithPrimary ? PrimaryDelay : SecondaryDelay;
 		if ( DetonateWithPrimary )
 		{
 			_throwReady = SecondaryDelay;
@@ -73,6 +75,9 @@ public abstract class ClassicSatchel : ProjectileWeapon
 		}
 		return true;
 	}
+
+	internal virtual bool SpawnCharge( Ray ray ) =>
+		PlacedCharge.SpawnSatchel( Owner, ray, ChargeMount, damage: ChargeMount is null ? null : 150 );
 
 	public override void SecondaryAttack()
 	{
@@ -98,7 +103,7 @@ public abstract class ClassicSatchel : ProjectileWeapon
 		_redraw = 0.5f;
 		if ( DetonateWithPrimary ) SetRadioCooldowns( 0.5f );
 		foreach ( var charge in Scene.GetAllComponents<PlacedCharge>().Where( x => !x.IsMine && x.Thrower == Owner.GameObject &&
-			x.EffectsMount == ChargeMount && x.WorldPosition.DistanceSquared( Owner.WorldPosition ) <= 4096 * 4096 ).ToArray() )
+			x.EffectsMount == ChargeMount && x.WorldPosition.DistanceSquared( Owner.WorldPosition ) <= RadioRange * RadioRange ).ToArray() )
 			charge.Detonate();
 	}
 
