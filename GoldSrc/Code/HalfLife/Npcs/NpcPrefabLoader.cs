@@ -31,6 +31,7 @@ internal sealed class NpcPrefabLoader( TypeDescription component, NpcDefinitionA
 			else if ( entry is PosedCorpse corpse )
 			{
 				root.Tags.Add( "ragdoll", "removable" );
+				corpse.MountIdent = Host.Ident;
 				corpse.ModelPath = modelPath;
 				corpse.Renderer = root.AddComponent<SkinnedModelRenderer>();
 				corpse.Renderer.Model = Model.Load( modelPath );
@@ -38,7 +39,7 @@ internal sealed class NpcPrefabLoader( TypeDescription component, NpcDefinitionA
 				var hitboxes = root.AddComponent<ModelHitboxes>();
 				hitboxes.Renderer = corpse.Renderer;
 				hitboxes.Target = root;
-				CorpseDamage.Attach( root, corpse.Renderer, definition.Health * 0.5f, GibSet.Human, Npc.BloodColor.Red );
+				CorpseDamage.Attach( root, corpse.Renderer, definition.Health * corpse.HealthFraction, GibSet.Human, Npc.BloodColor.Red );
 			}
 		}
 

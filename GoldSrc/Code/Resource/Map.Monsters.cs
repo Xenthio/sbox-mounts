@@ -103,6 +103,16 @@ partial class MapBuilder
 			if ( go.GetComponent<SvenCoop.RevivableNpc>( true ) is { } revival )
 				revival.Allowed = entity.GetInt( "is_not_revivable" ) == 0;
 		}
+		else if ( go.GetComponent<ConditionZeroDeletedScenes.DeadCampaignCivilian>( true ) is { } corpse )
+		{
+			corpse.ApplyMapProperties( entity );
+			if ( LoadMountedModel( entity.GetString( "model" ) ) is { IsError: false } model )
+			{
+				corpse.ModelPath = model.ResourcePath;
+				corpse.Renderer.Model = model;
+			}
+			RegisterMonster( go, entity, corpse.Renderer, null );
+		}
 		else
 		{
 			go.GetComponent<GruntRepel>( true )?.ApplyMapProperties( entity );
