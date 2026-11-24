@@ -25,7 +25,7 @@ public sealed class MonsterMaker : MapEntity
 	internal sealed record SavedMaker( int Count, bool Active, bool Exhausted, float NextSpawn, SavedChild[] Children );
 
 	internal SavedMaker CaptureMaker() => new( Count, _active, _exhausted, _next,
-		_children.Where( go => go.IsValid() && !go.IsDestroyed ).Select( go => go.GetComponent<Npc>() )
+		_children.Where( go => go.IsValid() && !go.IsDestroyed && go.Enabled ).Select( go => go.GetComponent<Npc>() )
 			.Where( npc => npc is { Health: > 0 } )
 			.Select( npc => new SavedChild( npc.WorldTransform, npc.Health, npc.CaptureMagazine() ) ).ToArray() );
 
@@ -72,9 +72,10 @@ public sealed class MonsterMaker : MapEntity
 
 	private void SpawnChild()
 	{
-		_children.RemoveAll( go => !go.IsValid() || go.IsDestroyed || go.GetComponent<Npc>() is { Health: <= 0 } );
-		if ( WaitForChildren && _children.Count > 0 ) return;
-		if ( MaxLive > 0 && _children.Count >= MaxLive ) return;
+		_children.RemoveAll( go => !go.IsValid() || go.IsDestroyed );
+		var live = _children.Count( go => go.Enabled && go.GetComponent<Npc>() is not { Health: <= 0 } );
+		if ( WaitForChildren && live > 0 ) return;
+		if ( MaxLive > 0 && live >= MaxLive ) return;
 		var pos = WorldPosition;
 		_ground ??= Scene.Trace.Ray( pos, pos + Vector3.Down * 2048 ).WithoutTags( "npc", "player", "trigger" ).Run().EndPosition.z;
 		var bounds = new BBox( new Vector3( pos.x - 34, pos.y - 34, _ground.Value ), pos + new Vector3( 34, 34, 0 ) );
@@ -108,6 +109,8 @@ public sealed class MonsterMaker : MapEntity
 				npc.ApplyMapProperties( entity );
 				npc.ApplyMapModel( entity );
 				if ( entity.GetFloat( "health" ) > 0 ) npc.Health = entity.GetFloat( "health" );
+				if ( child.GetComponent<SvenCoop.RevivableNpc>( true ) is { } revival )
+					revival.Allowed = entity.GetInt( "is_not_revivable" ) == 0;
 			}
 			if ( saved is not null )
 			{

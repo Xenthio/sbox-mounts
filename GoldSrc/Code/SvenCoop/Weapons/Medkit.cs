@@ -7,7 +7,7 @@ namespace GoldSrc.SvenCoop;
 
 [Title( "Medkit" ), Category( "Sven Co-op" )]
 [WeaponPickup( "medkit", "health", 100, PickupModel = "w_pmedkit", Bucket = 0, Weight = -5, Mount = "svencoop" )]
-public sealed class Medkit : CrowbarWeapon
+public sealed partial class Medkit : CrowbarWeapon
 {
 	TimeUntil _nextTreatment;
 	internal override string WorldModelPath => "models/p_medkit.mdl";
@@ -19,7 +19,8 @@ public sealed class Medkit : CrowbarWeapon
 		UsesClips = false;
 		StartingAmmo = 50;
 		HoldType = WeaponHolds.Throwable;
-		PrimaryAutomatic = true;
+		PrimaryAutomatic = SecondaryAutomatic = true;
+		SecondaryDelay = 0.1f;
 		PrimaryDelay = DeployTime = 0.5f;
 		Ballistics = new() { Range = 32 };
 	}
@@ -39,7 +40,7 @@ public sealed class Medkit : CrowbarWeapon
 	[Rpc.Host( NetFlags.OwnerOnly )]
 	void Treat()
 	{
-		if ( !IsActive || !Owner.IsValid() || !Inventory.IsValid() || PrimaryAmmoType is null || _nextTreatment > 0 ||
+		if ( !IsActive || !Owner.IsValid() || !Inventory.IsValid() || PrimaryAmmoType is null || _nextTreatment > 0 || _reviveTarget.IsValid() ||
 			MapState.PlayerVitals( Owner ) is not { Health: > 0 } healer ) return;
 
 		var charge = Inventory.GetAmmo( PrimaryAmmoType );
@@ -57,7 +58,7 @@ public sealed class Medkit : CrowbarWeapon
 		if ( healer.Health < healer.MaxHealth ) healer.Health = MathF.Min( healer.MaxHealth, healer.Health + spent * 0.25f );
 		ContentMount?.NpcAudio.Emit( "items/medshot5.wav", Owner.WorldPosition, attenuation: 0.8f );
 		using ( Rpc.FilterInclude( Owner.Network.Owner ?? Connection.Local ) )
-			PlayTreatment();
+			PlayTreatment( "shortuse" );
 	}
 
 	Component.IDamageable FindPatient( GameObject target )
@@ -71,9 +72,9 @@ public sealed class Medkit : CrowbarWeapon
 	}
 
 	[Rpc.Broadcast( NetFlags.HostOnly )]
-	void PlayTreatment()
+	void PlayTreatment( string sequence )
 	{
-		ViewModel?.GetComponent<StudioWeaponView>()?.Play( "shortuse", idleAfter: 1 );
+		ViewModel?.GetComponent<StudioWeaponView>()?.Play( sequence, idleAfter: sequence == "shortuse" ? 1 : null );
 		PostWeaponEvent( WeaponEvents.Attack );
 	}
 }

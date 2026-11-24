@@ -100,6 +100,8 @@ partial class MapBuilder
 			npc.ApplyMapProperties( entity );
 			npc.ApplyMapModel( entity );
 			RegisterMonster( go, entity, npc.Renderer, npc );
+			if ( go.GetComponent<SvenCoop.RevivableNpc>( true ) is { } revival )
+				revival.Allowed = entity.GetInt( "is_not_revivable" ) == 0;
 		}
 		else
 		{

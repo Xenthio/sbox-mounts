@@ -11,6 +11,11 @@ public partial class Npc
 
 	protected sealed override void OnDamaging( Component.IDamageable.DamageEvent hit )
 	{
+		if ( _revivalCorpse.IsValid() )
+		{
+			hit.Cancelled = true;
+			return;
+		}
 		_healthBeforeHit = Health;
 		ModifyDamage( hit );
 	}
@@ -18,11 +23,10 @@ public partial class Npc
 	protected override void OnDeath( Component.IDamageable.DeathEvent death )
 	{
 		var info = death.DamageInfo;
-		var remaining = info == _lastHit ? _remainingHealth : Health;
+		var remaining = RemainingHealth( info );
 		var direction = DamageDirection( info, death.Instigator, HullCenter );
 
-		_gibbed = Definition?.Gibs is GibSet.Human or GibSet.Alien
-			&& (info.Tags.Has( "alwaysgib" ) || (remaining < -30 && !info.Tags.Has( "nevergib" )));
+		_gibbed = ShouldGib( info );
 		if ( _gibbed )
 		{
 			var radius = Definition.Radius;
@@ -71,7 +75,16 @@ public partial class Npc
 
 	internal virtual void OnGibbed() { }
 
-	protected sealed override GameObject CreateRagdoll() => _gibbed ? null : CreateCorpse();
+	float RemainingHealth( DamageInfo info ) => info == _lastHit ? _remainingHealth : Health;
+	bool ShouldGib( DamageInfo info ) => Definition?.Gibs is GibSet.Human or GibSet.Alien &&
+		(info.Tags.Has( "alwaysgib" ) || (RemainingHealth( info ) < -30 && !info.Tags.Has( "nevergib" )));
+
+	protected sealed override GameObject CreateRagdoll()
+	{
+		var corpse = _gibbed ? null : CreateCorpse();
+		if ( _retainingDeath ) _revivalCorpse = corpse;
+		return corpse;
+	}
 
 	internal virtual NpcCorpse AddCorpseComponent( GameObject go ) => go.AddComponent<NpcCorpse>();
 	internal virtual bool AnchoredCorpse => false;

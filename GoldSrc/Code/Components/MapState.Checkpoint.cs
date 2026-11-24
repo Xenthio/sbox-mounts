@@ -115,7 +115,7 @@ public sealed partial class MapState
 		foreach ( var entity in Entities )
 		{
 			if ( !entity.IsValid() || entity.GameObject.IsDestroyed ) continue;
-			if ( entity is Monster dead && dead.Npc.IsValid() && dead.Npc.Health <= 0 ) continue;
+			if ( entity is Monster dead && dead.Npc.IsValid() && (dead.Npc.Health <= 0 || dead.Npc.IsAwaitingRevival) ) continue;
 			if ( entity is Monster { FromPreviousMap: true } incoming && incoming.Npc.IsValid() )
 				data.IncomingActors.Add( new( incoming.GameObject.Serialize(), incoming.Npc.Health,
 					incoming.Npc.CaptureScript(), incoming.Npc.CaptureMagazine() ) );

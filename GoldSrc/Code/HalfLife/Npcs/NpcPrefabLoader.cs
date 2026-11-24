@@ -91,6 +91,7 @@ internal sealed class NpcPrefabLoader( TypeDescription component, NpcDefinitionA
 		animation.EnableFootstepSounds = false;
 
 		npc.ClassName = definition.ClassName;
+		if ( Host is SvenCoopMount ) root.AddComponent<SvenCoop.RevivableNpc>();
 		npc.ModelPath = modelPath;
 		npc.ProjectilePath = projectile is null ? null : $"mount://{Host.Ident}/{projectile}.vmdl";
 		npc.DisplayName = component.Title;
