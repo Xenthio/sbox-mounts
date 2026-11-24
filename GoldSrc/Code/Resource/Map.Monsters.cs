@@ -122,7 +122,7 @@ partial class MapBuilder
 		if ( !mine.IsValid() ) return false;
 		var go = mine.GameObject;
 		go.Name = EntityName( entity );
-		mine.MineArmTime = (entity.SpawnFlags & 1) != 0 ? 1 : 2.5f;
+		if ( (entity.SpawnFlags & 1) != 0 ) mine.MineArmTime = 1;
 		mine.FindMineSupport = true;
 		if ( !string.IsNullOrEmpty( entity.TargetName ) )
 		{

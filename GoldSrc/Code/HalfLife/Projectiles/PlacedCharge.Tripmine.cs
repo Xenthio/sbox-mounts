@@ -51,6 +51,7 @@ public partial class PlacedCharge
 		var charge = go.AddComponent<T>();
 		charge.IsMine = true;
 		charge.EffectsMountId = mount?.Ident;
+		if ( mount is HalfLifeMModMount ) charge.MineArmTime = 1;
 		return charge;
 	}
 
@@ -79,7 +80,7 @@ public partial class PlacedCharge
 		else
 		{
 			NpcAudio.Play( audio.Find( "weapons/mine_deploy.wav" ), WorldPosition );
-			_chargeSound = NpcAudio.Play( audio.Find( "weapons/mine_charge.wav" ), WorldPosition, 0.2f );
+			_chargeSound = NpcAudio.Play( audio.Find( "weapons/mine_charge.wav" ), WorldPosition, 0.2f, mount is HalfLifeMModMount ? 1.45f : 1 );
 		}
 	}
 
@@ -158,13 +159,35 @@ public partial class PlacedCharge
 		var visual = new GameObject( GameObject, false, "Tripmine beam" ) { NetworkMode = NetworkMode.Never };
 		_beam = visual.AddComponent<LineRenderer>();
 		_beam.UseVectorPoints = true;
-		_beam.VectorPoints = [WorldPosition, WorldPosition + WorldRotation.Forward * (2048 * BeamFraction)];
-		_beam.Width = 1;
+		var end = WorldPosition + WorldRotation.Forward * (2048 * BeamFraction);
+		_beam.VectorPoints = [WorldPosition, end];
+		var mount = MineMount;
+		var mmod = mount is HalfLifeMModMount;
+		_beam.Width = mmod ? 1.5f : 1;
 		_beam.Color = new Color( 0, 214f / 255, 198f / 255, 64f / 255 );
-		if ( MineMount is { } mount )
-			_beam.Texturing = TrailTextureConfig.Default with { Material = mount.GetTrailMaterial( "laserbeam" ), Scroll = 255f / 128 };
+		if ( mount is not null )
+			_beam.Texturing = TrailTextureConfig.Default with { Material = mount.GetTrailMaterial( mmod ? "zbeam2" : "laserbeam" ), Scroll = 255f / 128 };
+		if ( mmod )
+		{
+			AddMineGlow( visual, mount, "glow04", end );
+			AddMineGlow( visual, mount, "glow03", WorldPosition );
+		}
 		_beam.Additive = true;
 		_beam.Opaque = _beam.CastShadows = false;
 		visual.Enabled = true;
+	}
+
+	static void AddMineGlow( GameObject parent, GameMount mount, string asset, Vector3 position )
+	{
+		if ( mount.GetIndexedSprite( asset ) is not { } sprite ) return;
+
+		var glow = new GameObject( parent, false, "Tripmine glow" ) { NetworkMode = NetworkMode.Never, WorldPosition = position };
+		var renderer = glow.AddComponent<SpriteRenderer>();
+		var frame = sprite.Animations[0].Frames[0].Texture;
+		renderer.Sprite = sprite;
+		renderer.Size = new Vector2( frame.Width, frame.Height ) * 0.3f;
+		renderer.Color = new Color32( 0, 214, 198, 210 );
+		renderer.Additive = true;
+		glow.Enabled = true;
 	}
 }

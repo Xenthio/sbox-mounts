@@ -35,9 +35,11 @@ public abstract class ClassicTripmine : ProjectileWeapon
 	protected static bool CanPlace( SceneTraceResult hit ) => hit.Hit && !hit.StartedSolid &&
 		hit.GameObject?.GetComponentInParent<GoldSrc.Maps.WallBrush>() is not { Conveyor: true, VisualOnly: false };
 
+	protected virtual bool CanRetire => true;
+
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-		if ( Networking.IsHost && IsActive && IsHeld && !HasPrimaryAmmo() ) Inventory.Remove( this );
+		if ( Networking.IsHost && IsActive && IsHeld && !HasPrimaryAmmo() && CanRetire ) Inventory.Remove( this );
 	}
 }
