@@ -54,7 +54,7 @@ public class PlayerRocket : RocketProjectile
 			DetachLauncher();
 	}
 
-	Vector3 FindSpotDirection()
+	protected Vector3 FindSpotDirection()
 	{
 		var forward = WorldRotation.Forward;
 		var direction = forward;

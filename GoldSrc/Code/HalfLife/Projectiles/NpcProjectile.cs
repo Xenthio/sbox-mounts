@@ -27,7 +27,8 @@ public class NpcProjectile : Component
 	internal static void Fire<T>( Npc npc, GameObject target, Vector3 origin, Vector3 direction, float? speed = null ) where T : NpcProjectile, new()
 		=> Fire<T>( npc.GameObject, npc.ProjectilePath, npc.Definition.Damage, target, origin + direction * 6, direction, speed );
 
-	internal static T Fire<T>( GameObject shooter, string model, float damage, GameObject target, Vector3 origin, Vector3 direction, float? speed ) where T : NpcProjectile, new()
+	internal static T Fire<T>( GameObject shooter, string model, float damage, GameObject target, Vector3 origin, Vector3 direction,
+		float? speed, System.Action<T> configure = null ) where T : NpcProjectile, new()
 	{
 		var go = new GameObject( false, typeof( T ).Name );
 		go.WorldPosition = origin;
@@ -40,6 +41,7 @@ public class NpcProjectile : Component
 		projectile.Damage = damage;
 		projectile.DamageTag = projectile.HitTag;
 		projectile.Age = 0;
+		configure?.Invoke( projectile );
 		projectile.PrepareLaunch();
 		go.Enabled = true;
 		go.NetworkSpawn( true, null );

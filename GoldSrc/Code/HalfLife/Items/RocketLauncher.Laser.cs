@@ -8,7 +8,8 @@ public abstract partial class GuidedRocketLauncher
 	SpriteRenderer _dot;
 
 	internal Vector3? SpotPosition { get; private set; }
-	bool GuidingRocket => LaserEnabled && ActiveRockets > 0;
+	internal virtual bool HasDesignator => LaserEnabled;
+	protected bool GuidingRocket => HasDesignator && ActiveRockets > 0;
 
 	public override bool CanReload() => !GuidingRocket && base.CanReload();
 	protected override bool OnHolstering( BaseInventoryItem next ) => !GuidingRocket && base.OnHolstering( next );
@@ -31,13 +32,13 @@ public abstract partial class GuidedRocketLauncher
 	protected override void OnReloadStarted()
 	{
 		base.OnReloadStarted();
-		if ( LaserEnabled ) _spotSuspended = LaserReloadDelay;
+		if ( HasDesignator ) _spotSuspended = LaserReloadDelay;
 	}
 
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-		if ( !IsActive || !Owner.IsValid() || !LaserEnabled || IsReloading || _spotSuspended > 0 )
+		if ( !IsActive || !Owner.IsValid() || !HasDesignator || IsReloading || _spotSuspended > 0 )
 		{
 			SpotPosition = null;
 			if ( _dot.IsValid() ) _dot.Enabled = false;

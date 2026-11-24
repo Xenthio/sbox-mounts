@@ -111,6 +111,7 @@ partial class MapBuilder
 			(ScientistSlaughterhouseMount, "ammo_egonclip") => ("w_isotopebox", "uranium", 250),
 			(ScientistSlaughterhouseMount, "ammo_gaussclip") => ("w_gaussammo", "uranium", 100),
 			(ScientistSlaughterhouseMount, "ammo_vortexclip") => ("w_rpgammo", "vortex_m", 5),
+			(ScientistSlaughterhouseMount, "ammo_rpgclip") => ("w_rpgammo", "rockets", 5),
 			(ScientistSlaughterhouseMount, "ammo_fireballclip") => ("w_weaponbox", "ffuel", 20),
 			(ScientistSlaughterhouseMount, "ammo_acidtank") => ("w_weaponbox", "acid", 30),
 			(ScientistSlaughterhouseMount, "ammo_laserclip") => ("w_9mmclip", "uranium", 20),

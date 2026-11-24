@@ -25,7 +25,7 @@ public abstract partial class GuidedRocketLauncher : ProjectileWeapon
 	internal override bool CanIdle => Ammo1 > 0;
 	internal override void PlayIdle( StudioWeaponView view )
 	{
-		if ( !LaserEnabled && Game.Random.Float( 0, 1 ) > 0.75f &&
+		if ( !HasDesignator && Game.Random.Float( 0, 1 ) > 0.75f &&
 			view.Play( HasLoadedRocket ? "fidget" : "fidget2", idleAfter: 3 ) ) return;
 		// The HD model has no empty-launcher fidget.
 		view.Play( HasLoadedRocket ? "idle" : "idle2", idleAfter: 6 );
