@@ -6,7 +6,7 @@ public sealed partial class Medkit
 {
 	const int RevivalCost = 50;
 	const float RevivalTime = 2;
-	RevivableCorpse _reviveTarget;
+	Component _reviveTarget;
 	TimeUntil _reviveAt;
 	TimeUntil _heldUntil;
 	TimeUntil _reviveRetry;
@@ -26,8 +26,9 @@ public sealed partial class Medkit
 		}
 
 		var hit = TraceMelee( AimRay, 16 );
-		var corpse = hit.GameObject?.GetComponentInParent<RevivableCorpse>();
-		if ( !corpse.IsValid() || !corpse.CanRevive( Owner ) )
+		var npc = hit.GameObject?.GetComponentInParent<RevivableCorpse>();
+		var corpse = npc.IsValid() && npc.CanRevive( Owner ) ? npc as Component : SandboxPlayerRevival.Find( hit.GameObject );
+		if ( !corpse.IsValid() )
 		{
 			DenyRevive( "items/medshotno1.wav" );
 			return;
@@ -42,16 +43,36 @@ public sealed partial class Medkit
 		_heldUntil = 0.3f;
 		if ( _reviveAt > 0 ) return;
 
-		if ( !corpse.TryFindStandingPlace( out var placement ) || Inventory.TakeAmmo( PrimaryAmmoType, RevivalCost ) != RevivalCost )
+		if ( !CompleteRevival( corpse ) )
 		{
 			DenyRevive( "items/medshotno1.wav" );
 			return;
 		}
 		_reviveTarget = null;
 		_reviveRetry = _nextTreatment = RevivalTime;
-		corpse.Revive( placement );
 		ContentMount?.NpcAudio.Emit( "weapons/electro4.wav", Owner.WorldPosition, pitch: 1.1f, attenuation: 0.8f );
 		PlayRevivalCue( "items/medshot5.wav", "shortuse" );
+	}
+
+	bool CompleteRevival( Component corpse )
+	{
+		var inventory = Inventory;
+		var ammo = PrimaryAmmoType;
+		if ( inventory.TakeAmmo( ammo, RevivalCost ) != RevivalCost ) return false;
+		if ( corpse is RevivableCorpse npc )
+		{
+			if ( npc.TryFindStandingPlace( out var placement ) )
+			{
+				npc.Revive( placement );
+				return true;
+			}
+		}
+		else if ( SandboxPlayerRevival.TryRevive( corpse ) )
+		{
+			return true;
+		}
+		inventory.GiveAmmo( ammo, RevivalCost );
+		return false;
 	}
 
 	void DenyRevive( string sample )
