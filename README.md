@@ -34,7 +34,11 @@ See the full [Mount API docs](https://sbox.game/dev/doc/game-mounts/) to learn m
 | [Quake III Arena](https://store.steampowered.com/app/2200) | `quake3` | idTech 3 | ✅ | ❌ | ❌ | ⚠️ | ❌ | ✅ | ✅ |
 | [Return to Castle Wolfenstein](https://store.steampowered.com/app/9010) | `rtcw` | idTech 3 | ✅ | ❌ | ❌ | ⚠️ | ❌ | ✅ | ✅ |
 | [Wolfenstein: Enemy&nbsp;Territory](https://store.steampowered.com/app/1873030) | `wolfet` | idTech 3 | ✅ | ❌ | ❌ | ⚠️ | ❌ | ✅ | ✅ |
+| [Risk of Rain 2](https://store.steampowered.com/app/632360) | `ror2` | Unity | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 
+- **Risk of Rain 2** — base-game and expansion scenes load from the installed game with geometry, collision,
+  supported lighting, and authored navigation graphs. Standalone character, summon, and destructible prefabs
+  load with supported models, animations, materials, particles, and Wwise sounds.
 
 ## Development
 You will need a copy of s&box to develop mounts. You can get it on [Steam](https://store.steampowered.com/app/590830/sbox/) and switch to the [staging branch](https://sbox.game/dev/doc/getting-started/staging-branch), or  [build it from source](https://github.com/Facepunch/sbox-public).

@@ -1,0 +1,20 @@
+{
+  "Title": "Unity",
+  "Type": "addon",
+  "Org": "local",
+  "Ident": "unity",
+  "Tags": null,
+  "Schema": 1,
+  "HasAssets": true,
+  "Resources": null,
+  "HasCode": true,
+  "PackageReferences": [],
+  "EditorReferences": null,
+  "Metadata": {
+    "ParentPackage": "facepunch.sandbox",
+    "StartupScene": "scenes/sandbox.scene"
+  },
+  "AI": {
+    "EnableMcpCommunication": true
+  }
+}
